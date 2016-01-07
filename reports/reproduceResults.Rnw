@@ -1,0 +1,125 @@
+%\VignetteEngine{knitr::knitr}
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+\usepackage[latin1]{inputenc}
+\usepackage{geometry}
+\usepackage{titlesec}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\usepackage[table]{xcolor}
+%\newcommand{\sectionbreak}{\clearpage}
+
+\graphicspath{images}
+
+\begin{document}
+
+<<setup, include=FALSE, cache=FALSE>>=
+# Set options
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, cache=FALSE)
+options(replace.assign=TRUE,width=90)
+par.original <- par()
+days.per.month <- 30.4368
+days.per.year <- 365.242
+package.dir <- "~/repos/MetaGx/"
+@
+
+\title{Reproduction of Published Ovarian Subtyping Schemes}
+
+\author{Gregory M. Chen}
+\date{\today}
+\maketitle
+
+%\tableofcontents 
+
+<<load, cache=FALSE>>=
+library(gdata)
+library(survival)
+library(reshape2)
+library(genefu)
+library(annotate)
+library(HiDimDA)
+library(hgu133plus2.db)
+library(stringr)
+# library(survMisc) 
+library(xtable)
+library(gridExtra)
+library(Biobase)
+library(GSVA)
+library(sparsediscrim)
+library(MetaGxOvarian)
+library(survcomp)
+library(ggplot2)
+library(e1071)
+library(randomForest)
+@
+
+<<load_data, cache=FALSE>>=
+#
+#source(system.file("extdata", "reproduce.results.patientselection.config", package="MetaGx2"))
+#source(system.file("extdata", "patientselection.config", package="MetaGxOvarian"))
+
+source("../../inst/extdata/reproduce.results.patientselection.config")
+### use this line if you do not want to get rid of duplicates
+rm(remove.duplicates)
+probe.gene.mapping <- TRUE
+rescale <- FALSE
+source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
+#esets.not.rescaled <- esets
+#rescale <- TRUE
+@
+
+<<helper_functions>>=
+.getBootstrapAccuracyVals <- function(formula, data, train.function, custom.predict.function = NULL, num.repetitions=1000) {
+  bootstrap.accuracy.vals <- lapply(1:num.repetitions, function(x) {
+    num.samples <- nrow(data)
+    indices.to.include <- sample(1:num.samples, size = num.samples, replace=TRUE)
+    indices.out.of.bootstrap <- setdiff(1:num.samples, indices.to.include)
+    current.train.data <- data[indices.to.include,]
+    current.test.data <- data[indices.out.of.bootstrap,]
+    trained.model <- train.function(formula, data=current.train.data)
+    response.var.name <- all.vars(formula)[1]
+    if(is.null(custom.predict.function)) {
+      current.predictions <- predict(trained.model, newdata=current.test.data[,-which(colnames(current.test.data) == response.var.name)])
+    } else {
+      current.predictions <- custom.predict.function(trained.model, newdata=current.test.data[,-which(colnames(current.test.data) == response.var.name)])
+    }
+    current.accuracy <- mean(current.predictions == current.test.data$clustering_subtype)
+    return(current.accuracy)
+    })#, mc.cores = parallel::detectCores())
+  return(unlist(bootstrap.accuracy.vals))
+}
+.getCrossValidationAccuracyVals <- function(formula, data, train.function, custom.predict.function = NULL, num.folds=10) {
+  num.samples <- nrow(data)
+  folds <- as.factor(rep(1:num.folds, size=num.samples))
+  cv.accuracy.vals <- lapply(levels(folds), function(current.fold) {
+    current.train.data <- data[folds != current.fold,]
+    current.test.data <- data[folds == current.fold,]
+    trained.model <- train.function(formula, data=current.train.data)
+    response.var.name <- all.vars(formula)[1]
+    if(is.null(custom.predict.function)) {
+      current.predictions <- predict(trained.model, newdata=current.test.data[,-which(colnames(current.test.data) == response.var.name)])
+    } else {
+      current.predictions <- custom.predict.function(trained.model, newdata=current.test.data[,-which(colnames(current.test.data) == response.var.name)])
+    }
+    current.accuracy <- mean(current.predictions == current.test.data$clustering_subtype)
+    return(current.accuracy)
+    })#, mc.cores = parallel::detectCores())
+  return(unlist(cv.accuracy.vals))
+}
+@
+
+This document reports our implementations of ovarian cancer subtyping classification algorithms. Using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts.
+\tableofcontents
+
+\Sexpr{knit_child('reproduceKonecny.Rnw')}
+
+\Sexpr{knit_child('reproduceVerhaak.Rnw')}
+
+\Sexpr{knit_child('reproduceHelland.Rnw')}
+
+\Sexpr{knit_child('reproduceBentink.Rnw')}
+
+\end{document}

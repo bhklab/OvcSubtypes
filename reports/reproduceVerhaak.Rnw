@@ -1,0 +1,207 @@
+
+% Verhaak et al., 2013
+\pagebreak
+\section{Verhaak et al., 2013 / TCGA 2011}
+<<verhaak_get_subtypes, cache=FALSE>>=
+source("../../R/getVerhaakSubtypes.R", chdir=TRUE)
+verhaak.spreadsheet.data <- read.xls("../../inst/extdata/JCI65833sd1.xls", skip=1)
+
+## Examine the correlation between normalized ssGSEA scores in the Tothill dataset, as predicted by our implementation and that of Verhaak et al.
+verhaak.validation.esets <- list(Bonome=esets$GSE26712,
+                                 Crijns=esets$GSE13876, 
+                                 Denkert=esets$GSE14764, 
+                                 Dressman=esets$PMID17290060, 
+                                 TCGA=esets$TCGA, # This contains the full TCGA set, but we will filter to the validation data later
+                                 Tothill=esets$GSE9891, 
+                                 Yoshihara=esets$GSE17260)
+
+verhaak.tcga.discovery.ids <- as.character(verhaak.spreadsheet.data[verhaak.spreadsheet.data$DATASET == "TCGA-discovery",]$ID)
+verhaak.validation.esets$TCGA <- verhaak.validation.esets$TCGA[,!(as.character(verhaak.validation.esets$TCGA$unique_patient_ID) %in% as.character(verhaak.tcga.discovery.ids))]
+
+implemented.verhaak.output <- lapply(verhaak.validation.esets, getVerhaakSubtypes)
+@
+
+<<verhaak_get_merged, eval=TRUE, include=TRUE>>=
+# Get the labels from the original publication clustering algorithm
+verhaak.labels.table <- verhaak.spreadsheet.data[verhaak.spreadsheet.data$DATASET == "TCGA-discovery", c("ID", "SUBTYPE")]
+colnames(verhaak.labels.table)[2] <- "clustering_subtype"
+levels(verhaak.labels.table[,2]) <- sub("Immunoreactive", "IMR",levels(verhaak.labels.table[,2]))
+levels(verhaak.labels.table[,2]) <- sub("Proliferative", "PRO",levels(verhaak.labels.table[,2]))
+levels(verhaak.labels.table[,2]) <- sub("Differentiated", "DIF",levels(verhaak.labels.table[,2]))
+levels(verhaak.labels.table[,2]) <- sub("Mesenchymal", "MES",levels(verhaak.labels.table[,2]))
+
+intersecting.verhaak.tcga.ids <- intersect(verhaak.labels.table$ID, esets$TCGA$unique_patient_ID)
+verhaak.labels.table <- verhaak.labels.table[verhaak.labels.table$ID %in% intersecting.verhaak.tcga.ids,]
+implemented.ssgsea.scores <- data.frame()
+
+for(i in 1:length(implemented.verhaak.output)) {
+  current.implemented.df <- as.data.frame(implemented.verhaak.output[[i]][[2]])
+  Dataset.name <- names(implemented.verhaak.output)[i]
+  # Find the sample names corresponding to the names provided in the Verhaak et al. supplementary spreadsheet
+  if(Dataset.name == "Crijns") {
+    crijns.patientdata <- read.xls("../../inst/extdata/Patient data + GEO coupling for Haibe-Kains.xls")
+    crijns.patientdata$GEOnumber <- as.character(crijns.patientdata$GEOnumber)
+    verhaak.validation.esets[[i]]$geonumber <- str_extract(as.character(verhaak.validation.esets[[i]]$uncurated_author_metadata), "GSM[0-9]*")
+    sample.name <- as.character(crijns.patientdata[match(verhaak.validation.esets[[i]]$geonumber,crijns.patientdata$GEOnumber),]$Snumber)
+  } else if(Dataset.name == "Bonome") {
+    sample.name <- sub(".* ", "", pData(verhaak.validation.esets[[i]])$alt_sample_name)
+  } else if(Dataset.name == "Denkert") {
+     sample.name <- sub("GSE14764_", "", rownames(pData(verhaak.validation.esets[[i]])))
+  } else if(Dataset.name == "Dressman") {
+    sample.name <- sub("PMID17290060_X", "", rownames(pData(verhaak.validation.esets[[i]])))
+  } else if(Dataset.name == "TCGA") {
+    sample.name <- as.character(pData(verhaak.validation.esets[[i]])$unique_patient_ID)
+  }  else if(Dataset.name == "Tothill") {
+    sample.name <- sub("GSE9891_", "", rownames(pData(verhaak.validation.esets[[i]])))
+  }  else if(Dataset.name == "Yoshihara") {
+    sample.name <- sub("GSE17260_", "", rownames(pData(verhaak.validation.esets[[i]])))
+  }
+  current.ssgsea.scores <- as.data.frame(implemented.verhaak.output[[i]][[2]])
+  implemented.ssgsea.scores <- rbind(implemented.ssgsea.scores, data.frame(
+                                                                      Dataset.name=Dataset.name,
+                                                                      sample.name=sample.name,
+                                                                      DIF=current.ssgsea.scores$DIF,
+                                                                      IMR=current.ssgsea.scores$IMR,
+                                                                      MES=current.ssgsea.scores$MES,
+                                                                      PRO=current.ssgsea.scores$PRO,
+                                                                      implemented.subtype=implemented.verhaak.output[[i]][[1]]$Verhaak.subtypes,
+                                                                      days_to_death=implemented.verhaak.output[[i]][[1]]$days_to_death,
+                                                                      vital_status=implemented.verhaak.output[[i]][[1]]$vital_status))
+}
+
+implemented.ssgsea.scores$Dataset.name <- as.character(implemented.ssgsea.scores$Dataset.name)
+implemented.ssgsea.scores$Dataset.name[implemented.ssgsea.scores$Dataset.name == "TCGA"] <- "TCGA-validation"
+implemented.ssgsea.scores$Dataset.name <- as.factor(implemented.ssgsea.scores$Dataset.name)
+
+verhaak.spreadsheet.data.subset <- verhaak.spreadsheet.data[c(1,2,13,grep(".ssGSEA.normalized.score", colnames(verhaak.spreadsheet.data)))]
+
+levels(implemented.ssgsea.scores$Dataset.name) <- toupper(levels(implemented.ssgsea.scores$Dataset.name))
+levels(implemented.ssgsea.scores$sample.name) <- toupper(levels(implemented.ssgsea.scores$sample.name))
+levels(verhaak.spreadsheet.data.subset$ID) <- toupper(levels(verhaak.spreadsheet.data.subset$ID))
+levels(verhaak.spreadsheet.data.subset$DATASET) <- toupper(levels(verhaak.spreadsheet.data.subset$DATASET))
+
+verhaak.spreadsheet.data.subset$CloverLeaf <- as.character(verhaak.spreadsheet.data.subset$CloverLeaf)
+verhaak.spreadsheet.data.subset$CloverLeaf <- sub("_Good", "", as.character(verhaak.spreadsheet.data.subset$CloverLeaf))
+verhaak.spreadsheet.data.subset$CloverLeaf <- sub("_Poor", "", as.character(verhaak.spreadsheet.data.subset$CloverLeaf))
+verhaak.spreadsheet.data.subset$CloverLeaf <- as.factor(verhaak.spreadsheet.data.subset$CloverLeaf)
+
+colnames(implemented.ssgsea.scores)[1:2] <- c("DATASET", "ID")
+
+# subtypes predicted by our implementation
+verhaak.merged <- merge(implemented.ssgsea.scores, verhaak.spreadsheet.data.subset, by=c("DATASET", "ID"))
+
+# Plot correlations between ssGSEA scores
+
+DIF.cor <- cor(verhaak.merged$DIF, verhaak.merged$Differentiated.ssGSEA.normalized.score)
+IMR.cor <- cor(verhaak.merged$IMR, verhaak.merged$Immunoreactive.ssGSEA.normalized.score)
+MES.cor <- cor(verhaak.merged$MES, verhaak.merged$Mesenchymal.ssGSEA.normalized.score)
+PRO.cor <- cor(verhaak.merged$PRO, verhaak.merged$Proliferative.ssGSEA.normalized.score)
+
+accuracy.classification.with.thresholds <- mean(verhaak.merged$implemented.subtype == verhaak.merged$CloverLeaf)
+accuracy.classification.by.max <- mean(apply(verhaak.merged[,3:6],1,which.max) == apply(verhaak.merged[,11:14],1,which.max))
+@
+
+Next, we implemented the subtype classification scheme given by Verhaak et al., 2013. The authors designed a classifier based on single-sample GSEA to classify samples into subtypes previously defined in TCGA, 2011. In their supplementary materials, the authors provide a list of four sets of gene symbols (100 total gene symbols), with each gene set associated with a subtype. 
+
+We implemented this subtype classifier using the provided gene sets and the ssGSEA implementation in \texttt{R} package \texttt{GSVA}. The parameters to the function \texttt{gsva} were: \texttt{method="ssgsea"}, and \texttt{tau=0.75}.
+
+To assess our implementation, we compared our normalized ssGSEA scores with the scores in the validation set used in the original study. In their supplementary materials, Verhaak et al. provide their normalized ssGSEA scores for a validation set consisting of the datasets of Bonome, Crijns, Denkert, Dressman, Tothill, Yoshihara, and a subset of TCGA. This validation dataset consisted of \Sexpr{ nrow(verhaak.spreadsheet.data[ !is.na(verhaak.spreadsheet.data$CloverLeaf),])} patients reported in their supplementary; we matched \Sexpr{ nrow(verhaak.merged)} patients from MetaGxOvarian data based on sample IDs. 
+
+We observed Pearson's correlation coefficients of \Sexpr{ round(DIF.cor, digits=2)}, \Sexpr{ round(IMR.cor, digits=2)}, \Sexpr{ round(MES.cor, digits=2)}, and \Sexpr{ round(PRO.cor, digits=2)} for subtypes DIF, IMR, MES, and PRO respectively. 
+\vspace*{-30pt}
+\begin{figure}[H]
+<<verhaak_scatterplots, eval=TRUE, fig.width=10, fig.height=8, out.width="0.9\\textwidth">>=
+#png("verhaak_scatterplots.png", width=800, height=700)
+par(mfrow=c(2,2))
+
+par(oma=c(0,0,0,11))
+verhaak.dataset.cols <- RColorBrewer::brewer.pal(length(levels(verhaak.merged$DATASET)), name="Dark2")[as.integer(verhaak.merged$DATASET)]
+plot(verhaak.merged$DIF, verhaak.merged$Differentiated.ssGSEA.normalized.score, col=verhaak.dataset.cols, xlab="Implemented DIF ssGSEA", ylab="Published DIF ssGSEA Score")
+plot(verhaak.merged$IMR, verhaak.merged$Immunoreactive.ssGSEA.normalized.score, col=verhaak.dataset.cols, xlab="Implemented IMR ssGSEA", ylab="Published IMR ssGSEA Score")
+plot(verhaak.merged$MES, verhaak.merged$Mesenchymal.ssGSEA.normalized.score, col=verhaak.dataset.cols, xlab="Implemented MES ssGSEA", ylab="Published MES ssGSEA Score")
+plot(verhaak.merged$PRO, verhaak.merged$Proliferative.ssGSEA.normalized.score, col=verhaak.dataset.cols, xlab="Implemented PRO ssGSEA", ylab="Published PRO ssGSEA Score")
+par(usr=c(0,1,0,1), # Reset the coordinates
+          xpd=NA)
+legend(1.1,2.61, 
+       inset = 0,
+       legend=levels(verhaak.merged$DATASET),
+       col=RColorBrewer::brewer.pal(length(levels(verhaak.merged$DATASET)), name="Dark2"),
+       pch=1)
+#dev.off()
+
+par(par.original)
+@
+\vspace*{-15pt}
+\caption{ssGSEA scores for the >800 patient validation set from our implementation (x axis) and the supplementary material (y axis) for each of the four subtypes.}
+\end{figure}
+
+From these normalized ssGSEA scores, subtype classification may be performed by assigning a patient according to the highest ssGSEA score. Overall, this method produces a concordance of \Sexpr{ round(100 * accuracy.classification.by.max, digits=2)}\% of patients classified identically between our implementation and supplementary results.
+
+<<verhaak_table_bymax, results='asis'>>=
+implemented.classes.from.max <-  as.factor(c("DIF", "IMR", "MES", "PRO")[apply(verhaak.merged[,c("DIF", "IMR", "MES", "PRO")],1,which.max)]) 
+supplementary.classes.from.max <- as.factor(c("DIF", "IMR", "MES", "PRO")[apply(verhaak.merged[,paste0(c("Differentiated", "Immunoreactive", "Mesenchymal", "Proliferative"), ".ssGSEA.normalized.score")],1,which.max)])
+addtorow <- list()
+addtorow$pos <- list()
+addtorow$pos[[1]] <- 0
+addtorow$pos[[2]] <- 0
+addtorow$command <- c('& Verhaak Subtypes from Supplementary & & &\\\\\n', "Implemented Verhaak Subtypes & DIF & IMR & MES & PRO  \\\\\n")
+print(xtable(table(implemented.classes.from.max, supplementary.classes.from.max), caption="Contingency table showing concordance using our implementation of the Verhaak subtyping classifier and the predictions given in the supplementary of the Verhaak manuscript. The predictions for both implementations were made on the combined >800 sample dataset by taking the max ssGSEA subtype score."), add.to.row=addtorow, include.colnames=FALSE)
+@
+
+
+Verhaak et al. describe their subtype classification using the following method: first, Immunoreactive and Mesenchymal subtypes are classified by the higher score if corresponding ssGSEA scores exceed a given threshold.\footnote{The authors obtained these threshold as the lowest ssGSEA scores for samples clustered within Immunoreactive and Mesenchymal subtypes respectively.} Overall, this method produces a concordance of \Sexpr{ round(100 * accuracy.classification.with.thresholds, digits=2)}\% of samples classified identically between our implementation and supplementary results.
+
+<<verhaak_table_bythreshold, results='asis'>>=
+
+implemented.classes.from.threshold <-  verhaak.merged$implemented.subtype
+supplementary.classes.from.threshold <- verhaak.merged$CloverLeaf
+addtorow <- list()
+addtorow$pos <- list()
+addtorow$pos[[1]] <- 0
+addtorow$pos[[2]] <- 0
+addtorow$command <- c('& Verhaak Subtypes from Supplementary & & &\\\\\n', "Implemented Verhaak Subtypes & DIF & IMR & MES & PRO \\\\\n")
+print(xtable(table(implemented.classes.from.threshold, supplementary.classes.from.threshold), caption="Contingency table showing concordance using our implementation of the Verhaak subtyping classifier and the predictions given in the supplementary of the Verhaak manuscript, using threshold values for Immunoreactive and Mesenchymal subtypes."), add.to.row=addtorow, include.colnames=FALSE)
+@
+
+\pagebreak
+We sought to investigate whether the discrepancies may be explained as patients whose expression profiles are marginal cases, e.g. expression profiles that are similar to two different subtypes. We investigated the relationship between classification accuracy and the margin, defined as the difference between the top-scoring ssGSEA score and second-top scoring ssGSEA score (using the published ssGSEA normalized scores).
+
+\begin{figure}[H]
+<<verhaak_margin_vs_accuracy, fig.height=5, fig.width=10>>=
+verhaak.margins <- apply(verhaak.merged[,c("Differentiated.ssGSEA.normalized.score", "Immunoreactive.ssGSEA.normalized.score", "Mesenchymal.ssGSEA.normalized.score", "Proliferative.ssGSEA.normalized.score")], 1, function(x) max(x) - sort(x)[3])
+
+par(mfrow=c(1,2))
+margin.xvals <- seq(min(verhaak.margins), max(verhaak.margins), length.out = 1000)
+plot(margin.xvals, sapply(margin.xvals, function(x) mean(verhaak.merged$implemented.subtype[verhaak.margins > x] == verhaak.merged$CloverLeaf[verhaak.margins > x])), ylim=c(0,1), pch=19, col="#6E6E6E", cex = 0.5, xlab="Margin", ylab="Concordance")
+
+boxplot(verhaak.margins ~ as.factor(verhaak.merged$implemented.subtype == verhaak.merged$CloverLeaf), xlab="Margin", names=c("Non-concordant\nPatients", "Concordant\nPatients"), horizontal=TRUE)
+
+margins.concordant <- verhaak.margins[verhaak.merged$implemented.subtype == verhaak.merged$CloverLeaf]
+margins.non.concordant <- verhaak.margins[verhaak.merged$implemented.subtype != verhaak.merged$CloverLeaf]
+
+wilcox.out <- wilcox.test(margins.concordant, margins.non.concordant, alternative = 'greater')
+#quantile.xvals <- seq(0,1,length.out=1000)
+#plot(quantile.xvals, sapply(quantile.xvals, function(x) mean(verhaak.merged$implemented.subtype[ecdf(verhaak.margins)(verhaak.margins) > x] == verhaak.merged$CloverLeaf[ecdf(verhaak.margins)(verhaak.margins) > x])), ylim=c(0,1), pch=19, col="#6E6E6E", cex = 0.5, xlab="Margin (percentile)", ylab="Concordance")
+par(mfrow=c(1,1))
+@
+\caption{Left: the condordance of patients classified above a given margin threshold. Cases with a large difference between top ssGSEA subtype scores are more likely to be classified concordantly. Right: The margin values of patients with concordant vs non-concordant classification between our implementation and published subtypes. Patient classified differently between our implementation and the published subtypes had significantly lower margin values (one-sided Wilcoxon rank-sum p = \Sexpr{sprintf("%0.1E", wilcox.out$p.value)}).}
+\end{figure}
+
+We performed survival analysis with using the clinical annotations of the validation datasets, and observed similar survival curves as figure 2B in Verhaak et al.
+
+\begin{figure}[H]
+\centering
+<<verhaak_survival_curves_implemented, fig.height=5, fig.width=5, out.width="0.5\\textwidth">>=
+verhaak.merged$vital_status <- verhaak.merged$vital_status == "deceased"
+verhaak.merged$months_to_death <- verhaak.merged$days_to_death / days.per.month
+
+time.cens.out <- survcomp::censor.time(surv.time = verhaak.merged$months_to_death, surv.event = verhaak.merged$vital_status, time.cens = 60)
+verhaak.merged$months_to_death <- time.cens.out$surv.time.cens
+verhaak.merged$vital_status <- time.cens.out$surv.event.cens
+
+verhaak.merged$surv.obj <- Surv(verhaak.merged$months_to_death, verhaak.merged$vital_status)
+km.coxph.plot(surv.obj ~ implemented.subtype, verhaak.merged, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Classifier", show.n.risk = FALSE, leg.text = levels(verhaak.merged$implemented.subtype), .col=c("#E38010", "green", "blue", "purple"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0.4)
+@
+\includegraphics[width=0.5\textwidth]{verhaak_fig2B.png}
+\caption{The survival curves produced by our implemented classifier (top) appear similar to Figure 2B in the original publication (bottom).}
+\end{figure}

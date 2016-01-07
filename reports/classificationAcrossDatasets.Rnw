@@ -1,0 +1,378 @@
+%\VignetteEngine{knitr::knitr}
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+\usepackage[latin1]{inputenc}
+\usepackage{geometry}
+\usepackage{titlesec}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\usepackage[table]{xcolor}
+%\newcommand{\sectionbreak}{\clearpage}
+
+\begin{document}
+
+<<setup, include=FALSE, cache=FALSE>>=
+# Set options
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, cache=FALSE)
+options(replace.assign=TRUE,width=90)
+par.original <- par()
+days.per.month <- 30.4368
+days.per.year <- 365.242
+package.dir <- "~/repos/MetaGx/"
+source("../../R/create.survival.plot.R")
+@
+
+\title{Classification of Ovarian Subtyping Schemes Across a Large Compendium of Ovarian Datasets}
+
+\author{Gregory M. Chen}
+\date{\today}
+\maketitle
+
+%\tableofcontents 
+
+<<load, cache=FALSE>>=
+library(gdata)
+library(HiDimDA)
+library(survival)
+library(reshape2)
+library(genefu)
+library(annotate)
+library(hgu133plus2.db)
+# library(survMisc) 
+library(xtable)
+library(gridExtra)
+library(Biobase)
+library(GSVA)
+library(sparsediscrim)
+library(MetaGxOvarian)
+library(survcomp)
+library(ggplot2)
+library(e1071)
+library(randomForest)
+library(gridExtra)
+library(survcomp)
+library(metafor)
+library(genefu)
+
+source("../../R/subtypeClassification.R")
+source("../../R/setSubtype.R")
+source("../../R/stripWhiteSpace.R")
+
+package.dir = "~/repos/MetaGx/"
+@
+
+<<load_data, eval=FALSE>>=
+library(Biobase)
+library(MetaGxOvarian)
+
+source("../../inst/extdata/reproduce.results.patientselection.config")
+rule.2 <- c("histological_type","^ser$")
+#rule.3 <- c("summarystage","^late$")
+rule.4 <- c("summarygrade","^high$")
+### use this line if you do not want to get rid of duplicates
+rm(remove.duplicates)
+rescale <- FALSE
+
+source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
+
+esets.not.rescaled <- esets
+# remove any genes with NA values
+esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
+# only keep esets with at least 10000 genes
+esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(x) nrow(x) > 10000)]
+
+save(esets.not.rescaled, file="esets.not.rescaled.RData")
+@
+
+<<classify_data, eval=FALSE>>=
+#
+load("esets.not.rescaled.RData")
+
+source("../../R/getKonecnySubtypes.R")
+source("../../R/getVerhaakSubtypes.R")
+source("../../R/getHellandSubtypes.R")
+source("../../R/getBentinkSubtypes.R")
+source("../../R/create.survival.plot.R")
+
+
+# Subtype classification
+esets.not.rescaled.classified <- esets.not.rescaled
+# Remove TCGA.RNASeqV2
+esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
+
+esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+  konecny.out <- getKonecnySubtypes(eset)
+  annotated.eset <- konecny.out[[1]]
+  annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
+  return(annotated.eset)
+  })
+esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+  verhaak.out <- getVerhaakSubtypes(eset)
+  annotated.eset <- verhaak.out[[1]]
+  annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
+  return(annotated.eset)
+  })
+esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+  helland.out <- getHellandSubtypes(eset)
+  annotated.eset <- helland.out[[1]]
+  annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
+  return(annotated.eset)
+  })
+esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
+save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+@
+
+<<load_data_from_files>>=
+load("esets.not.rescaled.classified.RData")
+esets.with.survival <- esets.not.rescaled.classified
+esets.with.survival <- lapply(esets.with.survival, function(eset) {
+  eset[,!is.na(eset$days_to_death) & !is.na(eset$vital_status)]
+  })
+
+esets.with.survival <- esets.with.survival[sapply(esets.with.survival, ncol) > 0]
+eset.names <- names(esets.with.survival)
+esets.with.survival <-lapply(eset.names, function(eset.name) {
+  esets.with.survival[[eset.name]]$data.source <- eset.name
+  return(esets.with.survival[[eset.name]])
+  })
+names(esets.with.survival) <- eset.names
+
+ovarian.publication.years <- read.csv("ovarian_publication_years.csv", stringsAsFactors = FALSE)
+if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
+  stop("Check \"ovarian_publication_years.csv\"")
+}
+ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
+esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
+@
+
+\tableofcontents
+<<Pooled_survival_prepare_data>>=
+subtype.names <- c("Konecny", "Verhaak", "Helland", "Bentink")
+
+pooled.subtypes <- do.call(rbind, 
+  lapply(esets.not.rescaled.classified, function(eset) {
+    phenoData <- pData(eset)[,colnames(pData(esets.not.rescaled.classified$E.MTAB.386))]
+    for(i in 1:ncol(phenoData)) {
+      if(is.factor(phenoData[,i])) {
+        phenoData[,i] <- as.character(phenoData[,i])
+      }
+    }
+    return(phenoData)
+    }))
+pooled.subtypes <- pooled.subtypes[,!(colnames(pooled.subtypes) %in% c("uncurated_author_metadata", "batch") )]
+
+pooled.subtypes.survival <- do.call(rbind, 
+    lapply(esets.with.survival, function(eset) pData(eset)[,c("days_to_death", "vital_status", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]))
+
+colnames(pooled.subtypes.survival)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes.survival)[4:7])
+
+pooled.subtypes.survival$Konecny <- factor(pooled.subtypes.survival$Konecny, levels(pooled.subtypes.survival$Konecny)[c(1,2,3,4)])
+pooled.subtypes.survival$Verhaak <- factor(pooled.subtypes.survival$Verhaak, levels(pooled.subtypes.survival$Verhaak)[c(2,1,4,3)])
+pooled.subtypes.survival$Helland <- factor(pooled.subtypes.survival$Helland, levels(pooled.subtypes.survival$Helland)[c(2,3,4,1)])
+pooled.subtypes.survival$Bentink <- factor(pooled.subtypes.survival$Bentink, levels(pooled.subtypes.survival$Bentink)[c(2,1)])
+
+pooled.subtypes.survival$years_to_death = pooled.subtypes.survival$days_to_death / days.per.year
+pooled.subtypes.survival$days_to_death <- NULL
+pooled.subtypes.survival$vital_status <- pooled.subtypes.survival$vital_status == "deceased"
+
+pooled.subtypes.survival$data.source <- factor(pooled.subtypes.survival$data.source, levels=ovarian.publication.years$dataset)
+
+# Censor to ten years
+censor.time.out <- survcomp::censor.time(surv.time = pooled.subtypes.survival$years_to_death, surv.event = pooled.subtypes.survival$vital_status, time.cens = 10)
+pooled.subtypes.survival$years_to_death <- censor.time.out$surv.time.cens
+pooled.subtypes.survival$vital_status <- censor.time.out$surv.event.cens
+
+pooled.subtypes.survival$surv.obj <- Surv(time = pooled.subtypes.survival$years_to_death, event = pooled.subtypes.survival$vital_status)
+
+@
+
+From MetaGxOvarian, we identified \Sexpr{nrow(pooled.subtypes.survival)} patients from diagnosed with high-grade serous ovarian carcinoma.
+
+<<Dataset_table, results='asis'>>=
+data.counts <- as.data.frame(table(pooled.subtypes.survival$data.source))
+colnames(data.counts) <- c("Data Source", "Number of Patients")
+data.counts[,1] <- as.character(data.counts[,1])
+data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
+print(xtable(data.counts), include.rownames=FALSE)
+@
+
+<<Pooled_survival_plot>>=
+par(mfrow=c(2,2))
+#par(mar=c(5,1,0,1))
+par(mar=c(5.1, 8, 4.1, 2.1))
+for(subtype.name in subtype.names) {
+  #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
+  par(mar=c(5.1, 5, 4.1, 2.1))
+  survival.df <- pooled.subtypes.survival
+  survival.df$groups <- survival.df[,subtype.name]
+  
+  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
+  
+  hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
+  text <- ""
+  if(length(hr.out$hazard.ratio) == 1) {
+    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+  } else {
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+  }
+  cols <- 1:4
+  if(subtype.name == "Bentink") {
+    cols <- c("orange", "blue")
+  }
+  title <- subtype.name
+  if(title == "Verhaak") {
+    title <- "TCGA / Verhaak"
+  }
+  if(title == "Helland") {
+    title <- "Tothill / Helland"
+  }
+  km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+  title(title, cex.main=2)
+  text(0,0.05, text, cex=0.85, pos=4)
+  #dev.off()
+}
+
+@
+
+<<Contingency_tables, out.width="0.75\\textwidth", fig.width=8, fig.height=15>>=
+pair.matrix <- combn(subtype.names,2)
+# Modifications to order for aesthetic reasons
+pair.matrix <- pair.matrix[,c(4,5,1,3,2,6)]
+pair.matrix <- pair.matrix[2:1,]
+pair.matrix[,5] <- pair.matrix[2:1,5]
+
+contingency.plots <- apply(pair.matrix, 2, function(subtype.name.pair) {
+  contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]]))
+  contingency.m <- melt(contingency.matrix)
+  colnames(contingency.m) <- c(subtype.name.pair[1], subtype.name.pair[2], "value")
+  contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[1]]))
+  contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[2]]))
+  
+  print(chisq.test(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]])["p.value"])
+  print(vcd::assocstats(table(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]]))[["cramer"]])
+
+  p <- ggplot(contingency.m, aes_string(subtype.name.pair[1], subtype.name.pair[2])) + 
+    geom_tile(aes(fill = value), colour = "black") + 
+    scale_fill_gradient(name="Frequency", low="white", high="#CC0000", limits=c(0,500)) + 
+    #ggtitle(paste0("Contingency table: ", subtype.name.pair[1], " vs ", subtype.name.pair[2])) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
+    geom_text(label=as.character(contingency.matrix), colour="black")
+  return(p)
+})
+
+grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], contingency.plots[[5]], contingency.plots[[6]],ncol=2, widths=c(10,6))
+#pdf("subtype_classifier_conting_fours.pdf", width=17.5, height=5)
+#do.call(grid.arrange, c(contingency.plots[1:3], ncol = 3))
+#dev.off()
+#pdf("subtype_classifier_conting_bentink.pdf", width=17.5, height=2.75)
+#do.call(grid.arrange, c(contingency.plots[4:6], ncol = 3))
+#dev.off()
+@
+
+<<generate_figs_for_marginal_analysis>>=
+margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
+    margins.1 <- pooled.subtypes.survival[,paste0(subtype.name.pair[1], ".margins")]
+    margins.2 <- pooled.subtypes.survival[,paste0(subtype.name.pair[2], ".margins")]
+    
+    margins.1 <- ecdf(margins.1)(margins.1)
+    margins.2 <- ecdf(margins.2)(margins.2)
+    
+    plots <- lapply(c(100, 75, 50, 25), function(x) {
+      lower.bound <- 1 - x / 100
+      margin.boolean <- margins.1 > lower.bound & margins.2 > lower.bound
+      contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
+      contingency.m <- melt(contingency.matrix)
+      colnames(contingency.m) <- c(subtype.name.pair[1], subtype.name.pair[2], "value")
+      contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[1]]))
+      contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[2]]))
+      title.text <- paste0("Top ", x, "%")
+      if(x == 100) {
+          title.text <- "All Data"
+      }
+      
+       p <- ggplot(contingency.m, aes_string(subtype.name.pair[1], subtype.name.pair[2])) + 
+      geom_tile(aes(fill = value), colour = "black") + 
+      scale_fill_gradient(name="Frequency", low="white", high="#CC0000", limits=c(0,sum(contingency.matrix)/2)) + 
+      ggtitle(title.text) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
+      geom_text(label=as.character(contingency.matrix), colour="black")
+      return(p)
+    })
+  return(plots)
+})
+# Create the margin scatterplots
+margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
+    margins.1 <- pooled.subtypes.survival[,paste0(subtype.name.pair[1], ".margins")]
+    margins.2 <- pooled.subtypes.survival[,paste0(subtype.name.pair[2], ".margins")]
+    
+    margins.1 <- ecdf(margins.1)(margins.1)
+    margins.2 <- ecdf(margins.2)(margins.2)
+  
+    xvals <- seq(0, 1, length.out = 3000)
+    concordance <- sapply(xvals, function(x) {
+      margin.boolean <- margins.1 > x & margins.2 > x
+      contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
+      sum(diag(contingency.matrix)) / sum(contingency.matrix)
+    })
+    scatterplot.df <- data.frame(margin=xvals, concordance=concordance)
+    scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
+    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Margin (quantile)") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2]))
+    return(scatterplot)
+  })
+@
+
+\section{Helland vs Verhaak}
+
+<<Helland_vs_Verhaak_margin_contingency, out.width="0.8\\textwidth">>=
+do.call(grid.arrange, margin.contingency.plots[[1]], c(ncol=2))
+@
+
+<<Helland_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+margin.scatterplots[[1]]
+@
+
+\section{Konecny vs Verhaak}
+
+<<Konecny_vs_Verhaak_margin_contingency, out.width="0.8\\textwidth">>=
+do.call(grid.arrange, margin.contingency.plots[[2]], c(ncol=2))
+@
+
+<<Konecny_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+margin.scatterplots[[2]]
+@
+
+\section{Helland vs Konecny}
+
+<<Helland_vs_Konecny_margin_contingency, out.width="0.8\\textwidth">>=
+do.call(grid.arrange, margin.contingency.plots[[3]], c(ncol=2))
+@
+
+<<Helland_vs_Konecny_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+margin.scatterplots[[3]]
+@
+
+<<Forest_plots, eval=FALSE>>=
+out <- lapply(ovarian.publication.years$dataset, function(dataset.name) {
+  current.survival.df <- pooled.subtypes.survival[pooled.subtypes.survival$data.source == dataset.name,]
+  survcomp::hazard.ratio(x = current.survival.df$Konecny, surv.time = current.survival.df$years_to_death, surv.event = current.survival.df$vital_status)
+  })
+names(out) <- ovarian.publication.years$dataset
+
+rma.out <- lapply(1:3, function(i) {
+  loghr.vals <- sapply(out, function(x) x$coef[i])
+  loghr.se <- sapply(out, function(x) diag(x$se)[i])
+  rma(loghr.vals, sei=loghr.se, method="REML", slab=names(out))
+  })
+
+forest(rma.out[[3]], refline=0, annotate=FALSE, atransf=exp, xlim=c(-5, 4), addfit=FALSE, ylim=c(-1.5,length(out) + 3), at=log(c(0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32)))
+abline(h=0, lwd=1)
+addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
+@
+
+\end{document}
