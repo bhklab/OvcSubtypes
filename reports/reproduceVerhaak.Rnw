@@ -3,8 +3,7 @@
 \pagebreak
 \section{Verhaak et al., 2013 / TCGA 2011}
 <<verhaak_get_subtypes, cache=FALSE>>=
-source("../../R/getVerhaakSubtypes.R", chdir=TRUE)
-verhaak.spreadsheet.data <- read.xls("../../inst/extdata/JCI65833sd1.xls", skip=1)
+verhaak.spreadsheet.data <- read.xls("docs/JCI65833sd1.xls", skip=1)
 
 ## Examine the correlation between normalized ssGSEA scores in the Tothill dataset, as predicted by our implementation and that of Verhaak et al.
 verhaak.validation.esets <- list(Bonome=esets$GSE26712,
@@ -39,7 +38,7 @@ for(i in 1:length(implemented.verhaak.output)) {
   Dataset.name <- names(implemented.verhaak.output)[i]
   # Find the sample names corresponding to the names provided in the Verhaak et al. supplementary spreadsheet
   if(Dataset.name == "Crijns") {
-    crijns.patientdata <- read.xls("../../inst/extdata/Patient data + GEO coupling for Haibe-Kains.xls")
+    crijns.patientdata <- read.xls("docs/Patient data + GEO coupling for Haibe-Kains.xls")
     crijns.patientdata$GEOnumber <- as.character(crijns.patientdata$GEOnumber)
     verhaak.validation.esets[[i]]$geonumber <- str_extract(as.character(verhaak.validation.esets[[i]]$uncurated_author_metadata), "GSM[0-9]*")
     sample.name <- as.character(crijns.patientdata[match(verhaak.validation.esets[[i]]$geonumber,crijns.patientdata$GEOnumber),]$Snumber)

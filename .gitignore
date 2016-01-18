@@ -1,0 +1,9 @@
+.Rproj.user
+*.Rproj
+*.synctex.gz
+.RData
+.Rhistory
+.DS_Store
+# auto-generated knitr files
+reports/*.tex
+reports/figures
