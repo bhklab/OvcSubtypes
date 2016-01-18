@@ -35,6 +35,7 @@ package.dir <- "~/repos/MetaGx/"
 %\tableofcontents 
 
 <<load, cache=FALSE>>=
+library(MetaGx)
 library(gdata)
 library(survival)
 library(reshape2)
@@ -61,7 +62,7 @@ library(randomForest)
 #source(system.file("extdata", "reproduce.results.patientselection.config", package="MetaGx2"))
 #source(system.file("extdata", "patientselection.config", package="MetaGxOvarian"))
 
-source("../../inst/extdata/reproduce.results.patientselection.config")
+source("docs/reproduce.results.patientselection.config")
 ### use this line if you do not want to get rid of duplicates
 rm(remove.duplicates)
 probe.gene.mapping <- TRUE
