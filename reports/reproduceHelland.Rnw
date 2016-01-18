@@ -2,11 +2,10 @@
 \section{Helland et al., 2011 / Tothill et al., 2008}
 
 <<helland>>=
-source("../../R/getHellandSubtypes.R", chdir=TRUE)
 tcga.eset <- esets$TCGA
 implemented.helland.out <- getHellandSubtypes(tcga.eset)
 # Labelled validation data, provided by the authors by email
-helland.labelled.validation <- read.csv("../../inst/extdata/TCGA_samples_classified.csv")
+helland.labelled.validation <- read.csv("docs/TCGA_samples_classified.csv")
 helland.labelled.validation <- helland.labelled.validation[,c("SAMPLEID", "ClassLabel")]
 colnames(helland.labelled.validation) <- c("unique_patient_ID", "ClassLabel")
 helland.merged <- merge(pData(implemented.helland.out[[1]])[,c("unique_patient_ID", "vital_status", "days_to_death", "Helland.subtypes")], helland.labelled.validation, by="unique_patient_ID")

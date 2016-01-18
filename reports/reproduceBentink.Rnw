@@ -2,7 +2,6 @@
 \section{Bentink, Haibe-Kains et al., 2012}
 
 <<bentink_crijns, fig.width=9, fig.height=4, cache=FALSE>>=
-source("../../R/getBentinkSubtypes.R", chdir=TRUE)
 crijns.eset <- esets$GSE13876
 tothill.eset <- esets$GSE9891
 dressman.eset <- esets$PMID17290060
