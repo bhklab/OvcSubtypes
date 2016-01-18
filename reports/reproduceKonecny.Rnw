@@ -54,6 +54,6 @@ km.coxph.plot(surv.obj ~ Konecny.subtypes, data.for.survival, x.label="Time (mon
 @
 
 
-\includegraphics[width=0.35\textwidth]{konecny_fig3A.png}
+\includegraphics[width=0.35\textwidth]{images/konecny_fig3A.png}
 \caption{(Above) Survival curves the Bonome dataset using our implementation of the Konecny subtyping scheme. (Below) Corresponding Figure 3A from Konecny et al.}
 \end{figure}

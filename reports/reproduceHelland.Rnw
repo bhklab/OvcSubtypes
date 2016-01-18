@@ -47,7 +47,7 @@ helland.data.for.survival$surv.obj <- Surv(helland.data.for.survival$months_to_d
 km.coxph.plot(surv.obj ~ Helland.subtypes, helland.data.for.survival, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Helland classifier", show.n.risk = FALSE, leg.text = levels(helland.data.for.survival$Helland.subtypes), .col=c("black", "red", "green", "blue"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0)
 @
 
-\includegraphics[width=0.5\textwidth]{helland_fig1B_TCGA.png}
+\includegraphics[width=0.5\textwidth]{images/helland_fig1B_TCGA.png}
 \caption{(Above) Survival curves the TCGA dataset using our implementation of the Helland subtyping scheme. (Below) Corresponding survival plot from Figure 1B from Helland et al.}
 \end{figure}
 
