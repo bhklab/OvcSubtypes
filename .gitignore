@@ -6,4 +6,12 @@
 .DS_Store
 # auto-generated knitr files
 reports/*.tex
+reports/*.aux
+reports/*.log
+reports/*.toc
+reports/*.pdf
 reports/figures
+
+reports/NMF*
+reports/cache/
+reports/*.RData

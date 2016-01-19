@@ -16,13 +16,11 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
-package.dir <- "~/repos/MetaGx/"
-source("../../R/create.survival.plot.R")
 @
 
 \title{Classification of Ovarian Subtyping Schemes Across a Large Compendium of Ovarian Datasets}
@@ -34,6 +32,7 @@ source("../../R/create.survival.plot.R")
 %\tableofcontents 
 
 <<load, cache=FALSE>>=
+library(MetaGx)
 library(gdata)
 library(HiDimDA)
 library(survival)
@@ -41,7 +40,8 @@ library(reshape2)
 library(genefu)
 library(annotate)
 library(hgu133plus2.db)
-# library(survMisc) 
+# library(survMisc)
+#  library(vcd)
 library(xtable)
 library(gridExtra)
 library(Biobase)
@@ -56,47 +56,36 @@ library(gridExtra)
 library(survcomp)
 library(metafor)
 library(genefu)
-
-source("../../R/subtypeClassification.R")
-source("../../R/setSubtype.R")
-source("../../R/stripWhiteSpace.R")
-
-package.dir = "~/repos/MetaGx/"
-@
-
-<<load_data, eval=FALSE>>=
 library(Biobase)
 library(MetaGxOvarian)
-
-source("../../inst/extdata/reproduce.results.patientselection.config")
-rule.2 <- c("histological_type","^ser$")
-#rule.3 <- c("summarystage","^late$")
-rule.4 <- c("summarygrade","^high$")
-### use this line if you do not want to get rid of duplicates
-rm(remove.duplicates)
-rescale <- FALSE
-
-source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
-
-esets.not.rescaled <- esets
-# remove any genes with NA values
-esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
-# only keep esets with at least 10000 genes
-esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(x) nrow(x) > 10000)]
-
-save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
 
-<<classify_data, eval=FALSE>>=
+<<load_data>>=
+if(file.exists("esets.not.rescaled.RData")) {
+	load("esets.not.rescaled.RData")
+} else {
+	source("docs/reproduce.results.patientselection.config")
+	rule.2 <- c("histological_type","^ser$")
+	#rule.3 <- c("summarystage","^late$")
+	rule.4 <- c("summarygrade","^high$")
+	### use this line if you do not want to get rid of duplicates
+	rm(remove.duplicates)
+	rescale <- FALSE
+	
+	source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
+	
+	esets.not.rescaled <- esets
+	# remove any genes with NA values
+	esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
+	# only keep esets with at least 10000 genes
+	esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(x) nrow(x) > 10000)]
+	
+	save(esets.not.rescaled, file="esets.not.rescaled.RData")
+}
+@
+
+<<classify_data>>=
 #
-load("esets.not.rescaled.RData")
-
-source("../../R/getKonecnySubtypes.R")
-source("../../R/getVerhaakSubtypes.R")
-source("../../R/getHellandSubtypes.R")
-source("../../R/getBentinkSubtypes.R")
-source("../../R/create.survival.plot.R")
-
 
 # Subtype classification
 esets.not.rescaled.classified <- esets.not.rescaled

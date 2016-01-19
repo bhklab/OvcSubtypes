@@ -25,7 +25,6 @@ options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
-package.dir <- "~/repos/MetaGx/"
 @
 
 \title{Robustness of Ovarian Subtyping Schemes}
@@ -35,6 +34,7 @@ package.dir <- "~/repos/MetaGx/"
 \maketitle
 
 <<load, cache=FALSE>>=
+library(MetaGx)
 library(gdata)
 library(knitr)
 library(HiDimDA)
@@ -160,12 +160,12 @@ The discovery of molecular subtypes of ovarian cancer requires two steps: a clus
 \section{TCGA}
 <<TCGA_clustering_authorlist, cache=TRUE>>=
 set.seed(120)
-tcga.clustering.authordata <- read.delim("../../inst/extdata/TCGA_489_UE.top1500.txt", sep="\t")
+tcga.clustering.authordata <- read.delim("docs/TCGA_489_UE.top1500.txt", sep="\t")
 
 tcga.gene.indices <- match(rownames(tcga.clustering.authordata), fData(esets.not.rescaled$TCGA)$gene)
 tcga.gene.indices <- tcga.gene.indices[!is.na(tcga.gene.indices)]
 
-verhaak.spreadsheet.data <- read.xls("../../inst/extdata/JCI65833sd1.xls", skip=1)
+verhaak.spreadsheet.data <- read.xls("docs/JCI65833sd1.xls", skip=1)
 verhaak.labels.table <- verhaak.spreadsheet.data[verhaak.spreadsheet.data$DATASET == "TCGA-discovery", c("ID", "SUBTYPE")]
 
 tcga.eset <- esets.not.rescaled$TCGA
@@ -217,7 +217,7 @@ kable(table(tcga.merged.authorlist$SUBTYPE, tcga.merged.authorlist$nmf.classes)[
 
 %Considering only the samples after removing the bottom 10\% by silhouette width:
 %<<TCGA_contingency_authorlist_silhouette, results="asis">>=
-%verhaak.spreadsheet.data <- read.xls("../../inst/extdata/JCI65833sd1.xls", skip=1)
+%verhaak.spreadsheet.data <- read.xls("docs/JCI65833sd1.xls", skip=1)
 %verhaak.labels.table <- verhaak.spreadsheet.data[verhaak.spreadsheet.data$DATASET == "TCGA-discovery", c("ID", "SUBTYPE", %"SILHOUETTE.WIDTH")]
 %tcga.merged.authorlist <- merge(tcga.implemented.clustering.authorlist, verhaak.labels.table)
 %tcga.merged.authorlist.silhouette <- tcga.merged.authorlist[tcga.merged.authorlist$SILHOUETTE.WIDTH > quantile(tcga%.merged.authorlist$SILHOUETTE.WIDTH, 0.1)]
@@ -233,7 +233,7 @@ kable(table(tcga.merged.authorlist$SUBTYPE, tcga.merged.authorlist$nmf.classes)[
 set.seed(840)
 
 load("konecny.eset.RData")
-konecny.unique.entrez.ids <- scan("../../inst/extdata/konecny.unique.entrez.ids.txt", what=character(0))
+konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
 ## These files were generated on August 5, 2015 with the following code:
 konecny.original.eset <- getGEO("GSE53963", GSEMatrix=TRUE)[[1]]
 #konecny.mad.vals <- apply(exprs(konecny.original.eset), 1, function(x) mad(x, na.rm=TRUE))
@@ -255,12 +255,12 @@ konecny.original.eset <- getGEO("GSE53963", GSEMatrix=TRUE)[[1]]
 save(konecny.original.eset, file="konecny.original.eset.RData")
 save(konecny.eset, file="konecny.eset.RData")
 
-konecny.supp5 <- read.xls("../../inst/extdata/jnci_JNCI_14_0249_s05.xls", header=FALSE)
+konecny.supp5 <- read.xls("docs/jnci_JNCI_14_0249_s05.xls", header=FALSE)
 #konecny.unique.entrez.ids <- fData(konecny.original.eset)$GENE[ fData(konecny.original.eset)$ID %in% konecny.supp5$V2 ]
 #konecny.unique.entrez.ids <- konecny.unique.entrez.ids[!is.na(konecny.unique.entrez.ids) & konecny.unique.entrez.ids != ""]
 #konecny.unique.entrez.ids <- unique(konecny.unique.entrez.ids)
 #save(konecny.unique.entrez.ids, file="konecny.unique.entrez.ids.RData")
-#write(konecny.unique.entrez.ids, file="../../inst/extdata/konecny.unique.entrez.ids.txt", ncolumns = 1)
+#write(konecny.unique.entrez.ids, file="docs/konecny.unique.entrez.ids.txt", ncolumns = 1)
 
 konecny.original.eset.tocluster <- konecny.original.eset
 fData(konecny.original.eset.tocluster) <- fData(konecny.original.eset.tocluster)[,c("ID", "GENE_SYMBOL", "GENE")]
@@ -274,7 +274,7 @@ konecny.original.eset.tocluster <- konecny.original.eset.tocluster[apply(exprs(k
 konecny.eset.original.genes <- .getFilteredEsetByGeneList(eset = konecny.eset, gene.list = konecny.unique.entrez.ids, list.type = "entrez.id")
 konecny.implemented.clustering.authorlist <- data.frame(OV=sub("[A-Za-z ]*", "", konecny.eset$source_name_ch2), nmf.classes=.getNMFClasses(konecny.eset.original.genes, filter.genes = FALSE, nrun=100))
 
-konecny.supp3 <- read.xls("../../inst/extdata/jnci_JNCI_14_0249_s03.xls")
+konecny.supp3 <- read.xls("docs/jnci_JNCI_14_0249_s03.xls")
 konecny.labels.table <- konecny.supp3[,c("OV", "MAYO.C4")]
 
 konecny.merged.authorlist <- merge(konecny.implemented.clustering.authorlist, konecny.labels.table)
@@ -310,20 +310,16 @@ kable(table(konecny.merged.authorlist$MAYO.C4, konecny.merged.authorlist$nmf.cla
 
 <<Tothill_clustering>>=
 set.seed(132)
-tothill.original.labels <- read.table("../../inst/extdata/tothill.supptable.1.classes.txt", header=TRUE, stringsAsFactors = FALSE)
+tothill.original.labels <- read.table("docs/tothill.supptable.1.classes.txt", header=TRUE, stringsAsFactors = FALSE)
 tothill.original.labels <- tothill.original.labels[tothill.original.labels$group %in% c(1, 2, 3, 4, 5, 6),]
 tothill.original.labels$group <- sub("^", "C", tothill.original.labels$group)
 
-if(file.exists("../../inst/extdata/tothill.clustering.probesets.txt")) {
-  tothill.clustering.probesets <- scan("../../inst/extdata/tothill.clustering.probesets.txt")
-}
-
-tothill.clustering.genes <- read.table("../../inst/extdata/tothill.clustering.genes.txt")
+tothill.clustering.genes <- read.table("docs/tothill.clustering.genes.txt")
 ## This file was generated on July 31, 2015 with the following code:
 #original.tothill.eset <- getGEO("GSE9891", GSEMatrix=TRUE)[[1]]
 #original.tothill.eset <- original.tothill.eset[apply(exprs(original.tothill.eset), 1, function(x) any(x > 7) & var(x) >= 0.5),]
 #tothill.clustering.genes <- data.frame(probe=fData(original.tothill.eset)$ID, entrez.id=fData(original.tothill.eset)$ENTREZ_GENE_ID)
-#write.table(tothill.clustering.genes, file="../../inst/extdata/tothill.clustering.genes.txt")
+#write.table(tothill.clustering.genes, file="docs/tothill.clustering.genes.txt")
 
 tothill.implemented.clustering.kmeans <- data.frame(ID=esets.not.rescaled.probes$GSE9891$alt_sample_name, consensus.kmeans.classes=.getConsensusKMeansClasses(esets.not.rescaled.probes$GSE9891, k=6, num.iterations=1000))
 
