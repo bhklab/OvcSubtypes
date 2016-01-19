@@ -17,10 +17,11 @@
 %\newcommand{\sectionbreak}{\clearpage}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, cache=TRUE, error=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -232,29 +233,29 @@ kable(table(tcga.merged.authorlist$SUBTYPE, tcga.merged.authorlist$nmf.classes)[
 <<Konecny_clustering, cache=TRUE>>=
 set.seed(840)
 
-load("konecny.eset.RData")
-konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
-## These files were generated on August 5, 2015 with the following code:
-konecny.original.eset <- getGEO("GSE53963", GSEMatrix=TRUE)[[1]]
-#konecny.mad.vals <- apply(exprs(konecny.original.eset), 1, function(x) mad(x, na.rm=TRUE))
-#konecny.eset <- konecny.original.eset
-#fData(konecny.eset) <- fData(konecny.eset)[,c("ID", "GENE_SYMBOL", "GENE")]
-#colnames(fData(konecny.eset)) <- c("probeset", "gene", "EntrezGene.ID")
-#fData(konecny.eset)$best_probe <- FALSE
- #remove NA probes
-#konecny.eset <- konecny.eset[apply(exprs(konecny.eset), 1, function(x) all(!is.na(x))),]
-#konecny.eset <- konecny.eset[!is.na(fData(konecny.eset)$EntrezGene.ID) & fData(konecny.eset)$EntrezGene.ID != "",]
-#for(konecny.entrez.id in unique(fData(konecny.eset)$EntrezGene.ID)) {
-#  probe.indices <- which(fData(konecny.eset)$EntrezGene.ID == konecny.entrez.id)
-#  probe.index.to.keep <- probe.indices[which.max(apply(exprs(konecny.eset)[probe.indices,,drop=FALSE], 1, var))]
-#  fData(konecny.eset)$best_probe[probe.index.to.keep] <- TRUE
-#}
-#konecny.eset.probest
-#konecny.eset <- konecny.eset[fData(konecny.eset)$best_probe,]
-#rownames(konecny.eset) <- paste0("geneid.", fData(konecny.eset)$EntrezGene.ID)
-save(konecny.original.eset, file="konecny.original.eset.RData")
-save(konecny.eset, file="konecny.eset.RData")
-
+if(file.exists("konecny.eset.RData")) {
+	load("konecny.eset.RData")
+} else {
+	konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
+	konecny.original.eset <- getGEO("GSE53963", GSEMatrix=TRUE)[[1]]
+	konecny.mad.vals <- apply(exprs(konecny.original.eset), 1, function(x) mad(x, na.rm=TRUE))
+	konecny.eset <- konecny.original.eset
+	fData(konecny.eset) <- fData(konecny.eset)[,c("ID", "GENE_SYMBOL", "GENE")]
+	colnames(fData(konecny.eset)) <- c("probeset", "gene", "EntrezGene.ID")
+	fData(konecny.eset)$best_probe <- FALSE
+	 #remove NA probes
+	konecny.eset <- konecny.eset[apply(exprs(konecny.eset), 1, function(x) all(!is.na(x))),]
+	konecny.eset <- konecny.eset[!is.na(fData(konecny.eset)$EntrezGene.ID) & fData(konecny.eset)$EntrezGene.ID != "",]
+	for(konecny.entrez.id in unique(fData(konecny.eset)$EntrezGene.ID)) {
+	  probe.indices <- which(fData(konecny.eset)$EntrezGene.ID == konecny.entrez.id)
+	  probe.index.to.keep <- probe.indices[which.max(apply(exprs(konecny.eset)[probe.indices,,drop=FALSE], 1, var))]
+	  fData(konecny.eset)$best_probe[probe.index.to.keep] <- TRUE
+	}
+	konecny.eset <- konecny.eset[fData(konecny.eset)$best_probe,]
+	rownames(konecny.eset) <- paste0("geneid.", fData(konecny.eset)$EntrezGene.ID)
+	save(konecny.original.eset, file="konecny.original.eset.RData")
+	save(konecny.eset, file="konecny.eset.RData")
+}
 konecny.supp5 <- read.xls("docs/jnci_JNCI_14_0249_s05.xls", header=FALSE)
 #konecny.unique.entrez.ids <- fData(konecny.original.eset)$GENE[ fData(konecny.original.eset)$ID %in% konecny.supp5$V2 ]
 #konecny.unique.entrez.ids <- konecny.unique.entrez.ids[!is.na(konecny.unique.entrez.ids) & konecny.unique.entrez.ids != ""]
@@ -308,7 +309,7 @@ kable(table(konecny.merged.authorlist$MAYO.C4, konecny.merged.authorlist$nmf.cla
 %Tothill
 \section{Tothill}
 
-<<Tothill_clustering>>=
+<<Tothill_clustering, cache=FALSE>>=
 set.seed(132)
 tothill.original.labels <- read.table("docs/tothill.supptable.1.classes.txt", header=TRUE, stringsAsFactors = FALSE)
 tothill.original.labels <- tothill.original.labels[tothill.original.labels$group %in% c(1, 2, 3, 4, 5, 6),]
@@ -326,6 +327,7 @@ tothill.implemented.clustering.kmeans <- data.frame(ID=esets.not.rescaled.probes
 tothill.implemented.clustering.kmeans$ID <- sub("X", "", tothill.implemented.clustering.kmeans$ID)
 
 tothill.merged.kmeans <- merge(tothill.implemented.clustering.kmeans, tothill.original.labels)
+
 @
 
 The dataset of Tothill et al. (2008) consisted of \Sexpr{ncol(esets.not.rescaled.probes$GSE9891)} patients, of which \Sexpr{ncol(esets.not.rescaled$GSE9891)} had late-stage, high-grade serious ovarian cancer. On their full dataset (n = \Sexpr{ncol(esets.not.rescaled.probes$GSE9891)}), they performed the following clustering procedure: probes were selected if at least one sample had an expression above 7.0, and global variance was above 0.5. They performed a form of consensus k-means clustering by performing k-means clustering 1000 times, identifyied a ``robust'' set of samples that co-clustered consistently, then used diagonal LDA and k-nearest neighbours to classify remaining samples. 
@@ -339,32 +341,30 @@ where $\mathcal{C}$ is the set of all possible clusterings, $d$ is the Euclidean
 Despite the difference between the consensus strategies, the cluster results appear to be similar:
 
 \vspace*{10pt}
-<<tothill_kmeans_contingency, results="asis">>=
-
+<<tothill_kmeans_contingency, results="asis", cache=FALSE>>=
 kable(table(tothill.merged.kmeans$group, tothill.merged.kmeans$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(5,6,4,3,2,1)], format="latex")
 #table(tothill.merged$nmf.classes, tothill.merged$group)
 @
 \vspace*{10pt}
 
-<<tothill_6_contingency_heatmap, fig.width=6, fig.height=5.5, out.width="0.6\\textwidth">>=
+<<tothill_6_contingency_heatmap, fig.width=6, fig.height=5.5, out.width="0.6\\textwidth", cache=FALSE>>=
 .getContingencyHeatmap(table(tothill.merged.kmeans$group, tothill.merged.kmeans$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(5,6,4,3,2,1)])
 @
 
-<<tothill_kmeans_5_clustering>>=
-
+<<tothill_kmeans_5_clustering, cache=FALSE>>=
 tothill.implemented.clustering.kmeans.5 <- data.frame(ID=esets.not.rescaled.probes$GSE9891$alt_sample_name, consensus.kmeans.classes=.getConsensusKMeansClasses(esets.not.rescaled.probes$GSE9891, k=5, num.iterations=1000))
 tothill.implemented.clustering.kmeans.5$ID <- sub("X", "", tothill.implemented.clustering.kmeans.5$ID)
 tothill.merged.kmeans.5 <- merge(tothill.implemented.clustering.kmeans.5, tothill.original.labels)
+
 @
 \pagebreak
 Since it appears that this implementation of k-means clustering is not capturing C6, we performed consensus k-means clustering with k = 5:
 \vspace*{10pt}
-<<tothill_kmeans_5_contingency, results="asis">>=
+<<tothill_kmeans_5_contingency, results="asis", cache=FALSE>>=
 kable(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(4,5,2,1,3)], format="latex")
 @
 \vspace*{10pt}
-<<tothill_5_contingency_heatmap, fig.width=5.5, fig.height=5.5, out.width="0.5\\textwidth">>=
-
+<<tothill_5_contingency_heatmap, fig.width=5.5, fig.height=5.5, out.width="0.5\\textwidth", cache=FALSE>>=
 .getContingencyHeatmap(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(4,5,2,1,3)])
 @
 
