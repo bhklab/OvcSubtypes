@@ -17,7 +17,6 @@
 %\newcommand{\sectionbreak}{\clearpage}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
@@ -62,7 +61,6 @@ library(GEOquery)
 @
 
 <<load_data>>=
-#
 #source(system.file("extdata", "reproduce.results.patientselection.config", package="MetaGx2"))
 #source(system.file("extdata", "patientselection.config", package="MetaGxOvarian"))
 source("docs/reproduce.results.patientselection.config")
@@ -93,7 +91,7 @@ The discovery of molecular subtypes of ovarian cancer requires two steps: a clus
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.6\textwidth]{prediction_strength_flowchart.png}
+\includegraphics[width=0.6\textwidth]{images/prediction_strength_flowchart.png}
 \end{figure}
 \pagebreak
 
@@ -391,6 +389,6 @@ kable(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kme
 \pagebreak
 \section{Prediction Strength}
 
-\Sexpr{knit_child('robustness_validation.Rnw')}
+%\Sexpr{knit_child('robustness_validation.Rnw')}
 
 \end{document}

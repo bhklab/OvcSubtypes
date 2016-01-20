@@ -23,7 +23,7 @@ set.seed(660 + task.id * 100)
   return(eset)
 }
 
-
+# TODO: avoid replication of these functions in robustness.Rnw
 .getNMFClasses <- function(eset, filter.genes=TRUE, num.genes=2000, rank=4, nrun=100) {
   # rescale eset by z-score per gene
   expression.matrix <- exprs(eset)
@@ -74,12 +74,11 @@ args <- commandArgs(trailingOnly = TRUE)
 #  algorithm=c("nmf", "kmeans"),
 #  dataset.index=1:16,
 #  k=4)
-
-config.grid <- expand.grid(
-  gene.set=c("tcga", "tothill", "konecny"),
-  algorithm=c("nmf", "kmeans"),
-  dataset.index=1:16,
-  k=4)
+#config.grid <- expand.grid(
+#  gene.set=c("tcga", "tothill", "konecny"),
+#  algorithm=c("nmf", "kmeans"),
+#  dataset.index=1:16,
+#  k=4)
 
 config.grid <- data.frame(
   gene.set=rep(c("tcga", "tothill", "konecny"), each=16),
@@ -110,14 +109,14 @@ current.eset <- esets.not.rescaled[[dataset.index]]
 current.eset.name <- names(esets.not.rescaled)[dataset.index]
 
 if(gene.set == "tcga") {
-  tcga.matrix <- read.delim("../../inst/extdata/TCGA_489_UE.top1500.txt", sep="\t", header=TRUE)
+  tcga.matrix <- read.delim("docs/TCGA_489_UE.top1500.txt", sep="\t", header=TRUE)
   tcga.gene.symbols <- rownames(tcga.matrix)
   current.eset <- .getFilteredEsetByGeneList(current.eset, tcga.gene.symbols, list.type="gene.symbol")
 } else if(gene.set == "tothill") {
-  tothill.gene.table <- read.table("../../inst/extdata/tothill.clustering.genes.txt")
+  tothill.gene.table <- read.table("docs/tothill.clustering.genes.txt")
   current.eset <- .getFilteredEsetByGeneList(current.eset, as.character(tothill.gene.table$entrez.id), list.type="entrez.id")
 } else if (gene.set == "konecny"){
-  konecny.unique.entrez.ids <- scan("../../inst/extdata/konecny.unique.entrez.ids.txt", what=character(0))
+  konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
   current.eset <- .getFilteredEsetByGeneList(current.eset, konecny.unique.entrez.ids, list.type="entrez.id")
 }else {
   num.genes <- as.integer(gene.set)
