@@ -9,7 +9,7 @@ Install MetaGx with the commands
 ```
 git clone https://github.com/bhklab/MetaGx.git
 R CMD BUILD MetaGx
-R CMD INSTALL MetaGx
+R CMD INSTALL MetaGx_0.9.9.tar.gz
 ```
 
 Clone this repository:
@@ -31,6 +31,7 @@ knit("reproduceResults.Rnw")
 knit("classificationAcrossDatasets.Rnw")
 knit("robustness.Rnw")
 ```
+(alternatively, they can be compiled in RStudio, making sure Preferences -> Sweave -> Weave Rnw files is set to knitr)
 
 Note that several dependencies may need to be installed. Packages on CRAN can be installed with, for example,
 ```
