@@ -1,6 +1,6 @@
 
 
-<<load_data_from_files>>=
+<<load_data_from_files, cache=TRUE>>=
 load("esets.not.rescaled.classified.RData")
 
 # These are the dataset names with TCGA RNASeq removed
@@ -105,12 +105,12 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 %\hline Algorithm & Gene Set & k \\ \hline 
 %Consensus k-means NMF & TCGA gene set Tothill gene set Top 1000 by MAD Top 1500 by MAD Top 2000 by MAD Top 2500 by MAD Top 3000 by MAD & 2 3 4 5 6 7 8 9 10
 %\\ \hline \end{tabular}
-<<TCGA_pred_str>>=
+<<TCGA_pred_str, cache=TRUE>>=
 
 .getSubtypeSpecificRandIndexValues <- function(classifier.subtypes.list, clustering.subtypes.list, ordered.classes, main) {
     consistency.list.of.matrices <- lapply(1:length(classifier.subtypes.list), function(x) {
       distance.per.subtype <- sapply(ordered.classes, function(subtype) {
-        sapply(1:100, function(y) {
+        sapply(1:42, function(y) {
                 subtype.specific.counts <- as.vector(table(clustering.subtypes.list[[x]][[y]][classifier.subtypes.list[[x]] == subtype]))
                 return( sum(sapply(subtype.specific.counts, choose, k=2)) / (choose(sum(subtype.specific.counts), 2)))
                })
@@ -125,21 +125,24 @@ In order to permit comparability between subtyping schemes, all datasets were fi
     return(distance.per.subtype.means)
   }
 
-tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
+tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
-<<Tothill_pred_str>>=
-tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
+
+<<Tothill_pred_str, cache=TRUE>>=
+
+tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
-<<Konecny_pred_str>>=
-konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
+<<Konecny_pred_str, cache=TRUE>>=
+
+konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
 
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
@@ -151,16 +154,18 @@ Each dataset was clustered according to our implementation of the clustering alg
 We performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. In the boxplot below, each data point represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
 
 <<ps_combined_boxplot, out.width="0.7\\textwidth">>=
+
 set.seed(900)
 combined.ps <- sapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) apply(x, 2, mean))
 combined.ps.m <- melt(combined.ps)
-my.boxplot <- ggplot(combined.ps.m, aes(x=L1, y=value)) + stat_boxplot(geom='errorbar', stat_params = list(width = 0.5)) + geom_boxplot(color="black") + geom_jitter(position=position_jitter(0.1)) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + geom_hline(y=0.8, linetype="dotted") + coord_cartesian(ylim = c(0, 1)) 
+my.boxplot <- ggplot(combined.ps.m, aes(x=L1, y=value)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + geom_jitter(position=position_jitter(0.1)) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) 
 my.boxplot
 
 @
 
 \pagebreak
 <<dataset_barplot, fig.width=8, fig.height=5>>=
+
 par(mar=c(5.1,10,4.1,2.1))
 barplot(sapply(esets.not.rescaled.classified[dataset.names], function(x) ncol(exprs(x))), horiz=TRUE, las=2, col="darkblue", main="HGS sample sizes")
 par(mar=c(5.1, 4.1, 4.1, 2.1))
@@ -178,12 +183,14 @@ Using the subtype labels from the implemented Verhaak classifier, compared again
 
 <<TCGA_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
 
+
 par(mar=c(10,4.1,4.1,2.1))
 stripchart(as.data.frame(tcga.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
 <<tcga_adj_rand, out.width="0.6\\textwidth">>=
+
 tcga.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Verhaak, clustering.subtypes$tcga_nmf_4, tcga.ordered.classes, main="TCGA")
 @
 
@@ -194,12 +201,14 @@ Using the subtype labels from the implemented Tothill/Helland classifier, compar
 
 
 <<Tothill_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
+
 par(mar=c(10,4.1,4.1,2.1))
 stripchart(as.data.frame(tothill.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
 <<tothill_adj_rand, out.width="0.6\\textwidth">>=
+
 tothill.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Helland, clustering.subtypes$tothill_kmeans_4, tothill.ordered.classes, main="Tothill")
 @
 
@@ -208,11 +217,13 @@ tothill.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Hella
 Using the subtype labels from the implemented Konecny classifier, compared against de novo clustering with consensus k-means, k = 4, and the top 2000 genes by MAD:
 
 <<Konecny_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
+
 par(mar=c(10,4.1,4.1,2.1))
 stripchart(as.data.frame(konecny.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
 <<konecny_adj_rand, out.width="0.6\\textwidth">>=
+
 konecny.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Konecny, clustering.subtypes$konecny_nmf_4, konecny.ordered.classes, "Konecny")
 @

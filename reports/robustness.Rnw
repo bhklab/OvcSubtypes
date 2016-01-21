@@ -20,7 +20,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -52,10 +52,10 @@ library(GSVA)
 library(sparsediscrim)
 library(MetaGxOvarian)
 library(survcomp)
+library(NMF)
 library(ggplot2)
 library(e1071)
 library(randomForest)
-library(NMF)
 library(clue)
 library(GEOquery)
 @
@@ -124,7 +124,7 @@ The discovery of molecular subtypes of ovarian cancer requires two steps: a clus
     expression.matrix <- expression.matrix + abs(min(expression.matrix))
   }
   
-  nmf.out <- nmf(expression.matrix, rank=rank, nrun=nrun)
+  nmf.out <- NMF::nmf(expression.matrix, rank=rank, nrun=nrun)
   # Clustering using consensus
   classes <- cutree(consensushc(nmf.out, dendrogram=FALSE), k=rank)
   
