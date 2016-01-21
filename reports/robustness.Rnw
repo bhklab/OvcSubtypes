@@ -389,6 +389,6 @@ kable(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kme
 \pagebreak
 \section{Prediction Strength}
 
-%\Sexpr{knit_child('robustness_validation.Rnw')}
+\Sexpr{knit_child('robustness_validation.Rnw')}
 
 \end{document}
