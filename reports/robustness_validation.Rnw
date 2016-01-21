@@ -12,7 +12,7 @@ for(dirname in c("konecny_nmf_4", "tcga_nmf_4", "tothill_kmeans_4")) {
   cluster.classes <- list()
   for(current.eset.name in dataset.names) {
     cluster.classes[[current.eset.name]] <- list()
-    filenames <- Sys.glob(paste0("aug11clusters/", dirname, "/", current.eset.name, "_*_classes.txt"))
+    filenames <- Sys.glob(paste0("jan20clusters/", dirname, "/", current.eset.name, "_*_classes.txt"))
     for(filename in filenames) {
       cluster.classes[[current.eset.name]][[length(cluster.classes[[current.eset.name]])+1]] <- scan(filename, what=character(0))
     }
