@@ -47,13 +47,17 @@ Within robustness.Rnw, there are two main components:
 - a reproduction of clustering algorithms and comparison to the cluster labels given in original supplementary texts (producing heatmaps demonstrating concordance between our implementation and the original results)
 - evaluation of robustness using prediction strength
 
-To build this file without the prediction strength, comment out the line:
+The prediction strength analysis depends on the output of a fairly computationally intensive run, which produced the output directory jan20clusters. In order to read this output, extract the compressed directory:
 ```
-\Sexpr{knit_child('robustness_validation.Rnw')}
+tar -xvfz jan20clusters.tar.gz
 ```
+
+**_(Addendum) Performing cluster analysis for prediction strength analysis:_**
 
 In the prediction strength analysis, we re-cluster each dataset with each algorithm 100 times. This takes a substantial amount of computation, so this is parallelized on an SGE cluster with the files "submit_batch_clustering.sh" and "batch.cluster.all.R". Ensuring that "esets.not.rescaled.RData" exists, the command
 ```
 ./submit_batch_clustering.sh
 ```
 submits an array job to the cluster, creating a directory with clustering output. This directory is read in "robustness_validation.Rnw".
+
+This was most recently performed on January 20, producing the output jan20clusters.tar.gz
