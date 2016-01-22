@@ -47,7 +47,7 @@ Within robustness.Rnw, there are two main components:
 - a reproduction of clustering algorithms and comparison to the cluster labels given in original supplementary texts (producing heatmaps demonstrating concordance between our implementation and the original results)
 - evaluation of robustness using prediction strength
 
-The prediction strength analysis depends on the output of a fairly computationally intensive run, which produced the output directory jan20clusters. In order to read this output, extract the compressed directory:
+The prediction strength analysis depends on the output of a fairly computationally intensive run, which produced the output directory jan20clusters. In order to read this output, cd into the "reports" directory and extract the compressed directory:
 ```
 tar -xvfz jan20clusters.tar.gz
 ```
