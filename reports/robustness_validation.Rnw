@@ -1,6 +1,6 @@
 
 
-<<load_data_from_files, cache=TRUE>>=
+<<load_data_from_files>>=
 load("esets.not.rescaled.classified.RData")
 
 # These are the dataset names with TCGA RNASeq removed
@@ -110,7 +110,7 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 .getSubtypeSpecificRandIndexValues <- function(classifier.subtypes.list, clustering.subtypes.list, ordered.classes, main) {
     consistency.list.of.matrices <- lapply(1:length(classifier.subtypes.list), function(x) {
       distance.per.subtype <- sapply(ordered.classes, function(subtype) {
-        sapply(1:42, function(y) {
+        sapply(1:100, function(y) {
                 subtype.specific.counts <- as.vector(table(clustering.subtypes.list[[x]][[y]][classifier.subtypes.list[[x]] == subtype]))
                 return( sum(sapply(subtype.specific.counts, choose, k=2)) / (choose(sum(subtype.specific.counts), 2)))
                })
@@ -125,7 +125,7 @@ In order to permit comparability between subtyping schemes, all datasets were fi
     return(distance.per.subtype.means)
   }
 
-tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
+tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
@@ -134,15 +134,15 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 <<Tothill_pred_str, cache=TRUE>>=
 
-tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
+tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
-<<Konecny_pred_str, cache=TRUE>>=
+<<Konecny_pred_str, cache>>=
 
-konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:42, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
+konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
 
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
