@@ -13,6 +13,7 @@
 %\newcommand{\sectionbreak}{\clearpage}
 
 \begin{document}
+%\SweaveOpts{concordance=TRUE}
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
@@ -25,7 +26,7 @@ days.per.year <- 365.242
 
 \title{Classification of Ovarian Subtyping Schemes Across a Large Compendium of Ovarian Datasets}
 
-\author{Gregory M. Chen}
+\author{Gregory M. Chen (with some updated code added by Lavanya Kannan)}
 \date{\today}
 \maketitle
 
@@ -57,12 +58,13 @@ library(survcomp)
 library(metafor)
 library(genefu)
 library(Biobase)
-library(MetaGxOvarian)
+library(dplyr)
+library(VennDiagram)
 @
 
 <<load_data>>=
 if(file.exists("esets.not.rescaled.RData")) {
-	load("esets.not.rescaled.RData")
+  load("esets.not.rescaled.RData")
 } else {
 	source("docs/reproduce.results.patientselection.config")
 	rule.2 <- c("histological_type","^ser$")
@@ -188,46 +190,7 @@ data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
 print(xtable(data.counts), include.rownames=FALSE)
 @
 
-<<Pooled_survival_plot>>=
-par(mfrow=c(2,2))
-#par(mar=c(5,1,0,1))
-par(mar=c(5.1, 8, 4.1, 2.1))
-for(subtype.name in subtype.names) {
-  #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
-  par(mar=c(5.1, 5, 4.1, 2.1))
-  survival.df <- pooled.subtypes.survival
-  survival.df$groups <- survival.df[,subtype.name]
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
-  text <- ""
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  if(subtype.name == "Bentink") {
-    cols <- c("orange", "blue")
-  }
-  title <- subtype.name
-  if(title == "Verhaak") {
-    title <- "TCGA / Verhaak"
-  }
-  if(title == "Helland") {
-    title <- "Tothill / Helland"
-  }
-  km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-  #dev.off()
-}
-
-@
+% Survival analysis moved to end of document by Lavanya
 
 <<Contingency_tables, out.width="0.75\\textwidth", fig.width=8, fig.height=15>>=
 pair.matrix <- combn(subtype.names,2)
@@ -364,4 +327,345 @@ abline(h=0, lwd=1)
 addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
 @
 
+% Below section added by Lavanya
+\section{Contingency of subtypes}
+
+<<Subtype_mapping>>=
+# map the subtypes across the different algorithms
+subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes.survival[,subtype.names[[i]]])}))
+@
+
+
+ 
+
+
+Based on the pairwise concordance, we can see that the subtypes in the different schemes have a clear 1-1 mapping, except in the case of the Bentik, which maps the DIF, PRO and MES subtype of Vehaak (and the corresponding subtypes in other schemes) to Angiogenic and the IMR subtype to non-Angiogenic. The table below shows the mapping. 
+
+
+
+<<Subtype_map_table, results='asis'>>=
+subtype.map <- as.data.frame(subtypes)
+subtype.map$"Bentik" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
+colnames(subtype.map) <- subtype.names
+
+print(xtable(subtype.map), include.rownames=FALSE)
+@
+
+<<Data_setup>>=
+# Extract margins for each scheme
+margins.1 <- pooled.subtypes.survival[,paste0(subtype.names[[1]], ".margins")]    
+margins.1 <- ecdf(margins.1)(margins.1) 
+
+margins.2 <- pooled.subtypes.survival[,paste0(subtype.names[[2]], ".margins")]    
+margins.2 <- ecdf(margins.2)(margins.2) 
+
+margins.3 <- pooled.subtypes.survival[,paste0(subtype.names[[3]], ".margins")]    
+margins.3 <- ecdf(margins.3)(margins.3) 
+
+# get marginal data 
+get_margin <- function(lower.bound){  
+    margins.1 > lower.bound & 
+    margins.2 > lower.bound & 
+    margins.3 > lower.bound
+  }
+
+# the code below fetches the marginal data (including the ones where 100% remain) for each subtype
+get_marginal_data_top <- function(top_margin_percent,subtype.name) {
+    lower.bound <- 1 - top_margin_percent / 100
+    margin.boolean <- get_margin(lower.bound)
+    pooled.subtypes.survival[,subtype.name][margin.boolean]
+  }
+
+# given a subtype.name (scheme) position and the subtype, find the list of patients in the subtype in the scheme 
+
+
+filtered_dataset_all_subtypes <- 
+              function(margin_percent) 
+                lapply(subtype.names[1:3], function (sn) 
+                  get_marginal_data_top(margin_percent,sn))
+
+get_patients <- function(pos_subtype.name,subtype_order,margin_percent){
+  subtypes$subtype.name <- subtypes[[pos_subtype.name]]
+  filtered_dataset = 
+    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]]
+  which(filtered_dataset == subtypes$subtype.name[[subtype_order]] )  
+}
+
+# Given the mapped subtype number (called subtype_order), fetch the patients in each scheme in the subtype 
+get_subtype_patients <- function(subtype_order,margin_percent){
+ lapply(1:3, function(i) {get_patients(i,subtype_order,margin_percent)}) 
+}
+
+# Get the subtype_patients for each subtype across schemes and find overlaps 
+
+get_overlaps <- function(margin_percent) {
+  lapply(1:4, function(subtype_order) {
+    output <- NULL
+    output$parts <- calculate.overlap(x=get_subtype_patients(subtype_order,margin_percent))
+    output$lengths <- sapply(output$parts, length)
+    output
+  })
+}
+
+get_sum <- function (ov_m) {
+  sapply(1:4, function(i) {ov_m[[i]]$lengths %>% sum}) %>% sum
+}
+total_patients <- get_sum(get_overlaps(100))
+
+# Concordance plots
+margin_vals <- seq(100, 0, length.out = 3000)
+get_overlaps_margin <- 
+  lapply(margin_vals, function(mval) {get_overlaps(mval)})
+  
+
+
+percent_removed <- lapply(1:3000, function(i) {
+  total_remaining = 
+    get_overlaps_margin[[i]] %>% get_sum
+  100*(total_patients - total_remaining)/total_patients
+})
+percent = percent_removed %>% as.numeric
+
+##set up for scatter plot
+xvals <- seq(0, 1, length.out = 3000)
+margin.scatterplots_subtype <- function (subtype_order) {   
+  concordance <- lapply(1:3000, function(i) {
+    go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
+    go[[1]]/sum(go)
+  })
+  scatterplot.df <- data.frame(margin = xvals, concordance=concordance%>%as.numeric, percent = percent)
+  scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
+  scatterplot <- 
+    ggplot(scatterplot.df, aes(y=concordance, x = percent)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])) 
+  return(scatterplot)
+}
+@
+
+We seek to filter the dataset based on the percent of datasets that would remain and we remove datasets based on margin-cutoffs (i.e., datasets with margins lesser than the margin cut-offs or removed). In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed
+
+
+
+
+<<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
+margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
+margin_cutoff = margin_scatterplot.df$margin[1500]
+points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
+ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) + 
+    geom_point(size=3) + geom_line(size=3) + theme_bw() + 
+    xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus percentage of dataset removed") 
+@
+
+<<margin_cutoff>>=
+All=pooled.subtypes.survival[,"data.source"] %>% summary
+Filtered = pooled.subtypes.survival[get_margin(margin_cutoff),"data.source"]  %>% summary
+mydata <- data.frame(All,Filtered)
+newdata <- mydata[order(All),]
+@ 
+
+In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed. Each subtype is labelled by the name provied by Verhaak et al.
+
+<<margin.scatterplots_subtype, out.width="0.8\\textwidth">>=
+# do.call(grid.arrange, lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
+grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
+@
+
+
+
+
+We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% concordance) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
+
+The resulting dataset is as below:
+
+<<dataset_barplots, out.width="0.8\\textwidth">>=
+
+barplot(as.matrix(newdata) %>% t, main="HGS sample sizes", 
+        beside=TRUE, 
+        horiz=TRUE, las=2
+        #col=terrain.colors(13)
+)
+@
+
+The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
+
+<<venn_setup, results = 'hide'>>=
+ # the overlaps obtained by get_overlap function are numbers of non-intersecting regions of the venn - they had to be computed for the whole areas again for strange reason - maybe there is a simpler function in the VennDiagram that would replace parts of the below function
+get_venn_margin_subtype <- function(margin,subtype_order){
+    overlaps = get_overlaps_margin[[margin]][[subtype_order]]$lengths
+    venn_dia = 
+      draw.triple.venn(area1 = overlaps[[5]] + overlaps[[3]] + overlaps[[2]] + overlaps[[1]], 
+                                area2 = overlaps[[6]] + overlaps[[4]] + overlaps[[2]] + overlaps[[1]], 
+                                area3 = overlaps[[7]] + overlaps[[4]] + overlaps[[3]] + overlaps[[1]], 
+                                n12 = overlaps[[2]] + overlaps[[1]], 
+                                n23 = overlaps[[4]] + overlaps[[1]], 
+                                n13 = overlaps[[3]] + overlaps[[1]], 
+                                n123 = overlaps[[1]], 
+                                category = subtype.names[1:3], filename = NULL, 
+                                fill = c("blue", "yellow", "green")                 
+    )
+#   grid.newpage()
+return(venn_dia)
+  }
+
+# the below functions are adapted fromhttp://stackoverflow.com/questions/23794942/adding-extra-texts-to-a-venn-diagram-drawn-using-venndiagram-r-package to overlay additional text to the venndiagram areas
+addlab <- function(lab, x, y, offset = 0) {
+  grid.text(lab, unit(as.numeric(x), "npc"), 
+            unit(as.numeric(y) - offset, "npc"), 
+            draw = FALSE)
+}
+
+overlay_text <- function (venn.plot,margin_overlay,subtype_order){
+  overlaps_margin_overlay = get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths %>% as.vector 
+  ov_new = overlaps_margin_overlay[c(5,2,6,3,1,4,7)]
+  lbls <- gList()
+  o <- 1 ## counter
+  for(i in 7:13) {
+    ## Check if it is a grid.text object
+    if(regexpr("text", venn.plot[[i]]$name) > 0) {
+      ## Write counter value under the existing label
+      lbls <- gList(lbls, addlab(ov_new[[o]], venn.plot[[i]]$x, venn.plot[[i]]$y, 0.03))
+      # overlaps_margin_overlay[[o]]
+      ## Increase the counter
+      o <- o + 1
+    }
+  }
+  lbls
+}
+
+overlay_venn <- function(subtype_order, margin, margin_overlay)
+  gList(get_venn_margin_subtype(margin,subtype_order), overlay_text(get_venn_margin_subtype(margin,subtype_order), margin_overlay,subtype_order)
+        )
+
+
+@
+
+<<Subtype_venn_diagrams, out.width="0.8\\textwidth">>=
+grid.newpage()
+draw_venn_formargin <- function (margin,margin_overlay){
+  grid.arrange(#adding subtitles: grid.arrange(gTree(children=overlay_venn(1,margin,margin_overlay)), main="Title", sub="subtitle"),
+    gTree(children = overlay_venn(1,margin,margin_overlay)),
+    gTree(children = overlay_venn(2,margin,margin_overlay)),
+    gTree(children = overlay_venn(3,margin,margin_overlay)),
+    gTree(children = overlay_venn(4,margin,margin_overlay))
+  )
+}
+margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
+draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
+
+@
+
+
+% Survival Analysis with new code added by Lavanya for filtered data below 
+\section{Survival Analysis}
+<<Pooled_survival_plot>>=
+layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
+#par(mfrow=c(2,2))
+#par(mar=c(5,1,0,1))
+par(mar=c(5.1, 8, 4.1, 2.1))
+for(subtype.name in subtype.names) {
+  #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
+  par(mar=c(5.1, 5, 4.1, 2.1))
+  survival.df <- pooled.subtypes.survival
+  survival.df$groups <- survival.df[,subtype.name]
+  
+  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
+  
+  hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
+  text <- ""
+  if(length(hr.out$hazard.ratio) == 1) {
+    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+  } else {
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+  }
+  cols <- 1:4
+  if(subtype.name == "Bentink") {
+    cols <- c("orange", "blue")
+  }
+  title <- subtype.name
+  if(title == "Verhaak") {
+    title <- "TCGA / Verhaak"
+  }
+  if(title == "Helland") {
+    title <- "Tothill / Helland"
+  }
+  km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+  title(title, cex.main=2)
+  text(0,0.05, text, cex=0.85, pos=4)
+  #dev.off()
+}
+
+## below is the code added by Lavanya for the filtered dataset
+
+# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
+Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff),] 
+
+# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
+filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
+Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
+
+# survival_filtered.df <- Filtered_pooled.subtypes.survival
+survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
+  survival_filtered.df$groups <- 
+  survival_filtered.df[,"Verhaak"] 
+# since we name the subtypes of the filtered set to that of Verhaak
+  
+  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
+  
+  hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
+  text <- ""
+  if(length(hr.out$hazard.ratio) == 1) {
+    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+  } else {
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+  }
+  cols <- 1:4
+  
+  title <- "Filtered Dataset (before overlaps)"
+  
+  km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+  title(title, cex.main=2)
+  text(0,0.05, text, cex=0.85, pos=4)
+  @
+
+% Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
+<<HR, echo = TRUE, results='asis'>>=
+coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
+fit = summary(coxph.model)
+print(xtable(fit$conf.int), include.rownames=FALSE)
+
+
+get_hr <- function (margin) {
+  # For each margin, extract the dataset 
+  dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
+  Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
+  survival_filtered_margin.df <- Filtered_intersection_margin
+  survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
+  # fit the coxph model
+  coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
+  fit = summary(coxph.model)
+  # extract the first column which corresponds to the HR of the three subtypes
+  fit$conf.int[,1]  
+}
+
+xvals <- seq(0, 0.75, length.out = 2250)
+
+all_hrs = lapply(xvals,get_hr)
+extract_hr = lapply(1:3, function (j) {
+  lapply(1:2250,function (i) all_hrs[[i]][j])
+})
+
+@
+The below plots show that the hazard ratios are more or less the same for filtered data with pretty much all the margins 0 (corresponding to the whole dataset) to 0.6, with our chossen cutoff lying inside this interval. 
+<<HR_plots, out.width="0.8\\textwidth">>=
+plot(xvals, extract_hr[[1]], xlab = "top margins", ylab = "Hazard Ratio")
+plot(xvals, extract_hr[[2]], xlab = "top margins", ylab = "Hazard Ratio")
+plot(xvals, extract_hr[[3]], xlab = "top margins", ylab = "Hazard Ratio")
+
+@
 \end{document}
+
