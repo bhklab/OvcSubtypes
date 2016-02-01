@@ -266,7 +266,7 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     margins.1 <- ecdf(margins.1)(margins.1)
     margins.2 <- ecdf(margins.2)(margins.2)
   
-    xvals <- seq(0, 1, length.out = 3000)
+    xvals <- seq(0, 1, length.out = 3001)
     concordance <- sapply(xvals, function(x) {
       margin.boolean <- margins.1 > x & margins.2 > x
       contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
@@ -354,19 +354,19 @@ print(xtable(subtype.map), include.rownames=FALSE)
 <<Data_setup>>=
 # Extract margins for each scheme
 margins.1 <- pooled.subtypes.survival[,paste0(subtype.names[[1]], ".margins")]    
-margins.1 <- ecdf(margins.1)(margins.1) 
+margins.1.percentile <- ecdf(margins.1)(margins.1) 
 
 margins.2 <- pooled.subtypes.survival[,paste0(subtype.names[[2]], ".margins")]    
-margins.2 <- ecdf(margins.2)(margins.2) 
+margins.2.percentile <- ecdf(margins.2)(margins.2) 
 
 margins.3 <- pooled.subtypes.survival[,paste0(subtype.names[[3]], ".margins")]    
-margins.3 <- ecdf(margins.3)(margins.3) 
+margins.3.percentile <- ecdf(margins.3)(margins.3) 
 
 # get marginal data 
 get_margin <- function(lower.bound){  
-    margins.1 > lower.bound & 
-    margins.2 > lower.bound & 
-    margins.3 > lower.bound
+    margins.1.percentile > lower.bound & 
+    margins.2.percentile > lower.bound & 
+    margins.3.percentile > lower.bound
   }
 
 # the code below fetches the marginal data (including the ones where 100% remain) for each subtype
@@ -377,7 +377,6 @@ get_marginal_data_top <- function(top_margin_percent,subtype.name) {
   }
 
 # given a subtype.name (scheme) position and the subtype, find the list of patients in the subtype in the scheme 
-
 
 filtered_dataset_all_subtypes <- 
               function(margin_percent) 
@@ -413,13 +412,13 @@ get_sum <- function (ov_m) {
 total_patients <- get_sum(get_overlaps(100))
 
 # Concordance plots
-margin_vals <- seq(100, 0, length.out = 3000)
+margin_vals <- seq(100, 0, length.out = 3001)
 get_overlaps_margin <- 
   lapply(margin_vals, function(mval) {get_overlaps(mval)})
   
 
 
-percent_removed <- lapply(1:3000, function(i) {
+percent_removed <- lapply(1:3001, function(i) {
   total_remaining = 
     get_overlaps_margin[[i]] %>% get_sum
   100*(total_patients - total_remaining)/total_patients
@@ -427,9 +426,9 @@ percent_removed <- lapply(1:3000, function(i) {
 percent = percent_removed %>% as.numeric
 
 ##set up for scatter plot
-xvals <- seq(0, 1, length.out = 3000)
+xvals <- seq(0, 1, length.out = 3001)
 margin.scatterplots_subtype <- function (subtype_order) {   
-  concordance <- lapply(1:3000, function(i) {
+  concordance <- lapply(1:3001, function(i) {
     go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
     go[[1]]/sum(go)
   })
@@ -448,11 +447,11 @@ We seek to filter the dataset based on the percent of datasets that would remain
 
 <<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
-margin_cutoff = margin_scatterplot.df$margin[1500]
+margin_cutoff = margin_scatterplot.df$margin[1501]
 points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
 ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) + 
     geom_point(size=3) + geom_line(size=3) + theme_bw() + 
-    xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus percentage of dataset removed") 
+    xlab("Percentage of dataset removed") + ylab("Margin cutoff (percentile)") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus Percentage of Dataset Removed") + coord_flip()
 @
 
 <<margin_cutoff>>=
@@ -472,7 +471,7 @@ grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 
 
 
-We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% concordance) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
+We choose a cutoff of \Sexpr{sprintf("%.2f", margin_cutoff * 100)}\% (corresponding to \Sexpr{ sprintf("%.2f", margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff])}\% of the dataset removed). The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
 The resulting dataset is as below:
 
@@ -548,15 +547,15 @@ draw_venn_formargin <- function (margin,margin_overlay){
     gTree(children = overlay_venn(4,margin,margin_overlay))
   )
 }
-margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
-draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
+margin_overlay_cutoff = ceiling(margin_cutoff*3001) %>% as.integer
+draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3001 x values; 1 being for all datasets
 
 @
 
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
-<<Pooled_survival_plot>>=
+<<Pooled_survival_plot, fig.width=8, fig.height=12>>=
 layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
 #par(mar=c(5,1,0,1))

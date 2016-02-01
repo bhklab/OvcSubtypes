@@ -11,6 +11,7 @@ reports/*.log
 reports/*.toc
 reports/*.pdf
 reports/figures
+reports/jan20clusters
 
 reports/NMF*
 reports/cache/
