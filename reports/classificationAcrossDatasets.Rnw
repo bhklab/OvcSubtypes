@@ -345,7 +345,7 @@ Based on the pairwise concordance, we can see that the subtypes in the different
 
 <<Subtype_map_table, results='asis'>>=
 subtype.map <- as.data.frame(subtypes)
-subtype.map$"Bentik" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
+subtype.map$"Bentink" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
 
 print(xtable(subtype.map), include.rownames=FALSE)
