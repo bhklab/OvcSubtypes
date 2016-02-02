@@ -373,7 +373,10 @@ get_margin <- function(lower.bound){
 get_marginal_data_top <- function(top_margin_percent,subtype.name) {
     lower.bound <- 1 - top_margin_percent / 100
     margin.boolean <- get_margin(lower.bound)
-    pooled.subtypes.survival[,subtype.name][margin.boolean]
+    tmp = pooled.subtypes.survival[,subtype.name][margin.boolean] %>% data.frame
+    row.names(tmp) <- row.names(pooled.subtypes.survival)[margin.boolean]
+    names(tmp) <- "tmp_subtype"
+    tmp # tmp can be obtained in a more simpler way?
   }
 
 # given a subtype.name (scheme) position and the subtype, find the list of patients in the subtype in the scheme 
@@ -384,11 +387,11 @@ filtered_dataset_all_subtypes <-
                 lapply(subtype.names[1:3], function (sn) 
                   get_marginal_data_top(margin_percent,sn))
 
-get_patients <- function(pos_subtype.name,subtype_order,margin_percent){
+get_patients <- function(pos_subtype.name,subtype_order, margin_percent){
   subtypes$subtype.name <- subtypes[[pos_subtype.name]]
   filtered_dataset = 
-    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]]
-  which(filtered_dataset == subtypes$subtype.name[[subtype_order]] )  
+    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]] 
+  row.names(filtered_dataset)[which(filtered_dataset$"tmp_subtype" == subtypes$subtype.name[[subtype_order]])] 
 }
 
 # Given the mapped subtype number (called subtype_order), fetch the patients in each scheme in the subtype 
@@ -472,7 +475,7 @@ grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 
 
 
-We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% concordance) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
+We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
 The resulting dataset is as below:
 
@@ -483,6 +486,9 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
         horiz=TRUE, las=2
         #col=terrain.colors(13)
 )
+
+
+
 @
 
 The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
@@ -553,6 +559,7 @@ draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 
 
 @
 
+To do: Suppress the side-effects of the above grid.arrange command to get the venn plots. 
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
@@ -605,6 +612,28 @@ Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cut
 filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
 Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
 
+## Check if Filtered_intersection_pooled.subtypes.survival is a subset of Filtered_pooled.subtypes.survival
+a = row.names(Filtered_intersection_pooled.subtypes.survival)
+b = row.names(Filtered_pooled.subtypes.survival)
+if (!all(a %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes.survival)
+}
+
+## Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
+tmp_filtered <- Filtered_pooled.subtypes.survival
+levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+levels(tmp_filtered$"Helland") <- subtypes[[2]]
+
+x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+# tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+c = row.names(tmp_filtered[x&y,])
+if (!all(c %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes.survival)
+}
+
 # survival_filtered.df <- Filtered_pooled.subtypes.survival
 survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   survival_filtered.df$groups <- 
@@ -625,7 +654,8 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   }
   cols <- 1:4
   
-  title <- "Filtered Dataset (before overlaps)"
+  title <- "Filtered Dataset
+"
   
   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
   title(title, cex.main=2)
@@ -637,8 +667,13 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
 coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
 fit = summary(coxph.model)
 print(xtable(fit$conf.int), include.rownames=FALSE)
+@ 
+Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
+
+Question: Why are the Hazard ratios in the above table different from those printed on the survival plots? (check code below which computes the HR for each of the subtypes for different margins -  HR at cutoff is more than the value at 0 before becoming random - any other observations?)
 
 
+<<hr_plots, out.width="0.8\\textwidth">>=
 get_hr <- function (margin) {
   # For each margin, extract the dataset 
   dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
@@ -660,12 +695,11 @@ extract_hr = lapply(1:3, function (j) {
 })
 
 @
-The below plots show that the hazard ratios are more or less the same for filtered data with pretty much all the margins 0 (corresponding to the whole dataset) to 0.6, with our chossen cutoff lying inside this interval. 
+ 
 <<HR_plots, out.width="0.8\\textwidth">>=
 plot(xvals, extract_hr[[1]], xlab = "top margins", ylab = "Hazard Ratio")
 plot(xvals, extract_hr[[2]], xlab = "top margins", ylab = "Hazard Ratio")
 plot(xvals, extract_hr[[3]], xlab = "top margins", ylab = "Hazard Ratio")
-
 @
 \end{document}
 
