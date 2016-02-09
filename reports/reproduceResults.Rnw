@@ -64,7 +64,7 @@ library(randomForest)
 
 source("docs/reproduce.results.patientselection.config")
 ### use this line if you do not want to get rid of duplicates
-rm(remove.duplicates)
+### rm(remove.duplicates)
 probe.gene.mapping <- TRUE
 rescale <- FALSE
 source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))

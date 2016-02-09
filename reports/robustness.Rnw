@@ -68,7 +68,7 @@ source("docs/reproduce.results.patientselection.config")
 #rule.3 <- c("summarystage","^late$")
 #rule.4 <- c("summarygrade","^high$")
 ### use this line if you do not want to get rid of duplicates
-rm(remove.duplicates)
+## rm(remove.duplicates)
 rescale <- FALSE
 rm(probe.gene.mapping)
 source("docs/reproduce.results.patientselection.config")
