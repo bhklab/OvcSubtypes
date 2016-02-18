@@ -266,7 +266,7 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     margins.1 <- ecdf(margins.1)(margins.1)
     margins.2 <- ecdf(margins.2)(margins.2)
   
-    xvals <- seq(0, 1, length.out = 3001)
+    xvals <- seq(0, 1, length.out = 3000)
     concordance <- sapply(xvals, function(x) {
       margin.boolean <- margins.1 > x & margins.2 > x
       contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
@@ -345,7 +345,7 @@ Based on the pairwise concordance, we can see that the subtypes in the different
 
 <<Subtype_map_table, results='asis'>>=
 subtype.map <- as.data.frame(subtypes)
-subtype.map$"Bentink" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
+subtype.map$"Bentik" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
 
 print(xtable(subtype.map), include.rownames=FALSE)
@@ -354,53 +354,57 @@ print(xtable(subtype.map), include.rownames=FALSE)
 <<Data_setup>>=
 # Extract margins for each scheme
 margins.1 <- pooled.subtypes.survival[,paste0(subtype.names[[1]], ".margins")]    
-margins.1.percentile <- ecdf(margins.1)(margins.1) 
+margins.1 <- ecdf(margins.1)(margins.1) 
 
 margins.2 <- pooled.subtypes.survival[,paste0(subtype.names[[2]], ".margins")]    
-margins.2.percentile <- ecdf(margins.2)(margins.2) 
+margins.2 <- ecdf(margins.2)(margins.2) 
 
 margins.3 <- pooled.subtypes.survival[,paste0(subtype.names[[3]], ".margins")]    
-margins.3.percentile <- ecdf(margins.3)(margins.3) 
+margins.3 <- ecdf(margins.3)(margins.3) 
 
 # get marginal data 
 get_margin <- function(lower.bound){  
-    margins.1.percentile > lower.bound & 
-    margins.2.percentile > lower.bound & 
-    margins.3.percentile > lower.bound
+    margins.1 > lower.bound & 
+    margins.2 > lower.bound & 
+    margins.3 > lower.bound
   }
 
 # the code below fetches the marginal data (including the ones where 100% remain) for each subtype
 get_marginal_data_top <- function(top_margin_percent,subtype.name) {
     lower.bound <- 1 - top_margin_percent / 100
     margin.boolean <- get_margin(lower.bound)
-    pooled.subtypes.survival[,subtype.name][margin.boolean]
+    tmp = pooled.subtypes.survival[,subtype.name][margin.boolean] %>% data.frame
+    row.names(tmp) <- row.names(pooled.subtypes.survival)[margin.boolean]
+    names(tmp) <- "tmp_subtype"
+    tmp # tmp can be obtained in a more simpler way?
   }
 
 # given a subtype.name (scheme) position and the subtype, find the list of patients in the subtype in the scheme 
+
 
 filtered_dataset_all_subtypes <- 
               function(margin_percent) 
                 lapply(subtype.names[1:3], function (sn) 
                   get_marginal_data_top(margin_percent,sn))
 
-get_patients <- function(pos_subtype.name,subtype_order,margin_percent){
+get_patients <- function(pos_subtype.name,subtype_order, margin_percent){
   subtypes$subtype.name <- subtypes[[pos_subtype.name]]
   filtered_dataset = 
-    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]]
-  which(filtered_dataset == subtypes$subtype.name[[subtype_order]] )  
+    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]] 
+  row.names(filtered_dataset)[which(filtered_dataset$"tmp_subtype" == subtypes$subtype.name[[subtype_order]])] 
 }
 
 # Given the mapped subtype number (called subtype_order), fetch the patients in each scheme in the subtype 
-get_subtype_patients <- function(subtype_order,margin_percent){
- lapply(1:3, function(i) {get_patients(i,subtype_order,margin_percent)}) 
+get_subtype_patients <- function(subtype_order,margin_percent, methods_considered = 1:3){  
+ lapply(methods_considered, function(i) {get_patients(i,subtype_order,margin_percent)}) 
 }
 
 # Get the subtype_patients for each subtype across schemes and find overlaps 
 
-get_overlaps <- function(margin_percent) {
+get_overlaps <- function(margin_percent, methods_considered = 1:3) {
   lapply(1:4, function(subtype_order) {
     output <- NULL
-    output$parts <- calculate.overlap(x=get_subtype_patients(subtype_order,margin_percent))
+    output$parts <- calculate.overlap(x=get_subtype_patients(subtype_order,margin_percent, methods_considered))
     output$lengths <- sapply(output$parts, length)
     output
   })
@@ -412,13 +416,13 @@ get_sum <- function (ov_m) {
 total_patients <- get_sum(get_overlaps(100))
 
 # Concordance plots
-margin_vals <- seq(100, 0, length.out = 3001)
+margin_vals <- seq(100, 0, length.out = 3000)
 get_overlaps_margin <- 
   lapply(margin_vals, function(mval) {get_overlaps(mval)})
   
 
 
-percent_removed <- lapply(1:3001, function(i) {
+percent_removed <- lapply(1:3000, function(i) {
   total_remaining = 
     get_overlaps_margin[[i]] %>% get_sum
   100*(total_patients - total_remaining)/total_patients
@@ -426,9 +430,9 @@ percent_removed <- lapply(1:3001, function(i) {
 percent = percent_removed %>% as.numeric
 
 ##set up for scatter plot
-xvals <- seq(0, 1, length.out = 3001)
+xvals <- seq(0, 1, length.out = 3000)
 margin.scatterplots_subtype <- function (subtype_order) {   
-  concordance <- lapply(1:3001, function(i) {
+  concordance <- lapply(1:3000, function(i) {
     go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
     go[[1]]/sum(go)
   })
@@ -447,11 +451,11 @@ We seek to filter the dataset based on the percent of datasets that would remain
 
 <<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
-margin_cutoff = margin_scatterplot.df$margin[1501]
+margin_cutoff = margin_scatterplot.df$margin[1500]
 points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
 ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) + 
     geom_point(size=3) + geom_line(size=3) + theme_bw() + 
-    xlab("Percentage of dataset removed") + ylab("Margin cutoff (percentile)") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus Percentage of Dataset Removed") + coord_flip()
+    xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus percentage of dataset removed") 
 @
 
 <<margin_cutoff>>=
@@ -471,7 +475,7 @@ grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 
 
 
-We choose a cutoff of \Sexpr{sprintf("%.2f", margin_cutoff * 100)}\% (corresponding to \Sexpr{ sprintf("%.2f", margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff])}\% of the dataset removed). The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
+We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
 The resulting dataset is as below:
 
@@ -482,6 +486,9 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
         horiz=TRUE, las=2
         #col=terrain.colors(13)
 )
+
+
+
 @
 
 The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
@@ -490,7 +497,8 @@ The following are the venndiagram showing the 3-way concordance of each subtype 
  # the overlaps obtained by get_overlap function are numbers of non-intersecting regions of the venn - they had to be computed for the whole areas again for strange reason - maybe there is a simpler function in the VennDiagram that would replace parts of the below function
 get_venn_margin_subtype <- function(margin,subtype_order){
     overlaps = get_overlaps_margin[[margin]][[subtype_order]]$lengths
-    venn_dia = 
+ #dev.control('enable')   
+    venn_dia <- 
       draw.triple.venn(area1 = overlaps[[5]] + overlaps[[3]] + overlaps[[2]] + overlaps[[1]], 
                                 area2 = overlaps[[6]] + overlaps[[4]] + overlaps[[2]] + overlaps[[1]], 
                                 area3 = overlaps[[7]] + overlaps[[4]] + overlaps[[3]] + overlaps[[1]], 
@@ -499,10 +507,9 @@ get_venn_margin_subtype <- function(margin,subtype_order){
                                 n13 = overlaps[[3]] + overlaps[[1]], 
                                 n123 = overlaps[[1]], 
                                 category = subtype.names[1:3], filename = NULL, 
-                                fill = c("blue", "yellow", "green")                 
+                                fill = c("blue", "yellow", "green")               
     )
-#   grid.newpage()
-return(venn_dia)
+
   }
 
 # the below functions are adapted fromhttp://stackoverflow.com/questions/23794942/adding-extra-texts-to-a-venn-diagram-drawn-using-venndiagram-r-package to overlay additional text to the venndiagram areas
@@ -531,31 +538,35 @@ overlay_text <- function (venn.plot,margin_overlay,subtype_order){
 }
 
 overlay_venn <- function(subtype_order, margin, margin_overlay)
-  gList(get_venn_margin_subtype(margin,subtype_order), overlay_text(get_venn_margin_subtype(margin,subtype_order), margin_overlay,subtype_order)
+{ p <- get_venn_margin_subtype(margin,subtype_order)
+  dev.off()
+  
+  gList(p, 
+    overlay_text(p, margin_overlay,subtype_order)
         )
-
-
+}
 @
 
 <<Subtype_venn_diagrams, out.width="0.8\\textwidth">>=
 grid.newpage()
 draw_venn_formargin <- function (margin,margin_overlay){
-  grid.arrange(#adding subtitles: grid.arrange(gTree(children=overlay_venn(1,margin,margin_overlay)), main="Title", sub="subtitle"),
+  grid.arrange(
     gTree(children = overlay_venn(1,margin,margin_overlay)),
     gTree(children = overlay_venn(2,margin,margin_overlay)),
     gTree(children = overlay_venn(3,margin,margin_overlay)),
     gTree(children = overlay_venn(4,margin,margin_overlay))
   )
 }
-margin_overlay_cutoff = ceiling(margin_cutoff*3001) %>% as.integer
-draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3001 x values; 1 being for all datasets
+margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
+draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
 
 @
 
+To do: Suppress the side-effects of the above grid.arrange command to get the venn plots. 
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
-<<Pooled_survival_plot, fig.width=8, fig.height=12>>=
+<<Pooled_survival_plot>>=
 layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
 #par(mar=c(5,1,0,1))
@@ -604,6 +615,28 @@ Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cut
 filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
 Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
 
+## Check if Filtered_intersection_pooled.subtypes.survival is a subset of Filtered_pooled.subtypes.survival
+a = row.names(Filtered_intersection_pooled.subtypes.survival)
+b = row.names(Filtered_pooled.subtypes.survival)
+if (!all(a %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes.survival)
+}
+
+## Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
+tmp_filtered <- Filtered_pooled.subtypes.survival
+levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+levels(tmp_filtered$"Helland") <- subtypes[[2]]
+
+x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+# tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+c = row.names(tmp_filtered[x&y,])
+if (!all(c %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes.survival)
+}
+
 # survival_filtered.df <- Filtered_pooled.subtypes.survival
 survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   survival_filtered.df$groups <- 
@@ -624,7 +657,8 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   }
   cols <- 1:4
   
-  title <- "Filtered Dataset (before overlaps)"
+  title <- "Filtered Dataset
+"
   
   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
   title(title, cex.main=2)
@@ -636,8 +670,13 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
 coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
 fit = summary(coxph.model)
 print(xtable(fit$conf.int), include.rownames=FALSE)
+@ 
+Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
+
+Question: Why are the Hazard ratios in the above table different from those printed on the survival plots? (check code below which computes the HR for each of the subtypes for different margins -  HR at cutoff is more than the value at 0 before becoming random - any other observations?)
 
 
+<<hr_plots, out.width="0.8\\textwidth">>=
 get_hr <- function (margin) {
   # For each margin, extract the dataset 
   dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
@@ -647,24 +686,124 @@ get_hr <- function (margin) {
   # fit the coxph model
   coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
   fit = summary(coxph.model)
-  # extract the first column which corresponds to the HR of the three subtypes
-  fit$conf.int[,1]  
+  # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
+  fit$conf.int[,c(1,3,4)]  
 }
 
 xvals <- seq(0, 0.75, length.out = 2250)
 
-all_hrs = lapply(xvals,get_hr)
+all_hrs_CI = lapply(xvals,get_hr)
 extract_hr = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs[[i]][j])
-})
-
+  lapply(1:2250,function (i) all_hrs_CI[[i]][j,1])
+}%>% unlist) 
+extract_lower_CI = lapply(1:3, function (j) {
+  lapply(1:2250,function (i) all_hrs_CI[[i]][j,2])
+}%>% unlist) 
+extract_upper_CI = lapply(1:3, function (j) {
+  lapply(1:2250,function (i) all_hrs_CI[[i]][j,3])
+}%>% unlist) 
 @
-The below plots show that the hazard ratios are more or less the same for filtered data with pretty much all the margins 0 (corresponding to the whole dataset) to 0.6, with our chossen cutoff lying inside this interval. 
+ 
 <<HR_plots, out.width="0.8\\textwidth">>=
-plot(xvals, extract_hr[[1]], xlab = "top margins", ylab = "Hazard Ratio")
-plot(xvals, extract_hr[[2]], xlab = "top margins", ylab = "Hazard Ratio")
-plot(xvals, extract_hr[[3]], xlab = "top margins", ylab = "Hazard Ratio")
+get_hr_plot <- function (subtype_pos) {
+ss = smooth.spline(xvals, extract_hr[[subtype_pos]])
+ss_l = smooth.spline(xvals, extract_lower_CI[[subtype_pos]])
+ss_u = smooth.spline(xvals, extract_upper_CI[[subtype_pos]])
+hrplot.df <- data.frame(margin = xvals, percent = percent[1:2250],hr = extract_hr[[subtype_pos]], lower = ss_l$y, upper = ss_u$y)
+ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
+}
+
+grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+@
+
+<<marginal_dataset>>=
+BigDF = pooled.subtypes.survival
+SmallDF = Filtered_intersection_pooled.subtypes.survival 
+marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
+@
+
+
+\section{Prediction of the patients that are removed into combination of subtypes}
+Below is our prediction of combinations of subtypes in the remaining of the \Sexpr{(length(row.names(marginal_dataset)))} patients that were removed. The subtypes under different algorithms are mapped to the Varhaak subtypes using high concordance. The frequency of each combination of subtypes in the dataset is given below.  
+
+<<marginal_dataset_classification, results='asis'>>=
+levels(marginal_dataset$"Konecny") <- subtypes[[2]]
+levels(marginal_dataset$"Helland") <- subtypes[[2]]
+subtype_combinations = 
+lapply(1:length(row.names(marginal_dataset)), 
+       function (i) 
+        marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
+       ) 
+unique_combinations = subtype_combinations %>% unique
+sorted_unique_comb = unique_combinations[order(sapply(unique_combinations,'[[',1))]
+map_comb = sapply(sorted_unique_comb,
+                  function (i) {subtypes[[2]][i]}
+                  )
+
+
+## function to check if two vectors with unique elements and sorted are the same
+vecMatch <- function(x, want) {
+    isTRUE(all.equal(x, want))
+}
+
+which_combinations = 
+lapply(1:length(row.names(marginal_dataset)), 
+       function (i) 
+        sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
+       ) %>% unlist
+
+summary_comb <- as.data.frame(table(which_combinations))
+summary_c <- summary_comb[with(summary_comb,order(Freq)),]
+row.names(summary_c) <- 
+  sapply(map_comb, function (s) paste(s,collapse=" "))
+
+print(xtable(summary_c[-1]), include.rownames=TRUE)
+@
+
+\section{Picking the best classifier}
+
+For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
+
+<<best_method>>=
+methods = 1:3
+margin_vals <- seq(100, 0, length.out = 3000)
+find_proportion <- function(subtype.method, subtype_order, margin_percent, compare_self = TRUE){
+
+  if (compare_self) 
+   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/length(get_subtype_patients(subtype_order,margin_percent, subtype.method) %>% unlist)
+  else
+   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/get_overlaps(margin_percent,methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
+  
+}
+
+get_concordance <- function(subtype.method,subtype_order,compare_self){
+lapply(margin_vals[1:1500],
+       function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare_self)) %>% unlist
+}
+
+get_concordance_all_subtypes <- function(subtype.method, compare_self)
+  lapply(1:4, function (i) get_concordance(subtype.method,i, compare_self))
 
 @
+
+The first set of plots give concordance of the filtered dataset (i.e., patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the filtered dataset with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
+
+
+
+<<get_best_method_plots, out.width="0.8\\textwidth">>=
+get_method_concordance <- function (subtype.method, compare_self = TRUE) {
+sc = get_concordance_all_subtypes(subtype.method,compare_self)
+ smc.df <- data.frame( percent = percent[1:1500], IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
+  smc_long.df <- melt(smc.df, id = "percent")                      
+                        
+txt <- if (compare_self) "within the method" else "under the other two methods"
+ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
+}
+
+grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+
+grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance (i, compare_self = FALSE)), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+@
+
 \end{document}
 
