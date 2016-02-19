@@ -540,7 +540,8 @@ overlay_text <- function (venn.plot,margin_overlay,subtype_order){
 overlay_venn <- function(subtype_order, margin, margin_overlay)
 { p <- get_venn_margin_subtype(margin,subtype_order)
   dev.off()
-  
+  dev.new()
+  # grid.newpage()
   gList(p, 
     overlay_text(p, margin_overlay,subtype_order)
         )
@@ -548,7 +549,7 @@ overlay_venn <- function(subtype_order, margin, margin_overlay)
 @
 
 <<Subtype_venn_diagrams, out.width="0.8\\textwidth">>=
-grid.newpage()
+#grid.newpage()
 draw_venn_formargin <- function (margin,margin_overlay){
   grid.arrange(
     gTree(children = overlay_venn(1,margin,margin_overlay)),
@@ -562,248 +563,249 @@ draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 
 
 @
 
-To do: Suppress the side-effects of the above grid.arrange command to get the venn plots. 
-
-% Survival Analysis with new code added by Lavanya for filtered data below 
-\section{Survival Analysis}
-<<Pooled_survival_plot>>=
-layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
-#par(mfrow=c(2,2))
-#par(mar=c(5,1,0,1))
-par(mar=c(5.1, 8, 4.1, 2.1))
-for(subtype.name in subtype.names) {
-  #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
-  par(mar=c(5.1, 5, 4.1, 2.1))
-  survival.df <- pooled.subtypes.survival
-  survival.df$groups <- survival.df[,subtype.name]
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
-  text <- ""
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  if(subtype.name == "Bentink") {
-    cols <- c("orange", "blue")
-  }
-  title <- subtype.name
-  if(title == "Verhaak") {
-    title <- "TCGA / Verhaak"
-  }
-  if(title == "Helland") {
-    title <- "Tothill / Helland"
-  }
-  km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-  #dev.off()
-}
-
-## below is the code added by Lavanya for the filtered dataset
-
-# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
-Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff),] 
-
-# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
-filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
-Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
-
-## Check if Filtered_intersection_pooled.subtypes.survival is a subset of Filtered_pooled.subtypes.survival
-a = row.names(Filtered_intersection_pooled.subtypes.survival)
-b = row.names(Filtered_pooled.subtypes.survival)
-if (!all(a %in% b)) {
-  print("Error in filtered datasets")
-  rm(Filtered_intersection_pooled.subtypes.survival)
-}
-
-## Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
-tmp_filtered <- Filtered_pooled.subtypes.survival
-levels(tmp_filtered$"Konecny") <- subtypes[[2]]
-levels(tmp_filtered$"Helland") <- subtypes[[2]]
-
-x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
-y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
-# tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
-c = row.names(tmp_filtered[x&y,])
-if (!all(c %in% b)) {
-  print("Error in filtered datasets")
-  rm(Filtered_intersection_pooled.subtypes.survival)
-}
-
-# survival_filtered.df <- Filtered_pooled.subtypes.survival
-survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
-  survival_filtered.df$groups <- 
-  survival_filtered.df[,"Verhaak"] 
-# since we name the subtypes of the filtered set to that of Verhaak
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
-  text <- ""
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  
-  title <- "Filtered Dataset
-"
-  
-  km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-  @
-
-% Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
-<<HR, echo = TRUE, results='asis'>>=
-coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
-fit = summary(coxph.model)
-print(xtable(fit$conf.int), include.rownames=FALSE)
-@ 
-Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
-
-Question: Why are the Hazard ratios in the above table different from those printed on the survival plots? (check code below which computes the HR for each of the subtypes for different margins -  HR at cutoff is more than the value at 0 before becoming random - any other observations?)
-
-
-<<hr_plots, out.width="0.8\\textwidth">>=
-get_hr <- function (margin) {
-  # For each margin, extract the dataset 
-  dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
-  Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
-  survival_filtered_margin.df <- Filtered_intersection_margin
-  survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
-  # fit the coxph model
-  coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
-  fit = summary(coxph.model)
-  # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
-  fit$conf.int[,c(1,3,4)]  
-}
-
-xvals <- seq(0, 0.75, length.out = 2250)
-
-all_hrs_CI = lapply(xvals,get_hr)
-extract_hr = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,1])
-}%>% unlist) 
-extract_lower_CI = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,2])
-}%>% unlist) 
-extract_upper_CI = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,3])
-}%>% unlist) 
-@
- 
-<<HR_plots, out.width="0.8\\textwidth">>=
-get_hr_plot <- function (subtype_pos) {
-ss = smooth.spline(xvals, extract_hr[[subtype_pos]])
-ss_l = smooth.spline(xvals, extract_lower_CI[[subtype_pos]])
-ss_u = smooth.spline(xvals, extract_upper_CI[[subtype_pos]])
-hrplot.df <- data.frame(margin = xvals, percent = percent[1:2250],hr = extract_hr[[subtype_pos]], lower = ss_l$y, upper = ss_u$y)
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
-}
-
-grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
-@
-
-<<marginal_dataset>>=
-BigDF = pooled.subtypes.survival
-SmallDF = Filtered_intersection_pooled.subtypes.survival 
-marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
-@
-
-
-\section{Prediction of the patients that are removed into combination of subtypes}
-Below is our prediction of combinations of subtypes in the remaining of the \Sexpr{(length(row.names(marginal_dataset)))} patients that were removed. The subtypes under different algorithms are mapped to the Varhaak subtypes using high concordance. The frequency of each combination of subtypes in the dataset is given below.  
-
-<<marginal_dataset_classification, results='asis'>>=
-levels(marginal_dataset$"Konecny") <- subtypes[[2]]
-levels(marginal_dataset$"Helland") <- subtypes[[2]]
-subtype_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
-       function (i) 
-        marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
-       ) 
-unique_combinations = subtype_combinations %>% unique
-sorted_unique_comb = unique_combinations[order(sapply(unique_combinations,'[[',1))]
-map_comb = sapply(sorted_unique_comb,
-                  function (i) {subtypes[[2]][i]}
-                  )
-
-
-## function to check if two vectors with unique elements and sorted are the same
-vecMatch <- function(x, want) {
-    isTRUE(all.equal(x, want))
-}
-
-which_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
-       function (i) 
-        sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
-       ) %>% unlist
-
-summary_comb <- as.data.frame(table(which_combinations))
-summary_c <- summary_comb[with(summary_comb,order(Freq)),]
-row.names(summary_c) <- 
-  sapply(map_comb, function (s) paste(s,collapse=" "))
-
-print(xtable(summary_c[-1]), include.rownames=TRUE)
-@
-
-\section{Picking the best classifier}
-
-For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
-
-<<best_method>>=
-methods = 1:3
-margin_vals <- seq(100, 0, length.out = 3000)
-find_proportion <- function(subtype.method, subtype_order, margin_percent, compare_self = TRUE){
-
-  if (compare_self) 
-   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/length(get_subtype_patients(subtype_order,margin_percent, subtype.method) %>% unlist)
-  else
-   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/get_overlaps(margin_percent,methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
-  
-}
-
-get_concordance <- function(subtype.method,subtype_order,compare_self){
-lapply(margin_vals[1:1500],
-       function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare_self)) %>% unlist
-}
-
-get_concordance_all_subtypes <- function(subtype.method, compare_self)
-  lapply(1:4, function (i) get_concordance(subtype.method,i, compare_self))
-
-@
-
-The first set of plots give concordance of the filtered dataset (i.e., patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the filtered dataset with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
-
-
-
-<<get_best_method_plots, out.width="0.8\\textwidth">>=
-get_method_concordance <- function (subtype.method, compare_self = TRUE) {
-sc = get_concordance_all_subtypes(subtype.method,compare_self)
- smc.df <- data.frame( percent = percent[1:1500], IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
-  smc_long.df <- melt(smc.df, id = "percent")                      
-                        
-txt <- if (compare_self) "within the method" else "under the other two methods"
-ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
-}
-
-grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
-
-grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance (i, compare_self = FALSE)), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
-@
+% To do: Suppress the side-effects of the above grid.arrange command to get the venn plots. 
+% 
+% % Survival Analysis with new code added by Lavanya for filtered data below 
+% \section{Survival Analysis}
+% <<Pooled_survival_plot>>=
+% layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
+% #par(mfrow=c(2,2))
+% #par(mar=c(5,1,0,1))
+% par(mar=c(5.1, 8, 4.1, 2.1))
+% for(subtype.name in subtype.names) {
+%   #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
+%   par(mar=c(5.1, 5, 4.1, 2.1))
+%   survival.df <- pooled.subtypes.survival
+%   survival.df$groups <- survival.df[,subtype.name]
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
+%   text <- ""
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   if(subtype.name == "Bentink") {
+%     cols <- c("orange", "blue")
+%   }
+%   title <- subtype.name
+%   if(title == "Verhaak") {
+%     title <- "TCGA / Verhaak"
+%   }
+%   if(title == "Helland") {
+%     title <- "Tothill / Helland"
+%   }
+%   km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+%   #dev.off()
+% }
+% 
+% ## below is the code added by Lavanya for the filtered dataset
+% 
+% # the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
+% Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff),] 
+% 
+% # the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
+% filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
+% Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
+% 
+% ## Check if Filtered_intersection_pooled.subtypes.survival is a subset of Filtered_pooled.subtypes.survival
+% a = row.names(Filtered_intersection_pooled.subtypes.survival)
+% b = row.names(Filtered_pooled.subtypes.survival)
+% if (!all(a %in% b)) {
+%   print("Error in filtered datasets")
+%   rm(Filtered_intersection_pooled.subtypes.survival)
+% }
+% 
+% ## Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
+% tmp_filtered <- Filtered_pooled.subtypes.survival
+% levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+% levels(tmp_filtered$"Helland") <- subtypes[[2]]
+% 
+% x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+% y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+% # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+% c = row.names(tmp_filtered[x&y,])
+% if (!all(c %in% b)) {
+%   print("Error in filtered datasets")
+%   rm(Filtered_intersection_pooled.subtypes.survival)
+% }
+% 
+% # survival_filtered.df <- Filtered_pooled.subtypes.survival
+% survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
+%   survival_filtered.df$groups <- 
+%   survival_filtered.df[,"Verhaak"] 
+% # since we name the subtypes of the filtered set to that of Verhaak
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
+%   text <- ""
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   
+%   title <- "Filtered Dataset
+% "
+%   
+%   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+%   @
+% 
+% % Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
+% <<HR, echo = TRUE, results='asis'>>=
+% coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
+% fit = summary(coxph.model)
+% print(xtable(fit$conf.int), include.rownames=FALSE)
+% @ 
+% Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
+% 
+% Question: Why are the Hazard ratios in the above table different from those printed on the survival plots? (check code below which computes the HR for each of the subtypes for different margins -  HR at cutoff is more than the value at 0 before becoming random - any other observations?)
+% 
+% 
+% <<hr_plots, out.width="0.8\\textwidth">>=
+% get_hr <- function (margin) {
+%   # For each margin, extract the dataset 
+%   dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
+%   Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
+%   survival_filtered_margin.df <- Filtered_intersection_margin
+%   survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
+%   # fit the coxph model
+%   coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
+%   fit = summary(coxph.model)
+%   # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
+%   fit$conf.int[,c(1,3,4)]  
+% }
+% 
+% xvals <- seq(0, 0.75, length.out = 2250)
+% 
+% all_hrs_CI = lapply(xvals,get_hr)
+% extract_hr = lapply(1:3, function (j) {
+%   lapply(1:2250,function (i) all_hrs_CI[[i]][j,1])
+% }%>% unlist) 
+% extract_lower_CI = lapply(1:3, function (j) {
+%   lapply(1:2250,function (i) all_hrs_CI[[i]][j,2])
+% }%>% unlist) 
+% extract_upper_CI = lapply(1:3, function (j) {
+%   lapply(1:2250,function (i) all_hrs_CI[[i]][j,3])
+% }%>% unlist) 
+% @
+%  
+% <<HR_plots, out.width="0.8\\textwidth">>=
+% get_hr_plot <- function (subtype_pos) {
+% ss = smooth.spline(xvals, extract_hr[[subtype_pos]])
+% ss_l = smooth.spline(xvals, extract_lower_CI[[subtype_pos]])
+% ss_u = smooth.spline(xvals, extract_upper_CI[[subtype_pos]])
+% hrplot.df <- data.frame(margin = xvals, percent = percent[1:2250],hr = extract_hr[[subtype_pos]], lower = ss_l$y, upper = ss_u$y)
+% ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
+% }
+% 
+% grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+% @
+% 
+% <<marginal_dataset>>=
+% BigDF = pooled.subtypes.survival
+% SmallDF = Filtered_intersection_pooled.subtypes.survival 
+% marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
+% @
+% 
+% 
+% \section{Prediction of the patients that are removed into combination of subtypes}
+% Below is our prediction of combinations of subtypes in the remaining of the \Sexpr{(length(row.names(marginal_dataset)))} patients that were removed. The subtypes under different algorithms are mapped to the Varhaak subtypes using high concordance. The frequency of each combination of subtypes in the dataset is given below.  
+% 
+% <<marginal_dataset_classification, results='asis'>>=
+% levels(marginal_dataset$"Konecny") <- subtypes[[2]]
+% levels(marginal_dataset$"Helland") <- subtypes[[2]]
+% subtype_combinations = 
+% lapply(1:length(row.names(marginal_dataset)), 
+%        function (i) 
+%         marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
+%        ) 
+% unique_combinations = subtype_combinations %>% unique
+% sorted_unique_comb = unique_combinations[order(sapply(unique_combinations,'[[',1))]
+% map_comb = sapply(sorted_unique_comb,
+%                   function (i) {subtypes[[2]][i]}
+%                   )
+% 
+% 
+% ## function to check if two vectors with unique elements and sorted are the same
+% vecMatch <- function(x, want) {
+%     isTRUE(all.equal(x, want))
+% }
+% 
+% which_combinations = 
+% lapply(1:length(row.names(marginal_dataset)), 
+%        function (i) 
+%         sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
+%        ) %>% unlist
+% 
+% summary_comb <- as.data.frame(table(which_combinations))
+% summary_c <- summary_comb[with(summary_comb,order(Freq)),]
+% row.names(summary_c) <- 
+%   sapply(map_comb, function (s) paste(s,collapse=" "))
+% 
+% print(xtable(summary_c[-1]), include.rownames=TRUE)
+% @
+% 
+% \section{Picking the best classifier}
+% 
+% 
+% 
+% <<best_method>>=
+% # For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
+% methods = 1:3
+% margin_vals <- seq(100, 0, length.out = 3000)
+% find_proportion <- function(subtype.method, subtype_order, margin_percent, compare_self = TRUE){
+% 
+%   if (compare_self) 
+%    get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/length(get_subtype_patients(subtype_order,margin_percent, subtype.method) %>% unlist)
+%   else
+%    get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/get_overlaps(margin_percent,methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
+%   
+% }
+% 
+% get_concordance <- function(subtype.method,subtype_order,compare_self){
+% lapply(margin_vals[1:1500],
+%        function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare_self)) %>% unlist
+% }
+% 
+% get_concordance_all_subtypes <- function(subtype.method, compare_self)
+%   lapply(1:4, function (i) get_concordance(subtype.method,i, compare_self))
+% 
+% @
+% 
+% The first set of plots give concordance of the filtered dataset (i.e., patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the filtered dataset with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
+% 
+% 
+% 
+% <<get_best_method_plots, out.width="0.8\\textwidth">>=
+% get_method_concordance <- function (subtype.method, compare_self = TRUE) {
+% sc = get_concordance_all_subtypes(subtype.method,compare_self)
+%  smc.df <- data.frame( percent = percent[1:1500], IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
+%   smc_long.df <- melt(smc.df, id = "percent")                      
+%                         
+% txt <- if (compare_self) "within the method" else "under the other two methods"
+% ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
+% }
+% 
+% grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+% 
+% grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance (i, compare_self = FALSE)), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+% @
 
 \end{document}
 
