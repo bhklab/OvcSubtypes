@@ -137,6 +137,7 @@ if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
 }
 ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
 esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
+save(esets.with.survival, file = "esets.with.survival.RData")
 @
 
 \tableofcontents
