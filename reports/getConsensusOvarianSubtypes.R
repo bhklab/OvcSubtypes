@@ -3,7 +3,7 @@
 getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled), threshold.auto=TRUE, threshold=1) {
   
   ### Load training data
-  
+  print("Loading training data")
   ## This file is produced from classificationAcrossDatasets.Rnw
   load("esets.with.survival.RData")
   
@@ -34,9 +34,18 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
   
   train.labels <- training.dataset$Verhaak.subtypes
   levels(train.labels) <- paste0(levels(train.labels), "_consensus")
+ 
+  ### The function pamr.adaptthresh seems to have a scoping issue, so a workaround is to save 
+  # required data in the global environment
   
-  pamr.model <- pamr.train(data=list(x=exprs(training.dataset), y=train.labels),
-                           gene.subset = intersect(rownames(exprs(training.dataset)), rownames(exprs(eset))))
+  consensus.global.obj <- list(training.dataset=training.dataset, train.labels=train.labels, eset=eset)
+  
+  assign("consensus.global.obj", consensus.global.obj, .GlobalEnv)
+   
+  pamr.model <- pamr.train(data=list(x=exprs(consensus.global.obj$training.dataset), y=consensus.global.obj$train.labels),
+                           gene.subset = intersect(rownames(exprs(consensus.global.obj$training.dataset)), rownames(exprs(consensus.global.obj$eset))))
+  #pamr.model <- pamr.train(data=list(x=exprs(training.dataset), y=train.labels),
+  #                         gene.subset = intersect(rownames(exprs(training.dataset)), rownames(exprs(eset))))
   
   if(threshold.auto == TRUE) {
     threshold <- pamr.adaptthresh(pamr.model)
