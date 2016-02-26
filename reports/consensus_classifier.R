@@ -18,11 +18,11 @@ for(dataset.name in dataset.names) {
   
   consensus.classifier.output <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   
-  my.predictions <- pamr.predict(pamr.model, newx=exprs(left.out.dataset)[intersect(rownames(exprs(training.datasets.merged)), rownames(exprs(left.out.dataset))),], threshold = 1)
-  
   classification.vals[[dataset.name]] <- consensus.classifier.output$Annotated.eset$Ovarian.subtypes
 }
 
 # Make some tables
 
 print(table(unlist(lapply(esets.with.survival.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals)))
+print(table(unlist(lapply(esets.with.survival.scaled, function(eset) eset$Verhaak.subtypes)), unlist(classification.vals)))
+print(table(unlist(lapply(esets.with.survival.scaled, function(eset) eset$Konecny.subtypes)), unlist(classification.vals)))

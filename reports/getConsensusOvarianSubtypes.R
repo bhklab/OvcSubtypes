@@ -53,10 +53,12 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
     threshold = threshold
   }
   
+  assign("pamr.model", pamr.model, .GlobalEnv)
+  
   my.predictions <- pamr.predict(pamr.model, newx=exprs(eset)[intersect(rownames(exprs(training.dataset)), rownames(exprs(eset))),], threshold = threshold)
   my.predictions.posterior <- pamr.predict(pamr.model, newx=exprs(eset)[intersect(rownames(exprs(training.dataset)), rownames(exprs(eset))),], threshold = threshold, type="posterior")
   
   eset$Ovarian.subtypes <- my.predictions
   
-  return(list(Annotated.eset=eset, pamr.model=pamr.model), posterior.probs=my.predictions.posterior)
+  return(list(Annotated.eset=eset, pamr.model=pamr.model, posterior.probs=my.predictions.posterior))
 }
