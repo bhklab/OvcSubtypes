@@ -22,7 +22,9 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
   subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
                                         Verhaak=c("IMR", "DIF", "PRO", "MES"),
                                         Helland=c("C2", "C4", "C5", "C1"))
-
+  
+  # Only keep cases that are concordant for all three classifiers
+  
   cases.to.keep <- match(esets.survival.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
     match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
     match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
