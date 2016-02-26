@@ -126,75 +126,77 @@ esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(
 save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
 @
 
-<<load_data_from_files>>=
-load("esets.not.rescaled.classified.RData")
-esets.with.survival <- esets.not.rescaled.classified
-esets.with.survival <- lapply(esets.with.survival, function(eset) {
-  eset[,!is.na(eset$days_to_death) & !is.na(eset$vital_status)]
-  })
-
-esets.with.survival <- esets.with.survival[sapply(esets.with.survival, ncol) > 0]
-eset.names <- names(esets.with.survival)
-esets.with.survival <-lapply(eset.names, function(eset.name) {
-  esets.with.survival[[eset.name]]$data.source <- eset.name
-  return(esets.with.survival[[eset.name]])
-  })
-names(esets.with.survival) <- eset.names
-
-ovarian.publication.years <- read.csv("ovarian_publication_years.csv", stringsAsFactors = FALSE)
-if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
-  stop("Check \"ovarian_publication_years.csv\"")
-}
-ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
-esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
-save(esets.with.survival, file = "esets.with.survival.RData")
-@
+% BELOW CODE IS NOT USED
+% <<load_data_from_files>>=
+% load("esets.not.rescaled.classified.RData")
+% esets.with.survival <- esets.not.rescaled.classified
+% esets.with.survival <- lapply(esets.with.survival, function(eset) {
+%   eset[,!is.na(eset$days_to_death) & !is.na(eset$vital_status)]
+%   })
+% 
+% esets.with.survival <- esets.with.survival[sapply(esets.with.survival, ncol) > 0]
+% eset.names <- names(esets.with.survival)
+% esets.with.survival <-lapply(eset.names, function(eset.name) {
+%   esets.with.survival[[eset.name]]$data.source <- eset.name
+%   return(esets.with.survival[[eset.name]])
+%   })
+% names(esets.with.survival) <- eset.names
+% 
+% ovarian.publication.years <- read.csv("ovarian_publication_years.csv", stringsAsFactors = FALSE)
+% if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
+%   stop("Check \"ovarian_publication_years.csv\"")
+% }
+% ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
+% esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
+% save(esets.with.survival, file = "esets.with.survival.RData")
+% @
 
 \tableofcontents
 <<Pooled_survival_prepare_data>>=
 subtype.names <- c("Konecny", "Verhaak", "Helland", "Bentink")
 
+
+esets.all.data <- esets.not.rescaled.classified[sapply(esets.not.rescaled.classified, ncol) > 0]
+eset.all.data.names <- names(esets.not.rescaled.classified)
+esets.all <-lapply(eset.all.data.names, function(eset.name) {
+  esets.all.data[[eset.name]]$data.source <- eset.name
+  return(esets.all.data[[eset.name]])
+  })
+names(esets.all) <- eset.all.data.names
+
+
 pooled.subtypes <- do.call(rbind, 
-  lapply(esets.not.rescaled.classified, function(eset) {
-    phenoData <- pData(eset)[,colnames(pData(esets.not.rescaled.classified$E.MTAB.386))]
-    for(i in 1:ncol(phenoData)) {
-      if(is.factor(phenoData[,i])) {
-        phenoData[,i] <- as.character(phenoData[,i])
-      }
-    }
-    return(phenoData)
-    }))
-pooled.subtypes <- pooled.subtypes[,!(colnames(pooled.subtypes) %in% c("uncurated_author_metadata", "batch") )]
+    lapply(esets.all, function(eset) pData(eset)[,c("days_to_death", "vital_status", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]        
+           ))
 
-pooled.subtypes.survival <- do.call(rbind, 
-    lapply(esets.with.survival, function(eset) pData(eset)[,c("days_to_death", "vital_status", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]))
+colnames(pooled.subtypes)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes)[4:7])
 
-colnames(pooled.subtypes.survival)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes.survival)[4:7])
+pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
+pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
+pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
+pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
 
-pooled.subtypes.survival$Konecny <- factor(pooled.subtypes.survival$Konecny, levels(pooled.subtypes.survival$Konecny)[c(1,2,3,4)])
-pooled.subtypes.survival$Verhaak <- factor(pooled.subtypes.survival$Verhaak, levels(pooled.subtypes.survival$Verhaak)[c(2,1,4,3)])
-pooled.subtypes.survival$Helland <- factor(pooled.subtypes.survival$Helland, levels(pooled.subtypes.survival$Helland)[c(2,3,4,1)])
-pooled.subtypes.survival$Bentink <- factor(pooled.subtypes.survival$Bentink, levels(pooled.subtypes.survival$Bentink)[c(2,1)])
+pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
+pooled.subtypes$days_to_death <- NULL
+pooled.subtypes$vital_status <- pooled.subtypes$vital_status == "deceased"
 
-pooled.subtypes.survival$years_to_death = pooled.subtypes.survival$days_to_death / days.per.year
-pooled.subtypes.survival$days_to_death <- NULL
-pooled.subtypes.survival$vital_status <- pooled.subtypes.survival$vital_status == "deceased"
-
-pooled.subtypes.survival$data.source <- factor(pooled.subtypes.survival$data.source, levels=ovarian.publication.years$dataset)
+pooled.subtypes$data.source <- factor(pooled.subtypes$data.source, levels=eset.all.data.names)
 
 # Censor to ten years
-censor.time.out <- survcomp::censor.time(surv.time = pooled.subtypes.survival$years_to_death, surv.event = pooled.subtypes.survival$vital_status, time.cens = 10)
-pooled.subtypes.survival$years_to_death <- censor.time.out$surv.time.cens
-pooled.subtypes.survival$vital_status <- censor.time.out$surv.event.cens
+censor.time.out <- survcomp::censor.time(surv.time = pooled.subtypes$years_to_death, surv.event = pooled.subtypes$vital_status, time.cens = 10)
+pooled.subtypes$years_to_death <- censor.time.out$surv.time.cens
+pooled.subtypes$vital_status <- censor.time.out$surv.event.cens
 
-pooled.subtypes.survival$surv.obj <- Surv(time = pooled.subtypes.survival$years_to_death, event = pooled.subtypes.survival$vital_status)
+pooled.subtypes$surv.obj <- Surv(time = pooled.subtypes$years_to_death, event = pooled.subtypes$vital_status)
 
+# patients with survival data
+pooled.subtypes.survival = na.omit(pooled.subtypes)
 @
 
-From MetaGxOvarian, we identified \Sexpr{nrow(pooled.subtypes.survival)} patients from diagnosed with high-grade serous ovarian carcinoma.
+From MetaGxOvarian, we identified \Sexpr{nrow(pooled.subtypes)}  (\Sexpr{nrow(pooled.subtypes.survival)} with survival data) patients from diagnosed with high-grade serous ovarian carcinoma.
 
 <<Dataset_table, results='asis'>>=
-data.counts <- as.data.frame(table(pooled.subtypes.survival$data.source))
+data.counts <- as.data.frame(table(pooled.subtypes$data.source))
 colnames(data.counts) <- c("Data Source", "Number of Patients")
 data.counts[,1] <- as.character(data.counts[,1])
 data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
@@ -211,18 +213,18 @@ pair.matrix <- pair.matrix[2:1,]
 pair.matrix[,5] <- pair.matrix[2:1,5]
 
 contingency.plots <- apply(pair.matrix, 2, function(subtype.name.pair) {
-  contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]]))
+  contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]]))
   contingency.m <- melt(contingency.matrix)
   colnames(contingency.m) <- c(subtype.name.pair[1], subtype.name.pair[2], "value")
-  contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[1]]))
-  contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[2]]))
+  contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes[,subtype.name.pair[1]]))
+  contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes[,subtype.name.pair[2]]))
   
-  print(chisq.test(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]])["p.value"])
-  print(vcd::assocstats(table(pooled.subtypes.survival[,subtype.name.pair[1]],pooled.subtypes.survival[,subtype.name.pair[2]]))[["cramer"]])
+  print(chisq.test(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]])["p.value"])
+  print(vcd::assocstats(table(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]]))[["cramer"]])
 
   p <- ggplot(contingency.m, aes_string(subtype.name.pair[1], subtype.name.pair[2])) + 
     geom_tile(aes(fill = value), colour = "black") + 
-    scale_fill_gradient(name="Frequency", low="white", high="#CC0000", limits=c(0,500)) + 
+    scale_fill_gradient(name="Frequency", low="white", high="#CC0000", limits=c(0,600)) + 
     #ggtitle(paste0("Contingency table: ", subtype.name.pair[1], " vs ", subtype.name.pair[2])) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
     geom_text(label=as.character(contingency.matrix), colour="black")
@@ -240,8 +242,8 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 
 <<generate_figs_for_marginal_analysis>>=
 margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
-    margins.1 <- pooled.subtypes.survival[,paste0(subtype.name.pair[1], ".margins")]
-    margins.2 <- pooled.subtypes.survival[,paste0(subtype.name.pair[2], ".margins")]
+    margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
+    margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]
     
     margins.1 <- ecdf(margins.1)(margins.1)
     margins.2 <- ecdf(margins.2)(margins.2)
@@ -249,11 +251,11 @@ margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.na
     plots <- lapply(c(100, 75, 50, 25), function(x) {
       lower.bound <- 1 - x / 100
       margin.boolean <- margins.1 > lower.bound & margins.2 > lower.bound
-      contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
+      contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
       contingency.m <- melt(contingency.matrix)
       colnames(contingency.m) <- c(subtype.name.pair[1], subtype.name.pair[2], "value")
-      contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[1]]))
-      contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes.survival[,subtype.name.pair[2]]))
+      contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes[,subtype.name.pair[1]]))
+      contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes[,subtype.name.pair[2]]))
       title.text <- paste0("Top ", x, "%")
       if(x == 100) {
           title.text <- "All Data"
@@ -271,8 +273,8 @@ margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.na
 })
 # Create the margin scatterplots
 margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
-    margins.1 <- pooled.subtypes.survival[,paste0(subtype.name.pair[1], ".margins")]
-    margins.2 <- pooled.subtypes.survival[,paste0(subtype.name.pair[2], ".margins")]
+    margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
+    margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]
     
     margins.1 <- ecdf(margins.1)(margins.1)
     margins.2 <- ecdf(margins.2)(margins.2)
@@ -280,7 +282,7 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     xvals <- seq(0, 1, length.out = 3000)
     concordance <- sapply(xvals, function(x) {
       margin.boolean <- margins.1 > x & margins.2 > x
-      contingency.matrix <- as.matrix(table(pooled.subtypes.survival[,subtype.name.pair[1]][margin.boolean],pooled.subtypes.survival[,subtype.name.pair[2]][margin.boolean]))
+      contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
       sum(diag(contingency.matrix)) / sum(contingency.matrix)
     })
     scatterplot.df <- data.frame(margin=xvals, concordance=concordance)
@@ -320,35 +322,33 @@ do.call(grid.arrange, margin.contingency.plots[[3]], c(ncol=2))
 margin.scatterplots[[3]]
 @
 
-<<Forest_plots, eval=FALSE>>=
-out <- lapply(ovarian.publication.years$dataset, function(dataset.name) {
-  current.survival.df <- pooled.subtypes.survival[pooled.subtypes.survival$data.source == dataset.name,]
-  survcomp::hazard.ratio(x = current.survival.df$Konecny, surv.time = current.survival.df$years_to_death, surv.event = current.survival.df$vital_status)
-  })
-names(out) <- ovarian.publication.years$dataset
-
-rma.out <- lapply(1:3, function(i) {
-  loghr.vals <- sapply(out, function(x) x$coef[i])
-  loghr.se <- sapply(out, function(x) diag(x$se)[i])
-  rma(loghr.vals, sei=loghr.se, method="REML", slab=names(out))
-  })
-
-forest(rma.out[[3]], refline=0, annotate=FALSE, atransf=exp, xlim=c(-5, 4), addfit=FALSE, ylim=c(-1.5,length(out) + 3), at=log(c(0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32)))
-abline(h=0, lwd=1)
-addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
-@
+% The below code is not getting printed
+% <<Forest_plots, eval=FALSE>>=
+% out <- lapply(ovarian.publication.years$dataset, function(dataset.name) {
+%   current.survival.df <- pooled.subtypes[pooled.subtypes$data.source == dataset.name,]
+%   survcomp::hazard.ratio(x = current.survival.df$Konecny, surv.time = current.survival.df$years_to_death, surv.event = current.survival.df$vital_status)
+%   })
+% names(out) <- ovarian.publication.years$dataset
+% 
+% rma.out <- lapply(1:3, function(i) {
+%   loghr.vals <- sapply(out, function(x) x$coef[i])
+%   loghr.se <- sapply(out, function(x) diag(x$se)[i])
+%   rma(loghr.vals, sei=loghr.se, method="REML", slab=names(out))
+%   })
+% 
+% forest(rma.out[[3]], refline=0, annotate=FALSE, atransf=exp, xlim=c(-5, 4), addfit=FALSE, ylim=c(-1.5,length(out) + 3), at=log(c(0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32)))
+% abline(h=0, lwd=1)
+% addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
+% @
 
 % Below section added by Lavanya
 \section{Contingency of subtypes}
 
 <<Subtype_mapping>>=
 # map the subtypes across the different algorithms
-subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes.survival[,subtype.names[[i]]])}))
+subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes[,subtype.names[[i]]])}))
 @
-
-
  
-
 
 Based on the pairwise concordance, we can see that the subtypes in the different schemes have a clear 1-1 mapping, except in the case of the Bentik, which maps the DIF, PRO and MES subtype of Vehaak (and the corresponding subtypes in other schemes) to Angiogenic and the IMR subtype to non-Angiogenic. The table below shows the mapping. 
 
@@ -356,7 +356,7 @@ Based on the pairwise concordance, we can see that the subtypes in the different
 
 <<Subtype_map_table, results='asis'>>=
 subtype.map <- as.data.frame(subtypes)
-subtype.map$"Bentik" <- c(levels(pooled.subtypes.survival[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
+subtype.map$"Bentik" <- c(levels(pooled.subtypes[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
 
 print(xtable(subtype.map), include.rownames=FALSE)
@@ -364,28 +364,42 @@ print(xtable(subtype.map), include.rownames=FALSE)
 
 <<Data_setup>>=
 # Extract margins for each scheme
-margins.1 <- pooled.subtypes.survival[,paste0(subtype.names[[1]], ".margins")]    
-margins.1 <- ecdf(margins.1)(margins.1) 
+margins1 <- function (only.survival) { 
+  p = (if (only.survival) pooled.subtypes.survival
+  else pooled.subtypes)
+  m = p[,paste0(subtype.names[[1]], ".margins")]    
+  ecdf(m)(m) 
+}
 
-margins.2 <- pooled.subtypes.survival[,paste0(subtype.names[[2]], ".margins")]    
-margins.2 <- ecdf(margins.2)(margins.2) 
+margins2 <- function (only.survival) { 
+  p = (if (only.survival) pooled.subtypes.survival
+  else pooled.subtypes)
+  m = p[,paste0(subtype.names[[2]], ".margins")]    
+  ecdf(m)(m) 
+}  
 
-margins.3 <- pooled.subtypes.survival[,paste0(subtype.names[[3]], ".margins")]    
-margins.3 <- ecdf(margins.3)(margins.3) 
+margins3 <- function (only.survival) { 
+  p = (if (only.survival) pooled.subtypes.survival
+  else pooled.subtypes)
+  m = p[,paste0(subtype.names[[3]], ".margins")]    
+  ecdf(m)(m) 
+}
 
 # get marginal data 
-get_margin <- function(lower.bound){  
-    margins.1 > lower.bound & 
-    margins.2 > lower.bound & 
-    margins.3 > lower.bound
+get_margin <- function(lower.bound, only.survival = FALSE){  
+    margins1(only.survival) > lower.bound & 
+    margins2(only.survival) > lower.bound & 
+    margins3(only.survival) > lower.bound
   }
 
 # the code below fetches the marginal data (including the ones where 100% remain) for each subtype
-get_marginal_data_top <- function(top_margin_percent,subtype.name) {
+get_marginal_data_top <- function(top_margin_percent,subtype.name, only.survival = FALSE) {
     lower.bound <- 1 - top_margin_percent / 100
-    margin.boolean <- get_margin(lower.bound)
-    tmp = pooled.subtypes.survival[,subtype.name][margin.boolean] %>% data.frame
-    row.names(tmp) <- row.names(pooled.subtypes.survival)[margin.boolean]
+    margin.boolean <- get_margin(lower.bound, only.survival)
+    p = (if (only.survival) pooled.subtypes.survival
+  else pooled.subtypes)
+    tmp = p[,subtype.name][margin.boolean] %>% data.frame
+    row.names(tmp) <- row.names(p)[margin.boolean]
     names(tmp) <- "tmp_subtype"
     tmp # tmp can be obtained in a more simpler way?
   }
@@ -394,34 +408,34 @@ get_marginal_data_top <- function(top_margin_percent,subtype.name) {
 
 
 filtered_dataset_all_subtypes <- 
-              function(margin_percent) 
+              function(margin_percent, only.survival = FALSE) 
                 lapply(subtype.names[1:3], function (sn) 
-                  get_marginal_data_top(margin_percent,sn))
+                  get_marginal_data_top(margin_percent,sn, only.survival))
 
-get_patients <- function(pos_subtype.name,subtype_order, margin_percent){
+get_patients <- function(pos_subtype.name,subtype_order, margin_percent, only.survival = FALSE){
   subtypes$subtype.name <- subtypes[[pos_subtype.name]]
   filtered_dataset = 
-    filtered_dataset_all_subtypes(margin_percent)[[pos_subtype.name]] 
+    filtered_dataset_all_subtypes(margin_percent, only.survival)[[pos_subtype.name]] 
   row.names(filtered_dataset)[which(filtered_dataset$"tmp_subtype" == subtypes$subtype.name[[subtype_order]])] 
 }
 
 # Given the mapped subtype number (called subtype_order), fetch the patients in each scheme in the subtype 
-get_subtype_patients <- function(subtype_order,margin_percent, methods_considered = 1:3){  
- lapply(methods_considered, function(i) {get_patients(i,subtype_order,margin_percent)}) 
+get_subtype_patients <- function(subtype_order,margin_percent, methods_considered = 1:3, only.survival = FALSE){  
+ lapply(methods_considered, function(i) {get_patients(i,subtype_order,margin_percent, only.survival)}) 
 }
 
 # Get the subtype_patients for each subtype across schemes and find overlaps 
 
-get_overlaps <- function(margin_percent, methods_considered = 1:3) {
+get_overlaps <- function(margin_percent, methods_considered = 1:3, only.survival = FALSE) {
   lapply(1:4, function(subtype_order) {
     output <- NULL
-    output$parts <- calculate.overlap(x=get_subtype_patients(subtype_order,margin_percent, methods_considered))
+    output$parts <- calculate.overlap(x=get_subtype_patients(subtype_order,margin_percent, methods_considered, only.survival))
     output$lengths <- sapply(output$parts, length)
     output
   })
 }
 
-get_sum <- function (ov_m) {
+get_sum <- function (ov_m, only.survival = FALSE) {
   sapply(1:4, function(i) {ov_m[[i]]$lengths %>% sum}) %>% sum
 }
 total_patients <- get_sum(get_overlaps(100))
@@ -470,8 +484,8 @@ ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) +
 @
 
 <<margin_cutoff>>=
-All=pooled.subtypes.survival[,"data.source"] %>% summary
-Filtered = pooled.subtypes.survival[get_margin(margin_cutoff),"data.source"]  %>% summary
+All=pooled.subtypes[,"data.source"] %>% summary
+Filtered = pooled.subtypes[get_margin(margin_cutoff),"data.source"]  %>% summary
 mydata <- data.frame(All,Filtered)
 newdata <- mydata[order(All),]
 @ 
@@ -482,9 +496,6 @@ In the below plots, we can see how the concordance rises for each subtype as the
 # do.call(grid.arrange, lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 @
-
-
-
 
 We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
@@ -497,9 +508,6 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
         horiz=TRUE, las=2
         #col=terrain.colors(13)
 )
-
-
-
 @
 
 The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
@@ -577,6 +585,44 @@ draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 
 
 @
 
+<<filtered.dataset>>=
+## below is the code added by Lavanya for the filtered dataset
+
+# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
+Filtered_pooled.subtypes=pooled.subtypes[get_margin(margin_cutoff),] 
+## to be added: extract the patients from Filtered_pooled.subtypes that has survival data and call it Filtered_pooled.subtypes.survival
+Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff,TRUE),] 
+
+# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
+filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
+Filtered_intersection_pooled.subtypes = pooled.subtypes[filtered_overlaps,] 
+filtered_overlaps.survival = intersect(x = filtered_overlaps, y = rownames(pooled.subtypes.survival))
+Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps.survival,] 
+
+## Check if Filtered_intersection_pooled.subtypes is a subset of Filtered_pooled.subtypes
+a = row.names(Filtered_intersection_pooled.subtypes)
+b = row.names(Filtered_pooled.subtypes)
+if (!all(a %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes)
+}
+
+# Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
+ tmp_filtered <- Filtered_pooled.subtypes.survival
+ levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+ levels(tmp_filtered$"Helland") <- subtypes[[2]]
+ 
+ x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+ y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+ # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+ c = row.names(tmp_filtered[x&y,])
+ if (!all(c %in% b)) {
+   print("Error in filtered datasets")
+   rm(Filtered_intersection_pooled.subtypes.survival)
+ }
+ 
+@
+
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
@@ -620,36 +666,6 @@ for(subtype.name in subtype.names) {
   #dev.off()
 }
 
-## below is the code added by Lavanya for the filtered dataset
-
-# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
-Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff),] 
-
-# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
-filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
-Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps,] 
-
-## Check if Filtered_intersection_pooled.subtypes.survival is a subset of Filtered_pooled.subtypes.survival
-a = row.names(Filtered_intersection_pooled.subtypes.survival)
-b = row.names(Filtered_pooled.subtypes.survival)
-if (!all(a %in% b)) {
-  print("Error in filtered datasets")
-  rm(Filtered_intersection_pooled.subtypes.survival)
-}
-
-## Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
-tmp_filtered <- Filtered_pooled.subtypes.survival
-levels(tmp_filtered$"Konecny") <- subtypes[[2]]
-levels(tmp_filtered$"Helland") <- subtypes[[2]]
-
-x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
-y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
-# tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
-c = row.names(tmp_filtered[x&y,])
-if (!all(c %in% b)) {
-  print("Error in filtered datasets")
-  rm(Filtered_intersection_pooled.subtypes.survival)
-}
 
 # survival_filtered.df <- Filtered_pooled.subtypes.survival
 survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
@@ -691,9 +707,10 @@ Question: Why are the Hazard ratios in the above table different from those prin
 
 
 <<hr_plots, out.width="0.8\\textwidth">>=
+# Need to fix this - currently runs with warnings, but not correct
 get_hr <- function (margin) {
   # For each margin, extract the dataset 
-  dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin))[[i]]$parts[[1]]}) %>% unlist
+  dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin), only.survival = TRUE)[[i]]$parts[[1]]}) %>% unlist
   Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
   survival_filtered_margin.df <- Filtered_intersection_margin
   survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
@@ -731,8 +748,8 @@ grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights
 @
 
 <<marginal_dataset>>=
-BigDF = pooled.subtypes.survival
-SmallDF = Filtered_intersection_pooled.subtypes.survival 
+BigDF = pooled.subtypes
+SmallDF = Filtered_intersection_pooled.subtypes
 marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
 @
 
@@ -775,8 +792,6 @@ print(xtable(summary_c[-1]), include.rownames=TRUE)
 @
 
 \section{Picking the best classifier}
-
-
 
 <<best_method>>=
 # For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
