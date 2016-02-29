@@ -1,4 +1,5 @@
 source("getConsensusOvarianSubtypes.R")
+source("getRandomForestConsensusOvarianSubtypes.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
 load("esets.with.survival.RData")
 
@@ -10,15 +11,18 @@ esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
 
 dataset.names <- names(esets.with.survival.scaled)
 
-classification.vals <- list()
+classification.vals.pam <- list()
+classification.vals.rf <- list()
 
 for(dataset.name in dataset.names) {
   left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
   training.dataset.names <- dataset.names[dataset.names != dataset.name]
   
-  consensus.classifier.output <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  consensus.classifier.output.pam <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   
-  classification.vals[[dataset.name]] <- consensus.classifier.output$Annotated.eset$Ovarian.subtypes
+  classification.vals.pam[[dataset.name]] <- consensus.classifier.output.pam$Annotated.eset$Ovarian.subtypes
+  classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
 }
 
 # Make some tables
