@@ -53,6 +53,7 @@ library(survcomp)
 library(ggplot2)
 library(e1071)
 library(randomForest)
+library(grid)
 library(gridExtra)
 library(survcomp)
 library(metafor)
@@ -287,7 +288,7 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     })
     scatterplot.df <- data.frame(margin=xvals, concordance=concordance)
     scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
-    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Margin (quantile)") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2]))
+    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Margin (quantile)") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2])) + ylim(0, 1)
     return(scatterplot)
   })
 @
@@ -493,7 +494,6 @@ newdata <- mydata[order(All),]
 In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed. Each subtype is labelled by the name provied by Verhaak et al.
 
 <<margin.scatterplots_subtype, out.width="0.8\\textwidth">>=
-# do.call(grid.arrange, lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
 @
 
@@ -707,7 +707,6 @@ Question: Why are the Hazard ratios in the above table different from those prin
 
 
 <<hr_plots, out.width="0.8\\textwidth">>=
-# Need to fix this - currently runs with warnings, but not correct
 get_hr <- function (margin) {
   # For each margin, extract the dataset 
   dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin), only.survival = TRUE)[[i]]$parts[[1]]}) %>% unlist
@@ -741,7 +740,7 @@ ss = smooth.spline(xvals, extract_hr[[subtype_pos]])
 ss_l = smooth.spline(xvals, extract_lower_CI[[subtype_pos]])
 ss_u = smooth.spline(xvals, extract_upper_CI[[subtype_pos]])
 hrplot.df <- data.frame(margin = xvals, percent = percent[1:2250],hr = extract_hr[[subtype_pos]], lower = ss_l$y, upper = ss_u$y)
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
+ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
 }
 
 grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
@@ -797,22 +796,60 @@ print(xtable(summary_c[-1]), include.rownames=TRUE)
 # For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
 methods = 1:3
 margin_vals <- seq(100, 0, length.out = 3000)
-find_proportion <- function(subtype.method, subtype_order, margin_percent, compare_self = TRUE){
 
-  if (compare_self) 
-   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/length(get_subtype_patients(subtype_order,margin_percent, subtype.method) %>% unlist)
-  else
-   get_overlaps(margin_percent)[[subtype_order]]$lengths[[1]]/get_overlaps(margin_percent,methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
-  
+get_patients_method <- 
+  function(subtype_order,margin_percent)
+    lapply(1:3, function(subtype.method) get_subtype_patients(subtype_order,margin_percent, subtype.method))
+
+get_patients_marginpercent_method <- 
+  function (subtype_order)
+lapply(1:3000, function (index)
+get_patients_method(subtype_order,margin_vals[[index]]))
+
+get_subtype_patients_marginpercent_method <-
+  lapply(1:4, get_patients_marginpercent_method)
+
+get_overlaps_for <- function(index,subtype.method,subtype_order)
+get_overlaps(margin_vals[[index]],methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
+
+
+get_two_way_overlaps <-
+  function(subtype.method, go)
+  {
+    if (subtype.method == 3) {go[[1]] + go[[2]]}
+    else {
+      if (subtype.method == 2) {go[[1]] + go[[3]]}
+      else {go[[1]] + go[[4]]}
+    }
+  }
+
+
+find_proportion <- function(subtype.method, subtype_order, index, compare = c("self", "other.two", "all")){
+  go <- get_overlaps_margin[[index]][[subtype_order]]$lengths 
+    if (compare == "self") 
+  {     
+    go[[1]]/length(get_subtype_patients_marginpercent_method[[subtype_order]][[index]][[subtype.method]] %>% unlist)
+  }
+  else if (compare == "other.two")
+   go[[1]]/get_two_way_overlaps(subtype.method,go)
+
+    else go[[1]]/sum(go[1:4]) # not sure what to use
+
 }
 
-get_concordance <- function(subtype.method,subtype_order,compare_self){
-lapply(margin_vals[1:1500],
-       function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare_self)) %>% unlist
+get_concordance <- function(subtype.method,subtype_order,compare = c("self", "other.two", "all")){
+ 
+  lapply(# margin_vals[1:1500],
+       1:3000,
+       function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare)) %>% unlist
+
 }
 
-get_concordance_all_subtypes <- function(subtype.method, compare_self)
-  lapply(1:4, function (i) get_concordance(subtype.method,i, compare_self))
+get_concordance_all_subtypes <- function(subtype.method, compare = c("self", "other.two", "all"))
+  lapply(1:4, function (i) get_concordance(subtype.method,i, compare))
+
+get_concordance_all_methods <- function(subtype_order, compare = c("self", "other.two", "all"))
+  lapply(1:3, function (method) get_concordance(method,subtype_order, compare))
 
 @
 
@@ -821,18 +858,102 @@ The first set of plots give concordance of the filtered dataset (i.e., patients 
 
 
 <<get_best_method_plots, out.width="0.8\\textwidth">>=
-get_method_concordance <- function (subtype.method, compare_self = TRUE) {
-sc = get_concordance_all_subtypes(subtype.method,compare_self)
- smc.df <- data.frame( percent = percent[1:1500], IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
-  smc_long.df <- melt(smc.df, id = "percent")                      
-                        
-txt <- if (compare_self) "within the method" else "under the other two methods"
+get_method_concordance <- function (subtype.method, compare = c("self", "other.two", "all")) {
+sc = get_concordance_all_subtypes(subtype.method,compare)
+ smc.df <- data.frame( percent = percent, IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
+ smc.df[is.na(smc.df)] <- NA 
+ smc.df <- na.omit(smc.df)
+
+smc_long.df <- melt(smc.df, id = "percent")                      
+
+txt <- if (compare == "self") "within the method" else 
+  if (compare == "other.two") "under the other two methods" else "all the methods"
 ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
 }
 
 grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
 
-grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance (i, compare_self = FALSE)), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance(i, compare = "other.two")), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+
+@
+
+
+In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed, also stratified by each individual method. Each subtype is labelled by the name provied by Verhaak et al.
+
+<<subtype_concordance, out.width="0.8\\textwidth">>= 
+get_subtype_concordance <- function (subtype_order, compare = c("self", "other.two", "all")) {
+concordance <- lapply(1:3000, function(i) {
+  go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
+  go[[1]]/sum(go)  
+  }) %>% as.numeric
+sc = get_concordance_all_methods(subtype_order,compare)
+
+ smc.df <- data.frame( percent = percent, All = concordance, Konecny = sc[[1]], Varhaak= sc[[2]], Helland = sc[[3]])
+ smc.df[is.na(smc.df)] <- NA 
+ smc.df <- na.omit(smc.df)
+ smc_long.df <- melt(smc.df, id = "percent")                      
+ 
+
+ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])) + theme(legend.title=element_blank()) + theme(legend.position="top")
+}
+
+
+## combined plot, shared legend from https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+grid_arrange_shared_legend <- function(...) {
+    plots <- list(...)
+    g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
+    legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+    lheight <- sum(legend$height)
+    grid.arrange(
+        do.call(arrangeGrob, lapply(plots, function(x)
+            x + theme(legend.position="none"))),
+        legend,
+        ncol = 1,
+        heights = unit.c(unit(1, "npc") - lheight, lheight))
+}
+@
+
+<<margin.scatterplots_for_subtypes, out.width="0.8\\textwidth">>=
+
+grid_arrange_shared_legend(get_subtype_concordance(1), get_subtype_concordance(2), get_subtype_concordance(3), get_subtype_concordance(4))
+
+@
+
+<<pairwise_contingency, out.width="0.8\\textwidth">>=
+margin.scatterplots_pairwise <- 
+    apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
+    margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
+    margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]
+    
+    margins.1 <- ecdf(margins.1)(margins.1)
+    margins.2 <- ecdf(margins.2)(margins.2)
+  
+    xvals <- seq(0, 1, length.out = 3000)
+    concordance <- sapply(xvals, function(x) {
+      margin.boolean <- margins.1 > x & margins.2 > x
+      contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
+      sum(diag(contingency.matrix)) / sum(contingency.matrix)
+    })
+ # compare with the method that is not in the pair
+    other.method = setdiff(subtype.names[1:3],subtype.name.pair)
+    subtype.method = which(subtype.names[1:3] == other.method)
+    sc = get_concordance_all_subtypes(subtype.method, compare = "other.two")
+ 
+   smc_conc.df <- data.frame( percent = percent, Pairwise=concordance, IMR= sc[[1]], DIF = sc[[2]], PRO= sc[[3]], MES = sc[[4]])
+ smc_conc.df[is.na(smc_conc.df)] <- NA 
+ smc_conc.df <- na.omit(smc_conc.df)
+
+
+ 
+smc_c.df <- na.omit(smc_conc.df)
+  smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
+   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " and ", subtype.name.pair[2], " with ", other.method)) + ylim(0, 1) 
+
+  })
+
+#grid.arrange(grobs = margin.scatterplots_pairwise,ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+
+grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
 @
 
 \end{document}
