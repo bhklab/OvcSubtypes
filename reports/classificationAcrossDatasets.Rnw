@@ -457,15 +457,28 @@ percent = percent_removed %>% as.numeric
 
 ##set up for scatter plot
 xvals <- seq(0, 1, length.out = 3000)
-margin.scatterplots_subtype <- function (subtype_order) {   
-  concordance <- lapply(1:3000, function(i) {
+margin.scatterplots_subtype <- function (subtype_order = 1, all = FALSE) {   
+  concordance <- 
+    if (all) 
+    {
+      lapply(1:3000, function(i) {
+    go_all = get_overlaps_margin[[i]]
+    common = lapply(1:4,function (subtype_order) go_all[[subtype_order]]$lengths[[1]])%>% unlist %>% sum 
+    npatients = lapply(1:4,function (subtype_order) go_all[[subtype_order]]$lengths %>% sum)%>% unlist %>% sum 
+    common/npatients
+      })
+    } else
+    lapply(1:3000, function(i) {
     go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
     go[[1]]/sum(go)
   })
   scatterplot.df <- data.frame(margin = xvals, concordance=concordance%>%as.numeric, percent = percent)
   scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
+  title <- 
+    if (all) "Overall concordance" else paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])
+    
   scatterplot <- 
-    ggplot(scatterplot.df, aes(y=concordance, x = percent)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])) 
+    ggplot(scatterplot.df, aes(y=concordance, x = percent)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(title) 
   return(scatterplot)
 }
 @
@@ -476,6 +489,7 @@ We seek to filter the dataset based on the percent of datasets that would remain
 
 
 <<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
+xvals <- seq(0, 1, length.out = 3000)
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
 margin_cutoff = margin_scatterplot.df$margin[1500]
 points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
@@ -484,10 +498,69 @@ ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) +
     xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus percentage of dataset removed") 
 @
 
+
+<<filtered.dataset>>=
+## below is the code added by Lavanya for the filtered dataset
+
+# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
+Filtered_pooled.subtypes=pooled.subtypes[get_margin(margin_cutoff),] 
+## Filtered_pooled.subtypes.survival is the patients from Filtered_pooled.subtypes that has survival data 
+Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff,TRUE),] 
+
+# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
+filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
+Filtered_intersection_pooled.subtypes = pooled.subtypes[filtered_overlaps,] 
+filtered_overlaps.survival = intersect(x = filtered_overlaps, y = rownames(pooled.subtypes.survival))
+Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps.survival,] 
+
+## Check if Filtered_intersection_pooled.subtypes is a subset of Filtered_pooled.subtypes
+a = row.names(Filtered_intersection_pooled.subtypes)
+b = row.names(Filtered_pooled.subtypes)
+if (!all(a %in% b)) {
+  print("Error in filtered datasets")
+  rm(Filtered_intersection_pooled.subtypes)
+}
+
+# Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
+ tmp_filtered <- Filtered_pooled.subtypes.survival
+ levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+ levels(tmp_filtered$"Helland") <- subtypes[[2]]
+ 
+ x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+ y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+ # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+ c = row.names(tmp_filtered[x&y,])
+ if (!all(c %in% b)) {
+   print("Error in filtered datasets")
+   rm(Filtered_intersection_pooled.subtypes.survival)
+ }
+
+
+#### intersection_pooled.subtypes and intersection_pooled.subtypes.survival are the patients which are unanimously classified under the same subtypes across the methods and those which have survival data, respectively; intersection_pooled.subtypes must contain Filtered_intersection_pooled.subtypes (and must be the same as the cases_to_keep in getConsensusovarianSubtypes.R)
+
+# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
+filtered_overlaps_all = lapply(1:4, function (i) {get_overlaps(100)[[i]]$parts[[1]]}) %>% unlist
+intersection_pooled.subtypes = pooled.subtypes[filtered_overlaps_all,] 
+filtered_overlaps.survival_all = intersect(x = filtered_overlaps_all, y = rownames(pooled.subtypes.survival))
+intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps.survival_all,] 
+
+## Check if intersection_pooled.subtypes.survival is a subset of intersection_pooled.subtypes
+q = row.names(intersection_pooled.subtypes)
+p = row.names(intersection_pooled.subtypes.survival)
+if (!all(p %in% q)) {
+  print("Error in filtered datasets")
+  rm(intersection_pooled.subtypes)
+  rm(intersection_pooled.subtypes.survival)
+}
+ 
+@
+
+
 <<margin_cutoff>>=
 All=pooled.subtypes[,"data.source"] %>% summary
-Filtered = pooled.subtypes[get_margin(margin_cutoff),"data.source"]  %>% summary
-mydata <- data.frame(All,Filtered)
+Filtered = intersection_pooled.subtypes[,"data.source"] %>% summary  
+Filtered_margin = Filtered_intersection_pooled.subtypes[,"data.source"] %>% summary  
+mydata <- data.frame(All,Filtered, Filtered_margin)
 newdata <- mydata[order(All),]
 @ 
 
@@ -495,6 +568,7 @@ In the below plots, we can see how the concordance rises for each subtype as the
 
 <<margin.scatterplots_subtype, out.width="0.8\\textwidth">>=
 grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
+margin.scatterplots_subtype(all = TRUE)
 @
 
 We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
@@ -585,52 +659,17 @@ draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 
 
 @
 
-<<filtered.dataset>>=
-## below is the code added by Lavanya for the filtered dataset
-
-# the below dataset gives only those patients that have margins above margin_cutoff - each column consists of the individual schemes 
-Filtered_pooled.subtypes=pooled.subtypes[get_margin(margin_cutoff),] 
-## to be added: extract the patients from Filtered_pooled.subtypes that has survival data and call it Filtered_pooled.subtypes.survival
-Filtered_pooled.subtypes.survival=pooled.subtypes.survival[get_margin(margin_cutoff,TRUE),] 
-
-# the below dataset gives the patients that have margins above margin_cutoff and also sharing the same subtype name across the scheme 
-filtered_overlaps = lapply(1:4, function (i) {get_overlaps(100*(1 - margin_cutoff))[[i]]$parts[[1]]}) %>% unlist
-Filtered_intersection_pooled.subtypes = pooled.subtypes[filtered_overlaps,] 
-filtered_overlaps.survival = intersect(x = filtered_overlaps, y = rownames(pooled.subtypes.survival))
-Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filtered_overlaps.survival,] 
-
-## Check if Filtered_intersection_pooled.subtypes is a subset of Filtered_pooled.subtypes
-a = row.names(Filtered_intersection_pooled.subtypes)
-b = row.names(Filtered_pooled.subtypes)
-if (!all(a %in% b)) {
-  print("Error in filtered datasets")
-  rm(Filtered_intersection_pooled.subtypes)
-}
-
-# Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
- tmp_filtered <- Filtered_pooled.subtypes.survival
- levels(tmp_filtered$"Konecny") <- subtypes[[2]]
- levels(tmp_filtered$"Helland") <- subtypes[[2]]
- 
- x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
- y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
- # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
- c = row.names(tmp_filtered[x&y,])
- if (!all(c %in% b)) {
-   print("Error in filtered datasets")
-   rm(Filtered_intersection_pooled.subtypes.survival)
- }
- 
-@
 
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
 <<Pooled_survival_plot>>=
-layout(matrix(c(1,1,2,2,3,3,4,4,0,5,5,0), nrow = 3, byrow = TRUE))
+# layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
+layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
 #par(mar=c(5,1,0,1))
 par(mar=c(5.1, 8, 4.1, 2.1))
+#for(subtype.name in subtype.names[1:3]) {
 for(subtype.name in subtype.names) {
   #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
   par(mar=c(5.1, 5, 4.1, 2.1))
@@ -666,8 +705,36 @@ for(subtype.name in subtype.names) {
   #dev.off()
 }
 
+##########################
+## below is the survival plot for the patients with classified as same subtypes across the methods 
+survival_filtered_all.df <- intersection_pooled.subtypes.survival
+  survival_filtered_all.df$groups <- 
+  survival_filtered_all.df[,"Verhaak"] 
+# since we name the subtypes of the filtered set to that of Verhaak
+  
+  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered_all.df))$sctest["pvalue"]
+  
+  hr.out <- survcomp::hazard.ratio(x=survival_filtered_all.df$groups, surv.time=survival_filtered_all.df$years_to_death, surv.event=survival_filtered_all.df$vital_status, strat=survival_filtered_all.df$data.source)
+  text <- ""
+  if(length(hr.out$hazard.ratio) == 1) {
+    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+  } else {
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered_all.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+  }
+  cols <- 1:4
+  
+  title <- "Filtered (before margins)"
+  
+  km.coxph.plot(surv.obj ~ groups, survival_filtered_all.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered_all.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+  title(title, cex.main=2)
+  text(0,0.05, text, cex=0.85, pos=4)
 
-# survival_filtered.df <- Filtered_pooled.subtypes.survival
+################
+
+## below is the survival plot AFTER removing the patients with low margin 
 survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   survival_filtered.df$groups <- 
   survival_filtered.df[,"Verhaak"] 
@@ -687,7 +754,7 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   }
   cols <- 1:4
   
-  title <- "Filtered Dataset
+  title <- "Filtered (after margins)
 "
   
   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
@@ -947,7 +1014,7 @@ margin.scatterplots_pairwise <-
  
 smc_c.df <- na.omit(smc_conc.df)
   smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
-   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " and ", subtype.name.pair[2], " with ", other.method)) + ylim(0, 1) 
+   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
 
   })
 
