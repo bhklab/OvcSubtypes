@@ -852,7 +852,7 @@ lapply(1:length(row.names(marginal_dataset)),
 summary_comb <- as.data.frame(table(which_combinations))
 summary_c <- summary_comb[with(summary_comb,order(Freq)),]
 row.names(summary_c) <- 
-  sapply(map_comb, function (s) paste(s,collapse=" "))
+  sapply(map_comb, function (s) paste(s,collapse=" "))[summary_c[,1]]
 
 print(xtable(summary_c[-1]), include.rownames=TRUE)
 @
