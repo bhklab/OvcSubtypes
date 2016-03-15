@@ -457,7 +457,7 @@ percent = percent_removed %>% as.numeric
 
 ##set up for scatter plot
 xvals <- seq(0, 1, length.out = 3000)
-margin.scatterplots_subtype <- function (subtype_order = 1, all = FALSE) {   
+margin.concordance <- function (subtype_order = 1, all = FALSE) {   
   concordance <- 
     if (all) 
     {
@@ -472,20 +472,16 @@ margin.scatterplots_subtype <- function (subtype_order = 1, all = FALSE) {
     go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
     go[[1]]/sum(go)
   })
-  scatterplot.df <- data.frame(margin = xvals, concordance=concordance%>%as.numeric, percent = percent)
-  scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
-  title <- 
-    if (all) "Overall concordance" else paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])
-    
-  scatterplot <- 
-    ggplot(scatterplot.df, aes(y=concordance, x = percent)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(title) 
-  return(scatterplot)
 }
+
+
+  scatterplot.df <- data.frame(IMR = margin.concordance(1)%>%as.numeric, DIF = margin.concordance(2)%>%as.numeric, PRO = margin.concordance(3)%>%as.numeric, MES = margin.concordance(4)%>%as.numeric, overall = margin.concordance(1, all = TRUE)%>%as.numeric, percent = percent)
+  scatterplot_melt.df <- melt(scatterplot.df, id = "percent")       
+    scatterplot <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual(values=c("violet", "red","green","blue", "black")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Concordance of subtypes") 
 @
+In the concordance curves of subtypes (above), we can see how the concordance rises for each subtype as the marginal datasets are removed. Each subtype is labelled by the name provied by Verhaak et al.
 
-We seek to filter the dataset based on the percent of datasets that would remain and we remove datasets based on margin-cutoffs (i.e., datasets with margins lesser than the margin cut-offs or removed). In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed
-
-
+We filter the dataset based on the percent of datasets that would remain and we remove datasets based on margin-cutoffs (i.e., datasets with margins lesser than the margin cut-offs or removed). In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed
 
 
 <<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
@@ -564,12 +560,7 @@ mydata <- data.frame(All,Filtered, Filtered_margin)
 newdata <- mydata[order(All),]
 @ 
 
-In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed. Each subtype is labelled by the name provied by Verhaak et al.
 
-<<margin.scatterplots_subtype, out.width="0.8\\textwidth">>=
-grid.arrange(grobs = lapply(1:4,margin.scatterplots_subtype), c(ncol=2))
-margin.scatterplots_subtype(all = TRUE)
-@
 
 We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
@@ -600,7 +591,8 @@ get_venn_margin_subtype <- function(margin,subtype_order){
                                 n13 = overlaps[[3]] + overlaps[[1]], 
                                 n123 = overlaps[[1]], 
                                 category = subtype.names[1:3], filename = NULL, 
-                                fill = c("blue", "yellow", "green")               
+                                #fill = c("blue", "yellow", "green")   
+                                fill = c("gold", "orange", "orchid3")
     )
 
   }
@@ -621,7 +613,7 @@ overlay_text <- function (venn.plot,margin_overlay,subtype_order){
     ## Check if it is a grid.text object
     if(regexpr("text", venn.plot[[i]]$name) > 0) {
       ## Write counter value under the existing label
-      lbls <- gList(lbls, addlab(ov_new[[o]], venn.plot[[i]]$x, venn.plot[[i]]$y, 0.03))
+      lbls <- gList(lbls, addlab(ov_new[[o]], venn.plot[[i]]$x, venn.plot[[i]]$y, 0.05))
       # overlaps_margin_overlay[[o]]
       ## Increase the counter
       o <- o + 1
@@ -1022,6 +1014,10 @@ smc_c.df <- na.omit(smc_conc.df)
 
 grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
 @
+
+% Main Figures of the manuscript
+%figure 1 - pairwise concordance, venn_diagram, scatterplot 
+
 
 \end{document}
 
