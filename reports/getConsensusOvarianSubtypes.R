@@ -1,7 +1,8 @@
 ## if threshold.auto, use pamr.adaptthresh to select a threshold; otherwise, use the threshold parameter
 
-getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled), threshold.auto=TRUE, threshold=1) {
-  
+#getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled), threshold.auto=TRUE, threshold=1) {
+getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), threshold.auto=TRUE, threshold=1, pure.subtypes = TRUE) {
+    
   ### Load training data
   print("Loading training data")
   ## This file is produced from classificationAcrossDatasets.Rnw
@@ -40,14 +41,26 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
 #   
 #   training.dataset <- esets.survival.scaled.merged[,cases.to.keep]
 
-cases.to.keep <- match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
+## the below is the training dataset for puresubtypes 
+cases.to.keep <- 
+if (pure.subtypes) {
+  purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
+  tmp <- sub("E.MTAB.386.", "E_MTAB_386.", purest_subtypes)
+  tmp <- sub("^[^.]*", "", tmp)
+  purest_subtypes <- substring(tmp,2) 
+   (exprs(esets.scaled.merged) %>% colnames) %in% purest_subtypes    
+} else {
+  print("hi")
+match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
   match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
   match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
   match(esets.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
+}
 
 #training.dataset <- esets.survival.merged[,cases.to.keep]
 training.dataset <- esets.scaled.merged[,cases.to.keep]
-  
+
+
   ### Once we are happy with the normalization / removal of discordant cases, this eset should be a package data file.
   
   train.labels <- training.dataset$Verhaak.subtypes
