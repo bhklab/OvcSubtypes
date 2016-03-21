@@ -1,6 +1,13 @@
+delete_leading_dataset_string <- function (vector.of.strings) {
+  tmp <- sub("E.MTAB.386.", "E_MTAB_386.", vector.of.strings)
+  tmp <- sub("^[^.]*", "", tmp)
+  substring(tmp,2)
+}
+
+
 ## if threshold.auto, use pamr.adaptthresh to select a threshold; otherwise, use the threshold parameter
 
-#getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled), threshold.auto=TRUE, threshold=1) {
+# getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled), threshold.auto=TRUE, threshold=1) {
 getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), threshold.auto=TRUE, threshold=1, pure.subtypes = TRUE) {
     
   ### Load training data
@@ -43,14 +50,10 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
 
 ## the below is the training dataset for puresubtypes 
 cases.to.keep <- 
-if (pure.subtypes) {
-  purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
-  tmp <- sub("E.MTAB.386.", "E_MTAB_386.", purest_subtypes)
-  tmp <- sub("^[^.]*", "", tmp)
-  purest_subtypes <- substring(tmp,2) 
-   (exprs(esets.scaled.merged) %>% colnames) %in% purest_subtypes    
+if (pure.subtypes) { 
+   purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
+   (exprs(esets.scaled.merged) %>% colnames) %in% delete_leading_dataset_string(purest_subtypes)
 } else {
-  print("hi")
 match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
   match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
   match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
