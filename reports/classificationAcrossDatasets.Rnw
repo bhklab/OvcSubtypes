@@ -98,7 +98,6 @@ source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
 @
 
 <<classify_data>>=
-#
 
 # Subtype classification
 esets.not.rescaled.classified <- esets.not.rescaled
@@ -735,7 +734,7 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
   
   hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
-  text <- ""
+
   if(length(hr.out$hazard.ratio) == 1) {
     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
   } else {
@@ -746,8 +745,7 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   }
   cols <- 1:4
   
-  title <- "Filtered (after margins)
-"
+  title <- "Filtered (after margins)"
   
   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
   title(title, cex.main=2)
@@ -772,8 +770,15 @@ get_hr <- function (margin) {
   Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
   survival_filtered_margin.df <- Filtered_intersection_margin
   survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
+  survival_filtered_margin.df$notIMR <- survival_filtered_margin.df$groups 
+  notIMR <- c("MES", "PRO", "DIF") 
+  for(i in seq_along(notIMR)) 
+     survival_filtered_margin.df$notIMR <- 
+    gsub(notIMR[i], "notIMR", survival_filtered_margin.df$notIMR, fixed = TRUE)
+
   # fit the coxph model
-  coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
+  # coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
+  coxph.model = coxph(surv.obj ~ notIMR, survival_filtered_margin.df)
   fit = summary(coxph.model)
   # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
   fit$conf.int[,c(1,3,4)]  
@@ -782,27 +787,19 @@ get_hr <- function (margin) {
 xvals <- seq(0, 0.75, length.out = 2250)
 
 all_hrs_CI = lapply(xvals,get_hr)
-extract_hr = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,1])
-}%>% unlist) 
-extract_lower_CI = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,2])
-}%>% unlist) 
-extract_upper_CI = lapply(1:3, function (j) {
-  lapply(1:2250,function (i) all_hrs_CI[[i]][j,3])
-}%>% unlist) 
+extract_hr = lapply(1:2250,function (i) all_hrs_CI[[i]][[1]]) %>% unlist
+extract_lower_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[2]]) %>% unlist
+extract_upper_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[3]]) %>% unlist
 @
  
 <<HR_plots, out.width="0.8\\textwidth">>=
-get_hr_plot <- function (subtype_pos) {
-ss = smooth.spline(xvals, extract_hr[[subtype_pos]])
-ss_l = smooth.spline(xvals, extract_lower_CI[[subtype_pos]])
-ss_u = smooth.spline(xvals, extract_upper_CI[[subtype_pos]])
-hrplot.df <- data.frame(margin = xvals, percent = percent[1:2250],hr = extract_hr[[subtype_pos]], lower = ss_l$y, upper = ss_u$y)
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle(paste0("Hazard Ratio of subtype ", subtypes[[2]][[subtype_pos + 1]])) + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
-}
+ 
+ss = smooth.spline(xvals[1:2250], extract_hr)
+ss_l = smooth.spline(xvals[1:2250], extract_lower_CI)
+ss_u = smooth.spline(xvals[1:2250], extract_upper_CI)
+hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr, lower = ss_l$y, upper = ss_u$y)
+ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
 
-grid.arrange(grobs = lapply(1:3,get_hr_plot), ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
 @
 
 <<marginal_dataset>>=
