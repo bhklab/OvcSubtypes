@@ -1,13 +1,14 @@
+library(Biobase)
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
-#load("esets.with.survival.RData")
+load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
 # rescale per gene
-#   esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
-#     exprs(eset) <- t(scale(t(exprs(eset))))
-#     return(eset)
-#   })
+   esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
+     exprs(eset) <- t(scale(t(exprs(eset))))
+     return(eset)
+   })
 
 esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   exprs(eset) <- t(scale(t(exprs(eset))))
