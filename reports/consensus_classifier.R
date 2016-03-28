@@ -1,4 +1,5 @@
 source("getConsensusOvarianSubtypes.R")
+source("getRandomForestConsensusOvarianSubtypes.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
 #load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
@@ -13,30 +14,21 @@ esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   return(eset)
 })
 
-# dataset.names <- names(esets.with.survival.scaled)
-dataset.names <- names(esets.scaled)
-                       
-classification.vals <- list()
-sample_ids <- list()
-post.probs.best.subtype <- list()
+dataset.names <- names(esets.with.survival.scaled)
+
+classification.vals.pam <- list()
+classification.vals.rf <- list()
 
 for(dataset.name in dataset.names) {
   # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
   left.out.dataset <- esets.scaled[[dataset.name]]
   training.dataset.names <- dataset.names[dataset.names != dataset.name]
   
-  consensus.classifier.output <- 
-    getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
-    # getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names, threshold.auto=FALSE, threshold=2, pure.subtypes = TRUE)
+  consensus.classifier.output.pam <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   
-  classification.vals[[dataset.name]] <- consensus.classifier.output$Annotated.eset$Ovarian.subtypes %>% as.vector
-  sample_ids[[dataset.name]] <- paste(dataset.name,".",consensus.classifier.output$Annotated.eset %>% exprs %>% colnames, sep="")
-  post.probs <- consensus.classifier.output$posterior.probs 
-  # lapply(1: nrow(post.probs), function (i) (post.probs[i,] == (post.probs[i,] %>% max)) %>% which)
-  # should match classification.vals[[dataset.name]] 
-  post.probs.best.subtype[[dataset.name]] <- 
-    lapply(1:nrow(post.probs), function (i)
-    post.probs[i,classification.vals[[dataset.name]][[i]]]) %>% unlist
+  classification.vals.pam[[dataset.name]] <- consensus.classifier.output.pam$Annotated.eset$Ovarian.subtypes
+  classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
 }
 
 # Make some tables
