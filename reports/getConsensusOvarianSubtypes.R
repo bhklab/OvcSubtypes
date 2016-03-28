@@ -17,7 +17,7 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
   
   esets.with.survival.scaled <- esets.with.survival.scaled[dataset.names.to.keep]
   
-  esets.survival.scaled.merged <- MetaGx::datasetMerging(esets.with.survival.scaled, method = "intersect")
+  esets.survival.scaled.merged <- MetaGx::datasetMerging(esets.with.survival.scaled, method = "intersect", standardization = "none")
   
   subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
                                         Verhaak=c("IMR", "DIF", "PRO", "MES"),
