@@ -1,6 +1,11 @@
 library(Biobase)
+library(pamr)
+library(randomForest)
+
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
+source("~/repos/MetaGx/R/datasetMerging.R")
+source("~/repos/MetaGx/R/stripWhiteSpace.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
 load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
