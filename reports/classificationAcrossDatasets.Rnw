@@ -98,32 +98,35 @@ source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
 @
 
 <<classify_data>>=
-
-# Subtype classification
-esets.not.rescaled.classified <- esets.not.rescaled
-# Remove TCGA.RNASeqV2
-esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
-
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  konecny.out <- getKonecnySubtypes(eset)
-  annotated.eset <- konecny.out[[1]]
-  annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  verhaak.out <- getVerhaakSubtypes(eset)
-  annotated.eset <- verhaak.out[[1]]
-  annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  helland.out <- getHellandSubtypes(eset)
-  annotated.eset <- helland.out[[1]]
-  annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
-save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+if(file.exists("esets.not.rescaled.classified.RData")) {
+  load("esets.not.rescaled.classified.RData")
+} else {
+  # Subtype classification
+  esets.not.rescaled.classified <- esets.not.rescaled
+  # Remove TCGA.RNASeqV2
+  esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
+  
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    konecny.out <- getKonecnySubtypes(eset)
+    annotated.eset <- konecny.out[[1]]
+    annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    verhaak.out <- getVerhaakSubtypes(eset)
+    annotated.eset <- verhaak.out[[1]]
+    annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    helland.out <- getHellandSubtypes(eset)
+    annotated.eset <- helland.out[[1]]
+    annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
+  save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+}
 @
 
 % BELOW CODE IS NOT USED
