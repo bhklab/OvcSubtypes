@@ -1,3 +1,4 @@
+library(dplyr,pamr,randomForest)
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
@@ -14,10 +15,12 @@ esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   return(eset)
 })
 
-dataset.names <- names(esets.with.survival.scaled)
+dataset.names <- names(esets.scaled)
 
 classification.vals.pam <- list()
 classification.vals.rf <- list()
+classification.vals.pam.probs <- list()
+classification.vals.rf.prob <- list()
 
 for(dataset.name in dataset.names) {
   # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
@@ -28,14 +31,16 @@ for(dataset.name in dataset.names) {
   consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   
   classification.vals.pam[[dataset.name]] <- consensus.classifier.output.pam$Annotated.eset$Ovarian.subtypes
+  classification.vals.pam.probs[[dataset.name]] <- consensus.classifier.output.pam$posterior.probs 
   classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
+  classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
 }
 
 # Make some tables
 
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals)))
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)), unlist(classification.vals)))
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)), unlist(classification.vals)))
+print(table(unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals.pam)))
+print(table(unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)), unlist(classification.vals.rf)))
+print(table(unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)), unlist(classification.vals.rf)))
 
 # Check if classification.vals matches the prediction for the training set- highly pure subtypes
 
