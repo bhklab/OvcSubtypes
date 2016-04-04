@@ -550,7 +550,8 @@ if (!all(p %in% q)) {
   rm(intersection_pooled.subtypes)
   rm(intersection_pooled.subtypes.survival)
 }
- 
+
+save(Filtered_intersection_pooled.subtypes, file = "Filtered_intersection_pooled.subtypes.RData")
 @
 
 

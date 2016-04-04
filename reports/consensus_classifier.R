@@ -2,6 +2,8 @@ library(Biobase)
 library(pamr)
 library(randomForest)
 
+load("Filtered_intersection_pooled.subtypes.RData")
+
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
 source("~/repos/MetaGx/R/datasetMerging.R")
