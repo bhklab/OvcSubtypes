@@ -31,7 +31,7 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
   #esets.with.survival.scaled <- esets.with.survival.scaled[dataset.names.to.keep]
   esets.scaled <- esets.scaled[dataset.names.to.keep]
   
-  # esets.survival.scaled.merged <- MetaGx::datasetMerging(esets.with.survival.scaled, method = "intersect")
+  # esets.scaled.merged <- MetaGx::datasetMerging(esets.with.survival.scaled, method = "intersect")
   esets.scaled.merged <- MetaGx::datasetMerging(esets.scaled, method = "intersect")
   
   subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
@@ -40,12 +40,12 @@ getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets
   
   # Only keep cases that are concordant for all three classifiers
   
-#   cases.to.keep <- match(esets.survival.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
-#     match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
-#     match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
-#     match(esets.survival.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
+#   cases.to.keep <- match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
+#     match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
+#     match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
+#     match(esets.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
 #   
-#   training.dataset <- esets.survival.scaled.merged[,cases.to.keep]
+#   training.dataset <- esets.scaled.merged[,cases.to.keep]
 
 ## the below is the training dataset for puresubtypes 
 cases.to.keep <- 
@@ -59,7 +59,7 @@ match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
   match(esets.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
 }
 
-#training.dataset <- esets.survival.merged[,cases.to.keep]
+#training.dataset <- esets.merged[,cases.to.keep]
 training.dataset <- esets.scaled.merged[,cases.to.keep]
 
 
