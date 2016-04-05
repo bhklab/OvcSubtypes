@@ -1,29 +1,29 @@
 
-getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.with.survival.scaled)) {
+getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.scaled), purest.subtypes = TRUE) {
   
   ### Load training data
   print("Loading training data")
   ## This file is produced from classificationAcrossDatasets.Rnw
-  load("esets.with.survival.RData")
+  load("esets.not.rescaled.classified.RData")
   
   # rescale per gene
-  esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
+  esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
     exprs(eset) <- t(scale(t(exprs(eset))))
     return(eset)
   })
   
   dataset.names.to.keep <- .dataset.names.to.keep
   
-  esets.with.survival.scaled <- esets.with.survival.scaled[dataset.names.to.keep]
+  esets.scaled <- esets.scaled[dataset.names.to.keep]
   
   # Convert pData factor columns to strings
-  #esets.with.survival.scaled <- lapply(esets.with.survival.scaled, function(eset) {
+  #esets.scaled <- lapply(esets.scaled, function(eset) {
   #  ind <- sapply(pData(eset), is.factor)
   #  pData(eset)[ind] <- lapply(pData(eset)[ind], as.character)
   #  return(eset)
   #})
   
-  esets.survival.scaled.merged <- MetaGx::datasetMerging(esets.with.survival.scaled, method = "intersect", standardization = "none")
+  esets.scaled.merged <- MetaGx::datasetMerging(esets.scaled, method = "intersect", standardization = "none")
   
   subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
                                         Verhaak=c("IMR", "DIF", "PRO", "MES"),
@@ -31,12 +31,17 @@ getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep
   
   # Only keep cases that are concordant for all three classifiers
   
-  cases.to.keep <- match(esets.survival.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
-    match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
-    match(esets.survival.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
-    match(esets.survival.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
-  
-  training.dataset <- esets.survival.scaled.merged[,cases.to.keep]
+  cases.to.keep <- 
+    if (purest.subtypes) { 
+      purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
+      (exprs(esets.scaled.merged) %>% colnames) %in% delete_leading_dataset_string(purest_subtypes)
+    } else {
+      match(esets.scaled.merged$Konecny.subtypes, subtype.correspondances$Konecny) ==
+        match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) &
+        match(esets.scaled.merged$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
+        match(esets.scaled.merged$Helland.subtypes, subtype.correspondances$Helland)
+    }  
+  training.dataset <- esets.scaled.merged[,cases.to.keep]
   
   ### Once we are happy with the normalization / removal of discordant cases, this eset should be a package data file.
   
