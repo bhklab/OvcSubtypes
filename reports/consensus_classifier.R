@@ -12,11 +12,6 @@ source("~/repos/MetaGx/R/stripWhiteSpace.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
 #load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
-# rescale per gene
-#    esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
-#      exprs(eset) <- t(scale(t(exprs(eset))))
-#      return(eset)
-#    })
 
 esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   exprs(eset) <- t(scale(t(exprs(eset))))
@@ -29,6 +24,7 @@ classification.vals.pam <- list()
 classification.vals.rf <- list()
 classification.vals.pam.probs <- list()
 classification.vals.rf.prob <- list()
+sample_ids <- list()
 
 for(dataset.name in dataset.names) {
   # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
@@ -38,6 +34,7 @@ for(dataset.name in dataset.names) {
   consensus.classifier.output.pam <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   
+  sample_ids[[dataset.name]] <- paste(dataset.name,".",consensus.classifier.output.pam$Annotated.eset %>% exprs %>% colnames, sep="")
   classification.vals.pam[[dataset.name]] <- consensus.classifier.output.pam$Annotated.eset$Ovarian.subtypes
   classification.vals.pam.probs[[dataset.name]] <- consensus.classifier.output.pam$posterior.probs 
   classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
@@ -45,12 +42,48 @@ for(dataset.name in dataset.names) {
 }
 
 # check if the pam classifier and random forest classifier result in the same subtypes
-all(classification.vals.pam == classification.vals.rf)
+table(unlist(classification.vals.pam) == unlist(classification.vals.rf))
 
+# Get the margins, given the list of probabilities of datasets
+get_margins <- function(dataset.probs) {
+  lapply(1:nrow(dataset.probs), function (i)
+  sort(cl[i,],partial=4)[4] - sort(cl[i,],partial=3)[3]) %>% unlist
+} 
+
+margins.rf = lapply(classification.vals.rf.prob, get_margins) %>% unlist
+names(margins.rf) <- unlist(sample_ids)
+
+## Filter the predictions
+# rule 1 : Extract those samples whose probabilities are above 0.5
+get_top_prob <- function (dataset.number) {
+  lapply(1:length(classification.vals.rf[[dataset.number]]), function (i)
+    post.probs[i,classification.vals.rf[[dataset.number]][[i]]]) %>% unlist
+}
+
+top_prob.rf <- lapply(1:length(classification.vals.rf), get_top_prob) %>% unlist
+names(top_prob.rf) <- names(margins.rf)
+
+top_prob_above0.5 <- top_prob.rf > 0.5
+table(top_prob_above0.5)
+
+# rule 2 : Extract those samples whose margins are above prob_cutoff
+prob_cutoff <- 0.05
+top_prob_margin_cutoff <- margins.rf > prob_cutoff
+table(top_prob_margin_cutoff)
+
+(top_prob_above0.5 & top_prob_margin_cutoff) %>% table
+
+## The filtered dataset 
+predicted.rf <- unlist(classification.vals.rf)[top_prob_above0.5 & top_prob_margin_cutoff]
+names(top_prob.rf) <- names(margins.rf)
 # Make some tables
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals.rf)))
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)), unlist(classification.vals.rf)))
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)), unlist(classification.vals.rf)))
+helland <- (unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)))[names(predicted.rf)]
+verhaak <- (unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)))[names(predicted.rf)]
+konecny <- (unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)))[names(predicted.rf)]
+
+print(table(helland, predicted.rf))
+print(table(verhaak, predicted.rf))
+print(table(konecny, predicted.rf))
 
 # Check if classification.vals matches the prediction for the training set- highly pure subtypes
 
@@ -59,7 +92,7 @@ compare_subtypes <- function (sample_id)
 {
 pure_subtype = intersection_pooled.subtypes[sample_id,"Verhaak"]
 predicted = 
-  unlist(classification.vals)[((sample_ids %>% unlist) == sample_id) %>% which]
+  predicted.rf[((sample_ids %>% unlist) == sample_id) %>% which]
 predicted_subtype = substr(predicted,start = 1,stop = 3)
 pure_subtype == predicted_subtype
 }
@@ -79,10 +112,10 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 ########## Survival Curves
 
 ## below is the survival plot AFTER removing the patients with low margin 
-survival_combined.df <- data.frame(sample.names = unlist(sample_ids), prediction = unlist(classification.vals.rf))
+survival_combined.df <- data.frame(sample.names = names(predicted.rf), prediction = predicted.rf)
 
-survival_combined_pooled.df <- pooled.subtypes[unlist(sample_ids),]
-survival_combined_pooled.df$groups <- unlist(classification.vals.rf)
+survival_combined_pooled.df <- pooled.subtypes[names(predicted.rf),]
+survival_combined_pooled.df$groups <- predicted.rf
 # patients with survival data
 survival_combined_pooled.df = na.omit(survival_combined_pooled.df)
 # since we name the subtypes of the filtered set to that of Verhaak
