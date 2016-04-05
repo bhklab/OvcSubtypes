@@ -1,25 +1,22 @@
-<<<<<<< HEAD
-library(dplyr,pamr,randomForest)
-=======
 library(Biobase)
 library(pamr)
 library(randomForest)
+library(survcomp)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 
->>>>>>> ae36292b2f879f8c103a07a93550d98c324b132d
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
 source("~/repos/MetaGx/R/datasetMerging.R")
 source("~/repos/MetaGx/R/stripWhiteSpace.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
-load("esets.with.survival.RData")
+#load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
 # rescale per gene
-   esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
-     exprs(eset) <- t(scale(t(exprs(eset))))
-     return(eset)
-   })
+#    esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
+#      exprs(eset) <- t(scale(t(exprs(eset))))
+#      return(eset)
+#    })
 
 esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   exprs(eset) <- t(scale(t(exprs(eset))))
@@ -47,9 +44,11 @@ for(dataset.name in dataset.names) {
   classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
 }
 
-# Make some tables
+# check if the pam classifier and random forest classifier result in the same subtypes
+all(classification.vals.pam == classification.vals.rf)
 
-print(table(unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals.pam)))
+# Make some tables
+print(table(unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)), unlist(classification.vals.rf)))
 print(table(unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)), unlist(classification.vals.rf)))
 print(table(unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)), unlist(classification.vals.rf)))
 
@@ -80,10 +79,10 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 ########## Survival Curves
 
 ## below is the survival plot AFTER removing the patients with low margin 
-survival_combined.df <- data.frame(sample.names = unlist(sample_ids), prediction = unlist(classification.vals))
+survival_combined.df <- data.frame(sample.names = unlist(sample_ids), prediction = unlist(classification.vals.rf))
 
 survival_combined_pooled.df <- pooled.subtypes[unlist(sample_ids),]
-survival_combined_pooled.df$groups <- unlist(classification.vals)
+survival_combined_pooled.df$groups <- unlist(classification.vals.rf)
 # patients with survival data
 survival_combined_pooled.df = na.omit(survival_combined_pooled.df)
 # since we name the subtypes of the filtered set to that of Verhaak
