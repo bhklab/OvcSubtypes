@@ -1,14 +1,25 @@
+<<<<<<< HEAD
 library(dplyr,pamr,randomForest)
+=======
+library(Biobase)
+library(pamr)
+library(randomForest)
+
+load("Filtered_intersection_pooled.subtypes.RData")
+
+>>>>>>> ae36292b2f879f8c103a07a93550d98c324b132d
 source("getConsensusOvarianSubtypes.R")
 source("getRandomForestConsensusOvarianSubtypes.R")
+source("~/repos/MetaGx/R/datasetMerging.R")
+source("~/repos/MetaGx/R/stripWhiteSpace.R")
 ## This file is produced from classificationAcrossDatasets.Rnw
-#load("esets.with.survival.RData")
+load("esets.with.survival.RData")
 load("esets.not.rescaled.classified.RData")
 # rescale per gene
-#   esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
-#     exprs(eset) <- t(scale(t(exprs(eset))))
-#     return(eset)
-#   })
+   esets.with.survival.scaled <- lapply(esets.with.survival, function(eset) {
+     exprs(eset) <- t(scale(t(exprs(eset))))
+     return(eset)
+   })
 
 esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
   exprs(eset) <- t(scale(t(exprs(eset))))
