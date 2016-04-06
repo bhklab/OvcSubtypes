@@ -245,7 +245,7 @@ for(data.subset in c("all", "concordant")) {
 
 pooled.subtypes.current <- pooled.subtypes
 pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
-pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.5 & pooled.subtypes$concordant,]
+pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.50 & pooled.subtypes$concordant,]
 pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
     hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
     text <- ""
@@ -255,15 +255,47 @@ pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.s
     }
     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
     cols <- 1:4
-    title <- paste0("Combined Classifier: ", classifier)
-    if(data.subset == "concordant") {
-      title <- paste0(title, ", concordant cases")
-    }
+    title <- paste0("Combined Classifier: ", classifier, "RF cutoff 0.50")
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
     title(title, cex.main=1)
     text(0,0.05, text, cex=0.85, pos=4)
 
+pooled.subtypes.current <- pooled.subtypes
+pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
+pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.75 & pooled.subtypes$concordant,]
+pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
+    hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
+    text <- ""
+    text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+    text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+    cols <- 1:4
+    title <- paste0("Combined Classifier: ", classifier, "RF cutoff 0.75")
+    
+    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+    title(title, cex.main=1)
+    text(0,0.05, text, cex=0.85, pos=4)
+@
+
+<<hr_vals_per_cutoff, eval=FALSE>>=
+rf.cutoff <- seq(0,1,length.out = 100)
+hr.vals <- sapply(rf.cutoff, function(x) {
+  pooled.subtypes.current <- pooled.subtypes[pooled.subtypes$Consensus.rf.maxprob > x,]
+  hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$Consensus.rf, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
+  return(hr.out$hazard.ratio)
+})
+hr.vals <- as.data.frame(t(as.data.frame(hr.vals)))
+@
+
+<<RF_maxprob>>=
+layout(matrix(1:4, nrow = 2, byrow = TRUE))
+hist(pooled.subtypes$Consensus.rf.maxprob)
+hist(pooled.subtypes$Consensus.rf.margin)
+plot(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$Consensus.rf.margin)
+boxplot(pooled.subtypes$Consensus.rf.maxprob ~ pooled.subtypes$concordant)
 @
 
 \end{document}
