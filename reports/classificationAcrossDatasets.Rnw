@@ -17,7 +17,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -548,6 +548,8 @@ if (!all(p %in% q)) {
   rm(intersection_pooled.subtypes.survival)
 }
  
+save(Filtered_intersection_pooled.subtypes, file="Filtered_intersection_pooled.subtypes.RData")
+save(intersection_pooled.subtypes, file="intersection_pooled.subtypes.RData")
 @
 
 
@@ -654,7 +656,7 @@ draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 
 
 % Survival Analysis with new code added by Lavanya for filtered data below 
 \section{Survival Analysis}
-<<Pooled_survival_plot>>=
+<<Pooled_survival_plot, fig.height=12>>=
 # layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
 layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
@@ -671,8 +673,9 @@ for(subtype.name in subtype.names) {
   
   hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
   text <- ""
+  text <- paste0(text, "n = ", nrow(survival.df), "\n")
   if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+    text <- paste0(text, sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
   } else {
     for(i in 1:length(hr.out$hazard.ratio)) {
       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
@@ -707,6 +710,7 @@ survival_filtered_all.df <- intersection_pooled.subtypes.survival
   
   hr.out <- survcomp::hazard.ratio(x=survival_filtered_all.df$groups, surv.time=survival_filtered_all.df$years_to_death, surv.event=survival_filtered_all.df$vital_status, strat=survival_filtered_all.df$data.source)
   text <- ""
+  text <- paste0(text, "n = ", nrow(survival_filtered_all.df), "\n")
   if(length(hr.out$hazard.ratio) == 1) {
     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
   } else {
@@ -734,7 +738,9 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
   
   hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
-
+  
+  text <- ""
+  text <- paste0(text, "n = ", nrow(survival_filtered.df), "\n")
   if(length(hr.out$hazard.ratio) == 1) {
     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
   } else {
