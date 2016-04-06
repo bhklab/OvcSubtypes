@@ -1,0 +1,269 @@
+%\VignetteEngine{knitr::knitr}
+\documentclass{article}
+
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+\usepackage[latin1]{inputenc}
+\usepackage{geometry}
+\usepackage{titlesec}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\usepackage[table]{xcolor}
+%\newcommand{\sectionbreak}{\clearpage}
+
+\begin{document}
+
+<<setup, include=FALSE, cache=FALSE>>=
+# Set options
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
+options(replace.assign=TRUE,width=90)
+par.original <- par()
+days.per.month <- 30.4368
+days.per.year <- 365.242
+@
+
+<<Leave_one_dataset_out>>=
+library(Biobase)
+library(pamr)
+library(randomForest)
+library(survcomp)
+
+load("Filtered_intersection_pooled.subtypes.RData")
+load("intersection_pooled.subtypes.RData")
+
+source("getConsensusOvarianSubtypes.R")
+source("getRandomForestConsensusOvarianSubtypes.R")
+source("~/repos/MetaGx/R/datasetMerging.R")
+source("~/repos/MetaGx/R/stripWhiteSpace.R")
+## This file is produced from classificationAcrossDatasets.Rnw
+#load("esets.with.survival.RData")
+load("esets.not.rescaled.classified.RData")
+
+esets.scaled <- lapply(esets.not.rescaled.classified, function(eset) {
+  exprs(eset) <- t(scale(t(exprs(eset))))
+  return(eset)
+})
+
+dataset.names <- names(esets.scaled)
+
+classification.vals.pam <- list()
+classification.vals.rf <- list()
+classification.vals.pam.probs <- list()
+classification.vals.rf.prob <- list()
+sample_ids <- list()
+
+for(dataset.name in dataset.names) {
+  # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
+  left.out.dataset <- esets.scaled[[dataset.name]]
+  training.dataset.names <- dataset.names[dataset.names != dataset.name]
+  
+  consensus.classifier.output.pam <- getConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  
+  sample_ids[[dataset.name]] <- paste(dataset.name,".",consensus.classifier.output.pam$Annotated.eset %>% exprs %>% colnames, sep="")
+  classification.vals.pam[[dataset.name]] <- consensus.classifier.output.pam$Annotated.eset$Ovarian.subtypes
+  classification.vals.pam.probs[[dataset.name]] <- consensus.classifier.output.pam$posterior.probs 
+  classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
+  classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
+}
+
+@
+
+\title{Consensus Classifier for High-grade serous ovarian carcinoma}
+
+\author{Gregory M. Chen, Lavanya Kannan}
+\date{\today}
+\maketitle
+
+<<contingency_tables, results='markup'>>=
+# check if the pam classifier and random forest classifier result in the same subtypes
+table(unlist(classification.vals.pam), unlist(classification.vals.rf))
+
+# Get the margins, given the list of probabilities of datasets
+get_margins <- function(dataset.probs) {
+  apply(dataset.probs, 1, function(x) max(x) - sort(x)[3])
+} 
+
+margins.rf = lapply(classification.vals.rf.prob, get_margins) %>% unlist
+names(margins.rf) <- unlist(sample_ids)
+
+## Filter the predictions
+# rule 1 : Extract those samples whose probabilities are above 0.5
+get_top_prob <- function (dataset.probs) {
+  apply(dataset.probs, 1, max)
+}
+
+top_prob.rf <- lapply(classification.vals.rf.prob, get_top_prob) %>% unlist
+names(top_prob.rf) <- names(margins.rf)
+
+top_prob_above0.5 <- top_prob.rf > 0.5
+table(top_prob_above0.5)
+
+# rule 2 : Extract those samples whose margins are above prob_cutoff
+prob_cutoff <- 0.05
+top_prob_margin_cutoff <- margins.rf > prob_cutoff
+table(top_prob_margin_cutoff)
+
+(top_prob_above0.5 & top_prob_margin_cutoff) %>% table
+
+## The filtered dataset 
+predicted.rf <- unlist(classification.vals.rf)[top_prob_above0.5 & top_prob_margin_cutoff]
+names(top_prob.rf) <- names(margins.rf)
+# Make some tables
+helland <- (unlist(lapply(esets.scaled, function(eset) eset$Helland.subtypes)))[names(predicted.rf)]
+verhaak <- (unlist(lapply(esets.scaled, function(eset) eset$Verhaak.subtypes)))[names(predicted.rf)]
+konecny <- (unlist(lapply(esets.scaled, function(eset) eset$Konecny.subtypes)))[names(predicted.rf)]
+
+print(table(helland, predicted.rf))
+print(table(verhaak, predicted.rf))
+print(table(konecny, predicted.rf))
+
+# Check if classification.vals matches the prediction for the training set- highly pure subtypes
+
+# Check if classification.vals matches the prediction for the pure subtypes 
+compare_subtypes <- function (sample_id)
+{
+pure_subtype = intersection_pooled.subtypes[sample_id,"Verhaak"]
+predicted = 
+  predicted.rf[((sample_ids %>% unlist) == sample_id) %>% which]
+predicted_subtype = substr(predicted,start = 1,stop = 3)
+pure_subtype == predicted_subtype
+}
+
+## the following gives the amounts of consensus between the pure subtypes and the purest subtypes respectively
+print("Subtypes common to pure subtypes: \n")
+lapply(rownames(intersection_pooled.subtypes), compare_subtypes) %>% unlist %>% table
+print("Subtypes common to purest subtypes: \n")
+lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% unlist %>% table
+
+@
+
+
+
+<<Venn_Diagrams>>=
+# overlaps = get_overlaps_margin[[margin]][[subtype_order]]
+# #overlaps.parts = lapply(overlaps$parts, delete_leading_dataset_string)
+# IMR = unlist(classification.vals) %in% "IMR_consensus" %>% which
+# overlaps$parts[[1]] %in% unlist(sample_ids)[IMR]
+########## Survival Curves
+@
+
+<<survival_plots, fig.width=9, fig.height=13.5>>=
+
+subtype.names <- c("Konecny", "Verhaak", "Helland", "Bentink")
+esets.scaled.names <- names(esets.scaled)
+esets.scaled <-lapply(esets.scaled.names, function(eset.name) {
+  esets.scaled[[eset.name]]$data.source <- eset.name
+  return(esets.scaled[[eset.name]])
+  })
+names(esets.scaled) <- esets.scaled.names
+pooled.subtypes <- do.call(rbind, 
+    lapply(esets.scaled, function(eset) pData(eset)[,c("days_to_death", "vital_status", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]        
+           ))
+
+colnames(pooled.subtypes)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes)[4:7])
+
+pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
+pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
+pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
+pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
+
+subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
+                                      Verhaak=c("IMR", "DIF", "PRO", "MES"),
+                                      Helland=c("C2", "C4", "C5", "C1"))
+
+
+
+pooled.subtypes$concordant <- match(pooled.subtypes$Konecny, subtype.correspondances$Konecny) ==
+  match(pooled.subtypes$Verhaak, subtype.correspondances$Verhaak) &
+  match(pooled.subtypes$Verhaak, subtype.correspondances$Verhaak) ==
+  match(pooled.subtypes$Helland, subtype.correspondances$Helland)
+
+pooled.subtypes$Consensus.pam <- unlist(classification.vals.pam)
+pooled.subtypes$Consensus.pam.margin <- unlist(lapply(classification.vals.pam.probs, function(pam.probs) apply(pam.probs, 1, function(x) max(x) - sort(x)[3]))) 
+pooled.subtypes$Consensus.rf <- unlist(classification.vals.rf)
+pooled.subtypes$Consensus.rf.margin <- unlist(lapply(classification.vals.rf.prob, function(rf.probs) apply(rf.probs, 1, function(x) max(x) - sort(x)[3]))) 
+pooled.subtypes$Consensus.rf.maxprob <- unlist(lapply(classification.vals.rf.prob, function(rf.probs) apply(rf.probs, 1, max))) 
+
+# reorder factor levels. Note, this should be done in the original function
+pooled.subtypes$Consensus.pam <- factor(pooled.subtypes$Consensus.pam, levels(pooled.subtypes$Consensus.pam)[c(2,1,4,3)])
+pooled.subtypes$Consensus.rf <- factor(pooled.subtypes$Consensus.rf, levels(pooled.subtypes$Consensus.rf)[c(2,1,4,3)])
+
+pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
+pooled.subtypes$days_to_death <- NULL
+
+  # Censor to ten years
+censor.time.out <- survcomp::censor.time(surv.time = pooled.subtypes$years_to_death, surv.event = pooled.subtypes$vital_status, time.cens = 10)
+pooled.subtypes$years_to_death <- censor.time.out$surv.time.cens
+pooled.subtypes$vital_status <- censor.time.out$surv.event.cens
+
+# only keep cases with survival data
+pooled.subtypes <- pooled.subtypes[!is.na(pooled.subtypes$years_to_death) & !is.na(pooled.subtypes$vital_status),]
+
+pooled.subtypes$vital_status <- pooled.subtypes$vital_status == "deceased"
+
+layout(matrix(1:6, nrow = 3, byrow = TRUE))
+
+par(mar=c(5.1, 8, 4.1, 2.1))
+
+pooled.subtypes$data.source <- factor(pooled.subtypes$data.source)
+
+for(data.subset in c("all", "concordant")) {
+  par(mar=c(5.1, 5, 4.1, 2.1))
+  for(classifier in c("PAM", "Random Forest")) {
+    pooled.subtypes.current <- pooled.subtypes
+    if(classifier == "PAM") {
+      pooled.subtypes.current$group <- pooled.subtypes$Consensus.pam
+    } else {
+      pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
+    }
+    
+    if(data.subset == "concordant") {
+      pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$concordant,]
+    }
+    
+    pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
+    hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
+    text <- ""
+    text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+    text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+    cols <- 1:4
+    title <- paste0("Combined Classifier: ", classifier)
+    if(data.subset == "concordant") {
+      title <- paste0(title, ", concordant cases")
+    }
+    
+    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+    title(title, cex.main=1)
+    text(0,0.05, text, cex=0.85, pos=4)
+  }
+}
+
+pooled.subtypes.current <- pooled.subtypes
+pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
+pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.5 & pooled.subtypes$concordant,]
+pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
+    hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
+    text <- ""
+    text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
+    for(i in 1:length(hr.out$hazard.ratio)) {
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+    }
+    text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+    cols <- 1:4
+    title <- paste0("Combined Classifier: ", classifier)
+    if(data.subset == "concordant") {
+      title <- paste0(title, ", concordant cases")
+    }
+    
+    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+    title(title, cex.main=1)
+    text(0,0.05, text, cex=0.85, pos=4)
+
+@
+
+\end{document}
