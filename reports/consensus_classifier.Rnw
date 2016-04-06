@@ -255,7 +255,7 @@ pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.s
     }
     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
     cols <- 1:4
-    title <- paste0("Combined Classifier: ", classifier, "RF cutoff 0.50")
+    title <- paste0("Combined Classifier: ", classifier, " RF cutoff 0.50")
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
     title(title, cex.main=1)
@@ -273,7 +273,7 @@ pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.s
     }
     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
     cols <- 1:4
-    title <- paste0("Combined Classifier: ", classifier, "RF cutoff 0.75")
+    title <- paste0("Combined Classifier: ", classifier, " RF cutoff 0.75")
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
     title(title, cex.main=1)
