@@ -28,6 +28,7 @@ library(Biobase)
 library(pamr)
 library(randomForest)
 library(survcomp)
+library(RColorBrewer)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
@@ -296,6 +297,14 @@ hist(pooled.subtypes$Consensus.rf.maxprob)
 hist(pooled.subtypes$Consensus.rf.margin)
 plot(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$Consensus.rf.margin)
 boxplot(pooled.subtypes$Consensus.rf.maxprob ~ pooled.subtypes$concordant)
+@
+
+<<ROC curve>>=
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins, pooled.subtypes$concordant), "tpr", "fpr"), col=2)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins, pooled.subtypes$concordant), "tpr", "fpr"), col=3, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins, pooled.subtypes$concordant), "tpr", "fpr"), col=4, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin, pooled.subtypes$concordant), "tpr", "fpr"), col=1, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$concordant), "tpr", "fpr"), col=5, add=TRUE)
 @
 
 \end{document}
