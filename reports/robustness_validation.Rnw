@@ -12,7 +12,7 @@ for(dirname in c("konecny_nmf_4", "tcga_nmf_4", "tothill_kmeans_4")) {
   cluster.classes <- list()
   for(current.eset.name in dataset.names) {
     cluster.classes[[current.eset.name]] <- list()
-    filenames <- Sys.glob(paste0("jan20clusters/", dirname, "/", current.eset.name, "_*_classes.txt"))
+    filenames <- Sys.glob(paste0("apr12clusters/", dirname, "/", current.eset.name, "_*_classes.txt"))
     for(filename in filenames) {
       cluster.classes[[current.eset.name]][[length(cluster.classes[[current.eset.name]])+1]] <- scan(filename, what=character(0))
     }
@@ -140,7 +140,7 @@ colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
-<<Konecny_pred_str, cache>>=
+<<Konecny_pred_str, cache=TRUE>>=
 
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
@@ -174,7 +174,7 @@ par(mar=c(5.1, 4.1, 4.1, 2.1))
 \pagebreak
 \section{Prediction Strength: Supplemental}
 
-For each classification and clustering algorithm, we produced a stripplot of the prediction strength values for each of the 100 clustering runs. In order to investigate a subtype-specific measure of robustness, we plot the subtype-specific Rand Index for each subtype. For a given subtype (as defined by classifier labels), the subtype-specific Rand Index is defined by the fraction of pairs that co-cluster divided by the total number of pairwise relationships.
+For each classification and clustering algorithm, we produced a stripplot of the prediction strength values for each of the 100 clustering runs.
 
 \pagebreak
 \subsection{Verhaak/TCGA}
@@ -189,7 +189,7 @@ stripchart(as.data.frame(tcga.ps.vals), vertical=TRUE, method="jitter", pch=20, 
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
-<<tcga_adj_rand, out.width="0.6\\textwidth">>=
+<<tcga_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
 
 tcga.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Verhaak, clustering.subtypes$tcga_nmf_4, tcga.ordered.classes, main="TCGA")
 @
@@ -207,7 +207,7 @@ stripchart(as.data.frame(tothill.ps.vals), vertical=TRUE, method="jitter", pch=2
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
-<<tothill_adj_rand, out.width="0.6\\textwidth">>=
+<<tothill_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
 
 tothill.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Helland, clustering.subtypes$tothill_kmeans_4, tothill.ordered.classes, main="Tothill")
 @
@@ -223,7 +223,7 @@ stripchart(as.data.frame(konecny.ps.vals), vertical=TRUE, method="jitter", pch=2
 par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
-<<konecny_adj_rand, out.width="0.6\\textwidth">>=
+<<konecny_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
 
 konecny.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Konecny, clustering.subtypes$konecny_nmf_4, konecny.ordered.classes, "Konecny")
 @
