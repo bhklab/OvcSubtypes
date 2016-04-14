@@ -105,7 +105,7 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 %\hline Algorithm & Gene Set & k \\ \hline 
 %Consensus k-means NMF & TCGA gene set Tothill gene set Top 1000 by MAD Top 1500 by MAD Top 2000 by MAD Top 2500 by MAD Top 3000 by MAD & 2 3 4 5 6 7 8 9 10
 %\\ \hline \end{tabular}
-<<TCGA_pred_str, cache=TRUE>>=
+<<TCGA_pred_str, cache=FALSE>>=
 
 .getSubtypeSpecificRandIndexValues <- function(classifier.subtypes.list, clustering.subtypes.list, ordered.classes, main) {
     consistency.list.of.matrices <- lapply(1:length(classifier.subtypes.list), function(x) {
@@ -132,7 +132,15 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
 
-<<Tothill_pred_str, cache=TRUE>>=
+<<tcga_pred_str_margin_trend, eval=FALSE>>=
+# in progress
+tcga.ps.vals <- sapply(names(classifier.subtypes$Verhaak), function(dataset.name) {
+  median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name]))[1]
+  sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
+})
+@
+
+<<Tothill_pred_str, cache=FALSE>>=
 
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
@@ -140,7 +148,7 @@ colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
-<<Konecny_pred_str, cache=TRUE>>=
+<<Konecny_pred_str, cache=FALSE>>=
 
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
@@ -151,12 +159,12 @@ konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
 
 Each dataset was clustered according to our implementation of the clustering algorithms and gene sets of Konecny, TCGA, and Tothill. Each dataset was also classified using our implementation of the corresponding classification algorithms of Konecny, TCGA/Verhaak, and Tothill/Helland. This produced two sets of subtype labels for each validation dataset, from which we computed prediction strength.
 
-We performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. In the boxplot below, each data point represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
+We performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. In the boxplot below, each data point represents the median estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
 
 <<ps_combined_boxplot, out.width="0.7\\textwidth">>=
 
 set.seed(900)
-combined.ps <- sapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) apply(x, 2, mean))
+combined.ps <- sapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) apply(x, 2, median))
 combined.ps.m <- melt(combined.ps)
 my.boxplot <- ggplot(combined.ps.m, aes(x=L1, y=value)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + geom_jitter(position=position_jitter(0.1)) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) 
 my.boxplot

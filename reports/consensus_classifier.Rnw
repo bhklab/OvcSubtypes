@@ -140,8 +140,6 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 
 @
 
-
-
 <<Venn_Diagrams>>=
 # overlaps = get_overlaps_margin[[margin]][[subtype_order]]
 # #overlaps.parts = lapply(overlaps$parts, delete_leading_dataset_string)
@@ -149,6 +147,8 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 # overlaps$parts[[1]] %in% unlist(sample_ids)[IMR]
 ########## Survival Curves
 @
+
+We sought to 
 
 <<survival_plots, fig.width=9, fig.height=13.5>>=
 
@@ -365,7 +365,7 @@ legend("bottomright", paste0(c("Helland (margin)", "Verhaak (margin)", "Konecny 
 title("ROC curves for predicting concordance")
 @
 }
-\caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based.}
+\caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Random Forest classifier was performed using leave-one-dataset-out validation. Also shown is the maximum probability score from the Consensus Random Forest classifier, which performed similarly to the Consensus Random Forest margin.}
 \end{figure}
 
 \end{document}
