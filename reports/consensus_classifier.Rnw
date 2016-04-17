@@ -140,8 +140,6 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 
 @
 
-
-
 <<Venn_Diagrams>>=
 # overlaps = get_overlaps_margin[[margin]][[subtype_order]]
 # #overlaps.parts = lapply(overlaps$parts, delete_leading_dataset_string)
@@ -149,6 +147,8 @@ lapply(rownames(Filtered_intersection_pooled.subtypes), compare_subtypes) %>% un
 # overlaps$parts[[1]] %in% unlist(sample_ids)[IMR]
 ########## Survival Curves
 @
+
+We sought to 
 
 <<survival_plots, fig.width=9, fig.height=13.5>>=
 
@@ -293,7 +293,8 @@ hr.vals <- sapply(rf.cutoff, function(x) {
 hr.vals <- as.data.frame(t(as.data.frame(hr.vals)))
 @
 
-<<RF_maxprob>>=
+<<RF_maxprob, eval=FALSE>>=
+## These four figures give some characteristics of the consensus random forest margins and max probs.
 layout(matrix(1:4, nrow = 2, byrow = TRUE))
 hist(pooled.subtypes$Consensus.rf.maxprob)
 hist(pooled.subtypes$Consensus.rf.margin)
@@ -301,36 +302,57 @@ plot(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$Consensus.rf.margin)
 boxplot(pooled.subtypes$Consensus.rf.maxprob ~ pooled.subtypes$concordant)
 @
 
-<<boxplots>>=
+Each subtype classifier produces a real-valued margin for each classified patient; this margin value is the difference between the highest subtype score and the second-highest subtype score. This margin value is a measure of the level of `certainty' of each classification; that is, a higher margin indicates greater certainty. We sought to investigate the ability of the margin values to discriminate between patients of concordant or non-concordant classification across subtypes.
+
+We segregated patients into two categories: concordant patients (n = \Sexpr{sum(pooled.subtypes$concordant)}) which were classified concordantly between the Helland, Verhaak, and Konecny classifiers; and non-concordant patients (n = \Sexpr{sum(!pooled.subtypes$concordant)}) which were not classified concordantly between all three subtype classifiers.
+
+\begin{figure}[H]
+{\centering
+<<histograms>>=
+margin.comparison.cases.to.include <- pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$data.source != "TCGA"
+
 par(mfrow=c(2,2))
-hist(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==TRUE],breaks=seq(0,3.5,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Helland Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==FALSE],breaks=seq(0,3.5,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
+hist(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,3.5,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Helland Margin Value", ylim=c(0,80))
+hist(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,3.5,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
 legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
+helland.hist.pval <- wilcox.test(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==FALSE])$p.value
+text( 3.5, 20, sprintf("p = %.2E", helland.hist.pval), pos=2)
 title("Helland Classifier Margins")
 
-hist(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="", xlab="Verhaak Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="",add=TRUE)
+hist(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="", xlab="Verhaak Margin Value", ylim=c(0,80))
+hist(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="",add=TRUE)
 legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
+verhaak.hist.pval <- wilcox.test(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==FALSE])$p.value
+text( 0.8, 20, sprintf("p = %.2E", verhaak.hist.pval), pos=2)
 title("Verhaak Classifier Margins")
 
-hist(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Konecny Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
+hist(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Konecny Margin Value", ylim=c(0,80))
+hist(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
 legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
+konecny.hist.pval <- wilcox.test(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE], pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE])$p.value
+text( 0.8, 20, sprintf("p = %.2E", konecny.hist.pval), pos=2)
 title("Konecny Classifier Margins")
 
-hist(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==TRUE],breaks=seq(0,1,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Consensus RF Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==FALSE],breaks=seq(0,1,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
+hist(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,1,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Consensus RF Margin Value", ylim=c(0,80))
+hist(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,1,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
 legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
+consensus.rf.hist.pval <- wilcox.test(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
+text( 1, 20, sprintf("p = %.2E", consensus.rf.hist.pval), pos=2)
 title("Consensus RF Margins")
 @
+}
+\caption{Histograms indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the Consensus Random Forest classifier, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test.}
+\end{figure}
 
-<<ROC curve>>=
+\begin{figure}[H]
+{\centering
+<<ROC curve, fig.width=6, fig.height=6>>=
 roc.colors <- brewer.pal(5, "Set1")
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891"], pooled.subtypes$concordant[pooled.subtypes$data.source != "GSE9891"]), "tpr", "fpr"), col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA"], pooled.subtypes$concordant[pooled.subtypes$data.source != "TCGA"]), "tpr", "fpr"), col=roc.colors[2], lwd=2, add=TRUE)
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins, pooled.subtypes$concordant), "tpr", "fpr"), col=roc.colors[3], lwd=2, add=TRUE)
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin, pooled.subtypes$concordant), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$concordant), "tpr", "fpr"), col=roc.colors[5], lwd=2, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[2], lwd=2, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[3], lwd=2, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.maxprob[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[5], lwd=2, add=TRUE)
 
 # get AUCs
 aucs <- numeric(0)
@@ -342,6 +364,10 @@ aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Co
 abline(a=0, b= 1,lty=3)
 
 legend("bottomright", paste0(c("Helland (margin)", "Verhaak (margin)", "Konecny (margin)", "Consensus RF (margin)", "Consensus RF (maxprob)"), paste(", AUC:",sprintf("%.3f", aucs))), lwd=2, col=roc.colors, bty="n")
+title("ROC curves for predicting concordance")
 @
+}
+\caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Random Forest classifier was performed using leave-one-dataset-out validation. Also shown is the maximum probability score from the Consensus Random Forest classifier, which performed similarly to the Consensus Random Forest margin.}
+\end{figure}
 
 \end{document}
