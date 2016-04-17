@@ -210,6 +210,8 @@ par(mar=c(5.1, 8, 4.1, 2.1))
 
 pooled.subtypes$data.source <- factor(pooled.subtypes$data.source)
 
+save(pooled.subtypes, file = "pooled.subtypes.RData")
+
 for(data.subset in c("all", "concordant")) {
   par(mar=c(5.1, 5, 4.1, 2.1))
   for(classifier in c("PAM", "Random Forest")) {
