@@ -134,10 +134,29 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 <<tcga_pred_str_margin_trend, eval=FALSE>>=
 # in progress
-tcga.ps.vals <- sapply(names(classifier.subtypes$Verhaak), function(dataset.name) {
-  median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name]))[1]
-  sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
+tcga.pred.str.trend <- sapply(names(classifier.subtypes$Verhaak), function(dataset.name) {
+  # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
+#  median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
+  ps.matrix <- sapply(1:100, function(y) {
+    sapply(seq(0,1,length.out=110), function(x) {
+      # calculate Prediction Strength; use x as fraction of dataset removed
+      margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
+      samples.to.keep <- margin.vals > quantile(margin.vals, x)
+      if(sum(samples.to.keep) <= 1) {
+        return(NA)
+      }
+      current.ps <- ps.cluster(classifier.subtypes$Verhaak[[dataset.name]][samples.to.keep], clustering.subtypes$tcga_nmf_4[[dataset.name]][[y]][samples.to.keep])$ps
+      return(current.ps)
+    })
+  })
+  return(apply(ps.matrix, 1, median))
 })
+
+tcga.pred.str.trend.df <- as.data.frame(tcga.pred.str.trend)
+tcga.pred.str.trend.m <- melt(tcga.pred.str.trend.df, "percent.removed")
+colnames(tcga.pred.str.trend.m) <- c("percent.removed", "dataset", "prediction.strength")
+
+ggplot(tcga.pred.str.trend.m, aes(y=prediction.strength, x = percent.removed)) + geom_point(size=3, colour = dataset) + geom_line(size=1) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") 
 @
 
 <<Tothill_pred_str, cache=FALSE>>=
