@@ -153,6 +153,8 @@ tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(datas
   return(out.df)
 })
 
+names(tcga.pred.str.trend) <- names(classifier.subtypes$Verhaak)
+
 for(dataset.name in names(classifier.subtypes$Verhaak)) {
   tcga.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
 }
@@ -199,6 +201,8 @@ tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(da
   return(out.df)
 })
 
+names(tothill.pred.str.trend) <- names(classifier.subtypes$Helland)
+
 for(dataset.name in names(classifier.subtypes$Helland)) {
   tothill.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
 }
@@ -216,8 +220,11 @@ ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.s
 ggplot(tothill.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<Konecny_pred_str, cache=FALSE>>=
+<<tothill_pred_str_margin_trend_tcga>>=
+ggplot(tothill.pred.str.trend.combined[tothill.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+@
 
+<<Konecny_pred_str, cache=FALSE>>=
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
 
@@ -245,6 +252,8 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
   out.df <- data.frame(dataset.size=1:length(classifier.subtypes$Konecny[[dataset.name]]), prediction.strength=apply(ps.matrix, 1, mean))
   return(out.df)
 })
+
+names(tothill.pred.str.trend) <- names(classifier.subtypes$Konecny)
 
 for(dataset.name in names(classifier.subtypes$Konecny)) {
   konecny.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
