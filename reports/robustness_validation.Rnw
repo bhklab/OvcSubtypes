@@ -253,7 +253,7 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
   return(out.df)
 })
 
-names(tothill.pred.str.trend) <- names(classifier.subtypes$Konecny)
+names(konecny.pred.str.trend) <- names(classifier.subtypes$Konecny)
 
 for(dataset.name in names(classifier.subtypes$Konecny)) {
   konecny.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
@@ -261,15 +261,18 @@ for(dataset.name in names(classifier.subtypes$Konecny)) {
 konecny.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), konecny.pred.str.trend)
 
 ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+@
+
+<<konecny_pred_str_margin_trend_average>>=
 
 konecny.mean.ps.df <- data.frame(dataset.size=unique(konecny.pred.str.trend.combined$dataset.size))
 konecny.mean.ps.df$prediction.strength <- sapply(konecny.mean.ps.df$dataset.size, function(dataset.size) mean(konecny.pred.str.trend.combined$prediction.strength[konecny.pred.str.trend.combined$dataset.size==dataset.size]))
 
-ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+ggplot(konecny.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<konecny_pred_str_margin_trend_2>>=
-ggplot(konecny.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+<<konecny_pred_str_margin_trend_tcga>>=
+ggplot(konecny.pred.str.trend.combined[konecny.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
 Each dataset was clustered according to our implementation of the clustering algorithms and gene sets of Konecny, TCGA, and Tothill. Each dataset was also classified using our implementation of the corresponding classification algorithms of Konecny, TCGA/Verhaak, and Tothill/Helland. This produced two sets of subtype labels for each validation dataset, from which we computed prediction strength.
