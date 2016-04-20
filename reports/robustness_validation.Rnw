@@ -137,8 +137,13 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(dataset.name) {
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
 #  median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
+  
+  if(length(classifier.subtypes$Verhaak[[dataset.name]]) < 100) {
+    return(NA)
+  }
+  
   ps.matrix <- sapply(1:100, function(y) {
-    sapply(1:length(classifier.subtypes$Verhaak[[dataset.name]]), function(x) {
+    sapply(50:length(classifier.subtypes$Verhaak[[dataset.name]]), function(x) {
       # calculate Prediction Strength; use the top x samples (by margin)
       margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
       samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
