@@ -140,8 +140,8 @@ tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(datas
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
-  
-  ps.vals <- sapply(50:length(classifier.subtypes$Verhaak[[dataset.name]]), function(x) {
+  xvals <- seq(length(classifier.subtypes$Verhaak[[dataset.name]]), 50, by = -25)
+  ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
     samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
@@ -152,7 +152,7 @@ tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(datas
     return(current.ps)
   })
 
-  out.df <- data.frame(dataset.size=50:length(classifier.subtypes$Verhaak[[dataset.name]]), prediction.strength=ps.vals)
+  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
   return(out.df)
 })
 
@@ -191,8 +191,8 @@ tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(da
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
-  
-  ps.vals <- sapply(50:length(classifier.subtypes$Helland[[dataset.name]]), function(x) {
+  xvals <- seq(length(classifier.subtypes$Helland[[dataset.name]]), 50, by=-25)
+  ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
     samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
@@ -200,7 +200,7 @@ tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(da
     return(current.ps)
   })
 
-  out.df <- data.frame(dataset.size=50:length(classifier.subtypes$Helland[[dataset.name]]), prediction.strength=ps.vals)
+  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
   return(out.df)
 })
 
@@ -231,7 +231,6 @@ konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sap
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
 
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
-
 @
 
 <<konecny_pred_str_margin_trend_computation>>=
@@ -243,7 +242,9 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
   
-  ps.vals <- sapply(50:length(classifier.subtypes$Konecny[[dataset.name]]), function(x) {
+  xvals <- seq(length(classifier.subtypes$Konecny[[dataset.name]]), 50, by=-25)
+  
+  ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Konecny.margins
     samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
@@ -251,7 +252,7 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
     return(current.ps)
   })
 
-  out.df <- data.frame(dataset.size=50:length(classifier.subtypes$Konecny[[dataset.name]]), prediction.strength=ps.vals)
+  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
   return(out.df)
 })
 
@@ -299,23 +300,26 @@ par(mar=c(5.1, 4.1, 4.1, 2.1))
 @
 
 \pagebreak
-Next, we computed Prediction Strength using various dataset sizes. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset.
+Next, we computed Prediction Strength using various dataset sizes. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
 \subsection{TCGA/Verhaak}
 <<tcga_pred_str_margin_trend>>=
-ggplot(tcga.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+
+ggplot(tcga.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
 \pagebreak
 
 \subsection{Tothill/Helland}
 For the clustering algorithm and classifier described in Tothill (2008) and Helland (2011), we observed an increase in robustness of subtypes in the TCGA dataset.
 <<tothill_pred_str_margin_trend>>=
-ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+
+ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
 \pagebreak
 \subsection{Konecny}
 For the clustering algorithm and classifier described in Konecny (2014), we observed an increase in robustness of subtypes in the TCGA dataset.
 <<konecny_pred_str_margin_trend>>=
-ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+
+ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
 
 \pagebreak
