@@ -170,11 +170,8 @@ tcga.mean.ps.df$prediction.strength <- sapply(tcga.mean.ps.df$dataset.size, func
 @
 
 
-<<tcga_pred_str_margin_trend>>=
-ggplot(tcga.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
 
-<<tcga_pred_str_margin_trend_average>>=
+<<tcga_pred_str_margin_trend_average, eval=FALSE>>=
 ggplot(tcga.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
@@ -221,15 +218,11 @@ tothill.mean.ps.df <- data.frame(dataset.size=unique(tothill.pred.str.trend.comb
 tothill.mean.ps.df$prediction.strength <- sapply(tothill.mean.ps.df$dataset.size, function(dataset.size) mean(tothill.pred.str.trend.combined$prediction.strength[tothill.pred.str.trend.combined$dataset.size==dataset.size]))
 @
 
-<<tothill_pred_str_margin_trend>>=
-ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
-
-<<tothill_pred_str_margin_trend_average>>=
+<<tothill_pred_str_margin_trend_average, eval=FALSE>>=
 ggplot(tothill.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<tothill_pred_str_margin_trend_tcga>>=
+<<tothill_pred_str_margin_trend_tcga, eval=FALSE>>=
 ggplot(tothill.pred.str.trend.combined[tothill.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
@@ -276,15 +269,11 @@ konecny.mean.ps.df <- data.frame(dataset.size=unique(konecny.pred.str.trend.comb
 konecny.mean.ps.df$prediction.strength <- sapply(konecny.mean.ps.df$dataset.size, function(dataset.size) mean(konecny.pred.str.trend.combined$prediction.strength[konecny.pred.str.trend.combined$dataset.size==dataset.size]))
 @
 
-<<konecny_pred_str_margin_trend>>=
-ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
-
-<<konecny_pred_str_margin_trend_average>>=
+<<konecny_pred_str_margin_trend_average, eval=FALSE>>=
 ggplot(konecny.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: konecny/Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<konecny_pred_str_margin_trend_tcga>>=
+<<konecny_pred_str_margin_trend_tcga, eval=FALSE>>=
 ggplot(konecny.pred.str.trend.combined[konecny.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
@@ -302,12 +291,31 @@ my.boxplot
 
 @
 
-\pagebreak
-<<dataset_barplot, fig.width=8, fig.height=5>>=
+<<dataset_barplot, fig.width=8, fig.height=5, eval=FALSE>>=
 
 par(mar=c(5.1,10,4.1,2.1))
 barplot(sapply(esets.not.rescaled.classified[dataset.names], function(x) ncol(exprs(x))), horiz=TRUE, las=2, col="darkblue", main="HGS sample sizes")
 par(mar=c(5.1, 4.1, 4.1, 2.1))
+@
+
+\pagebreak
+Next, we computed Prediction Strength using various dataset sizes. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset.
+\subsection{TCGA/Verhaak}
+<<tcga_pred_str_margin_trend>>=
+ggplot(tcga.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+@
+\pagebreak
+
+\subsection{Tothill/Helland}
+For the clustering algorithm and classifier described in Tothill (2008) and Helland (2011), we observed an increase in robustness of subtypes in the TCGA dataset.
+<<tothill_pred_str_margin_trend>>=
+ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+@
+\pagebreak
+\subsection{Konecny}
+For the clustering algorithm and classifier described in Konecny (2014), we observed an increase in robustness of subtypes in the TCGA dataset.
+<<konecny_pred_str_margin_trend>>=
+ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
 \pagebreak
@@ -316,7 +324,7 @@ par(mar=c(5.1, 4.1, 4.1, 2.1))
 For each classification and clustering algorithm, we produced a stripplot of the prediction strength values for each of the 100 clustering runs.
 
 \pagebreak
-\subsection{Verhaak/TCGA}
+\subsection{TCGA/Verhaak}
 Using the subtype labels from the implemented Verhaak classifier, compared against de novo clustering with NMF, k = 4, and the same gene list used by the authors:
 
 
