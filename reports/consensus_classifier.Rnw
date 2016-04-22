@@ -29,6 +29,7 @@ library(pamr)
 library(randomForest)
 library(survcomp)
 library(RColorBrewer)
+library(dplyr)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
@@ -69,6 +70,24 @@ for(dataset.name in dataset.names) {
   classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
 }
 
+@
+
+<<gene_pairs_rf>>=
+source("getGenePairConsensusOvarianSubtypes.R")
+classification.vals.genepairs.rf <- list()
+classification.vals.genepairs.rf.prob <- list()
+
+
+for(dataset.name in dataset.names) {
+  # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
+  left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
+  training.dataset.names <- dataset.names[dataset.names != dataset.name]
+  
+  consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
+  
+  classification.vals.genepairs.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
+  classification.vals.genepairs.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+}
 @
 
 \title{Consensus Classifier for High-grade serous ovarian carcinoma}
@@ -347,6 +366,7 @@ title("Consensus RF Margins")
 \begin{figure}[H]
 {\centering
 <<ROC curve, fig.width=6, fig.height=6>>=
+save(pooled.subtypes, file="pooled.subtypes.RData")
 roc.colors <- brewer.pal(5, "Set1")
 plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
 plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[2], lwd=2, add=TRUE)
