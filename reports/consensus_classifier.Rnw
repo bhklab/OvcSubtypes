@@ -21,6 +21,8 @@ options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
+library(ggplot2)
+library(gridExtra)
 @
 
 <<Leave_one_dataset_out>>=
@@ -327,40 +329,24 @@ We segregated patients into two categories: concordant patients (n = \Sexpr{sum(
 
 \begin{figure}[H]
 {\centering
-<<histograms>>=
+<<boxplots>>=
+
 margin.comparison.cases.to.include <- pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$data.source != "TCGA"
 
-par(mfrow=c(2,2))
-hist(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,3.5,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Helland Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,3.5,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
-legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
-helland.hist.pval <- wilcox.test(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==FALSE])$p.value
-text( 3.5, 20, sprintf("p = %.2E", helland.hist.pval), pos=2)
-title("Helland Classifier Margins")
+helland.boxplot.pval <- wilcox.test(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==FALSE])$p.value
+verhaak.boxplot.pval <- wilcox.test(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==FALSE])$p.value
+konecny.boxplot.pval <- wilcox.test(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE], pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE])$p.value
+consensus.rf.boxplot.pval <- wilcox.test(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
 
-hist(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="", xlab="Verhaak Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="",add=TRUE)
-legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
-verhaak.hist.pval <- wilcox.test(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==FALSE])$p.value
-text( 0.8, 20, sprintf("p = %.2E", verhaak.hist.pval), pos=2)
-title("Verhaak Classifier Margins")
+helland.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Helland.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Helland Classifier Margins") + xlab(sprintf("p = %.2E", helland.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+verhaak.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Verhaak.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Verhaak Classifier Margins") + xlab(sprintf("p = %.2E", verhaak.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+konecny.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Konecny.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Konecny Classifier Margins") + xlab(sprintf("p = %.2E", konecny.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+consensus.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 
-hist(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,0.8,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Konecny Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,0.8,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
-legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
-konecny.hist.pval <- wilcox.test(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE], pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE])$p.value
-text( 0.8, 20, sprintf("p = %.2E", konecny.hist.pval), pos=2)
-title("Konecny Classifier Margins")
-
-hist(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include & pooled.subtypes$concordant==TRUE],breaks=seq(0,1,length.out=70),col=rgb(1,1,0,0.7),main="",xlab="Consensus RF Margin Value", ylim=c(0,80))
-hist(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include & pooled.subtypes$concordant==FALSE],breaks=seq(0,1,length.out=70),col=rgb(0,1,1,0.4),main="", add=TRUE)
-legend("topright", c("Concordant", "Non-concordant"), fill=c(rgb(1,1,0,0.7), rgb(0,1,1,0.4)), bty="n")
-consensus.rf.hist.pval <- wilcox.test(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
-text( 1, 20, sprintf("p = %.2E", consensus.rf.hist.pval), pos=2)
-title("Consensus RF Margins")
+grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.rf.margin.boxplot, ncol=2, nrow=2)
 @
 }
-\caption{Histograms indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the Consensus Random Forest classifier, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test.}
+\caption{Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the Consensus Random Forest classifier, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test.}
 \end{figure}
 
 \begin{figure}[H]
