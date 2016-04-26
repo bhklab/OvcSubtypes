@@ -1,5 +1,5 @@
 
-getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.scaled), purest.subtypes = FALSE) {
+getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE) {
   
   ### Load training data
   print("Loading training data")
@@ -47,6 +47,10 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
 #  save(entrez.id.union, file="entrez.id.union.RData")
   load("entrez.id.union.RData")
   load("verhaak.entrez.ids.RData")
+  
+  dataset.names.to.keep <- .dataset.names.to.keep
+  
+  esets.not.rescaled.classified <- esets.not.rescaled.classified[dataset.names.to.keep]
   
   esets.merged <- MetaGx::datasetMerging(esets.not.rescaled.classified, method = "intersect", standardization = "none")
   
