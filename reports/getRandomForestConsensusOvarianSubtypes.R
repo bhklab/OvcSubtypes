@@ -1,5 +1,5 @@
 
-getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.scaled), purest.subtypes = TRUE) {
+getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.scaled), purest.subtypes = FALSE) {
   
   ### Load training data
   print("Loading training data")

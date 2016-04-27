@@ -64,6 +64,7 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   
   cases.to.keep <- 
     if (purest.subtypes) { 
+      print("Purest subtypes")
       purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
       (exprs(esets.merged) %>% colnames) %in% delete_leading_dataset_string(purest_subtypes)
     } else {

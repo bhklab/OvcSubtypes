@@ -7,7 +7,7 @@ delete_leading_dataset_string <- function (vector.of.strings) {
 
 ## if threshold.auto, use pamr.adaptthresh to select a threshold; otherwise, use the threshold parameter
 
-getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), threshold.auto=TRUE, threshold=1, purest.subtypes = TRUE) {
+getConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), threshold.auto=TRUE, threshold=1, purest.subtypes = FALSE) {
     
   ### Load training data
   print("Loading training data")
