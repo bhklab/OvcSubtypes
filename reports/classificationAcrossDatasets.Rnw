@@ -375,13 +375,12 @@ subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes[,subtype.names[[i]]])
 @
  
 
-Based on the pairwise concordance, we can see that the subtypes in the different schemes have a clear 1-1 mapping, except in the case of the Bentik, which maps the DIF, PRO and MES subtype of Vehaak (and the corresponding subtypes in other schemes) to Angiogenic and the IMR subtype to non-Angiogenic. The table below shows the mapping. 
-
+Based on the pairwise concordance, we observe that the subtypes in the different schemes appear to follow a clear one-to-one mapping, except in the case of the Bentink, which maps the IMR, DIF, and PRO subtypes of Verhaak (and the corresponding subtypes in other schemes) to non-Angiogenic and the MES subtype to Angiogenic. The table below shows the mapping. 
 
 
 <<Subtype_map_table, results='asis'>>=
 subtype.map <- as.data.frame(subtypes)
-subtype.map$"Bentik" <- c(levels(pooled.subtypes[,subtype.names[[4]]]), "Angiogenic", "Angiogenic")
+subtype.map$"Bentink" <- c("nonAngiogenic", "nonAngiogenic", "nonAngiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
 
 print(xtable(subtype.map), include.rownames=FALSE)
@@ -503,21 +502,24 @@ margin.concordance <- function (subtype_order = 1, all = FALSE) {
   scatterplot_melt.df <- melt(scatterplot.df, id = "percent")       
     scatterplot <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual(values=c("violet", "red","green","blue", "black")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Concordance of subtypes") 
 @
-In the concordance curves of subtypes (above), we can see how the concordance rises for each subtype as the marginal datasets are removed. Each subtype is labelled by the name provied by Verhaak et al.
 
-We filter the dataset based on the percent of datasets that would remain and we remove datasets based on margin-cutoffs (i.e., datasets with margins lesser than the margin cut-offs or removed). In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed
+We sought to further investigate the association of margin values with subtype concordance, under the hypothesis that patients with had higher margin values were more `confidently' classified, and more concordantly classified between subtypes. We restricted our attention to the Helland, Konecny, and Verhaak classifiers, since they have the same number of subtypes.
+In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed.
 
-
-<<margin_cuttoffs_versus_percentage removed, out.width="0.8\\textwidth">>=
+\begin{figure}[H]
+<<margin_cuttoffs_versus_percentage removed, out.width="0.5\\textwidth">>=
 xvals <- seq(0, 1, length.out = 3000)
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
 margin_cutoff = margin_scatterplot.df$margin[1500]
 points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
 ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) + 
     geom_point(size=3) + geom_line(size=3) + theme_bw() + 
-    xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus percentage of dataset removed") 
+    xlab("Percentage of dataset removed") + ylab("Margin cutoff") + ylim(0, 1) + geom_segment(aes(x=0,y=cutoff,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + geom_segment(aes(x=percent_removed,y=0,xend=percent_removed,yend=cutoff, color="cutoff"),data=points.df) + ggtitle("Margin Cutoffs versus Percentage of Dataset Removed")  + coord_flip()
 @
 
+\caption{The percentage of dataset removed for different margin cutoffs. The margin cutoff is used as a quantile, and patients above that margin quantile in all three classifiers are retained.}
+
+\end{figure}
 
 <<filtered.dataset>>=
 ## below is the code added by Lavanya for the filtered dataset
@@ -588,7 +590,7 @@ newdata <- mydata[order(All),]
 
 
 
-We choose a cutoff of \Sexpr{margin_cutoff} (corresponding to \Sexpr{ margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff]}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
+We choose a cutoff of \Sexpr{sprintf("%0.2f", margin_cutoff)} (corresponding to \Sexpr{ sprintf("%0.2f", margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff])}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
 The resulting dataset is as below:
 
@@ -746,7 +748,7 @@ survival_filtered_all.df <- intersection_pooled.subtypes.survival
   }
   cols <- 1:4
   
-  title <- "Filtered (before margins)"
+  title <- "Concordantly Classified Cases"
   
   km.coxph.plot(surv.obj ~ groups, survival_filtered_all.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered_all.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
   title(title, cex.main=2)
