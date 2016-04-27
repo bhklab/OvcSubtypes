@@ -17,14 +17,14 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
 @
 
-\title{Classification of Ovarian Subtyping Schemes Across a Large Compendium of Ovarian Datasets}
+\title{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
 
 \author{Gregory M. Chen (with some updated code added by Lavanya Kannan)}
 \date{\today}
@@ -193,6 +193,10 @@ pooled.subtypes$surv.obj <- Surv(time = pooled.subtypes$years_to_death, event = 
 pooled.subtypes.survival = na.omit(pooled.subtypes)
 @
 
+\pagebreak
+
+\section{Data Description}
+
 From MetaGxOvarian, we identified \Sexpr{nrow(pooled.subtypes)}  (\Sexpr{nrow(pooled.subtypes.survival)} with survival data) patients from diagnosed with high-grade serous ovarian carcinoma.
 
 <<Dataset_table, results='asis'>>=
@@ -202,10 +206,14 @@ data.counts[,1] <- as.character(data.counts[,1])
 data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
 print(xtable(data.counts), include.rownames=FALSE)
 @
-
+\pagebreak
+\section{Pairwise subtype associations}
+We applied our implementation of the subtype classifiers of Helland, Verhaak, Konecny, and Bentink to these datasets. 
 % Survival analysis moved to end of document by Lavanya
 
-<<Contingency_tables, out.width="0.75\\textwidth", fig.width=8, fig.height=15>>=
+\begin{figure}[H]
+\centering
+<<Contingency_tables, out.width="0.55\\textwidth", fig.width=8, fig.height=15>>=
 pair.matrix <- combn(subtype.names,2)
 # Modifications to order for aesthetic reasons
 pair.matrix <- pair.matrix[,c(4,5,1,3,2,6)]
@@ -239,6 +247,8 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 #do.call(grid.arrange, c(contingency.plots[4:6], ncol = 3))
 #dev.off()
 @
+\caption{Pairwise contingency tables indicated associations between the four subtype classifiers. We restricted our attention to the \Sexpr{nrow(pooled.subtypes.survival)} patients for which survival information was available. The subtypes of Bentink et al. appears to most strongly resemble the Mesenchymal subtype of Verhaak, subtype C4 of Konecny, and subtype C1 of Helland.}
+\end{figure}
 
 <<generate_figs_for_marginal_analysis>>=
 margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
@@ -292,35 +302,50 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
   })
 @
 
-\section{Helland vs Verhaak}
+\pagebreak
 
-<<Helland_vs_Verhaak_margin_contingency, out.width="0.8\\textwidth">>=
+\subsection{Helland vs Verhaak}
+\begin{figure}[H]
+<<Helland_vs_Verhaak_margin_contingency, out.width="0.75\\textwidth">>=
 do.call(grid.arrange, margin.contingency.plots[[1]], c(ncol=2))
 @
 
-<<Helland_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+<<Helland_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.4\\textwidth">>=
 margin.scatterplots[[1]]
 @
 
-\section{Konecny vs Verhaak}
+\caption{Pairwise subtype association between the Helland and Verhaak classifiers. Each classifier produces a real-valued subtype score per patient; from this score, a margin value can be defined as the difference between the top two subtype scores. We assessed subtype association, considering only patients for whom the margin values are in the top 75\%, top 50\%, and top 25\% of both classifiers. Using these margin value cutoffs, we observed an increase in between-classifier concordance.}
+\end{figure}
 
-<<Konecny_vs_Verhaak_margin_contingency, out.width="0.8\\textwidth">>=
+\subsection{Konecny vs Verhaak}
+
+\begin{figure}[H]
+
+<<Konecny_vs_Verhaak_margin_contingency, out.width="0.75\\textwidth">>=
 do.call(grid.arrange, margin.contingency.plots[[2]], c(ncol=2))
 @
 
-<<Konecny_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+<<Konecny_vs_Verhaak_margin_scatter, fig.width=5, fig.height=5, out.width="0.4\\textwidth">>=
 margin.scatterplots[[2]]
 @
 
-\section{Helland vs Konecny}
+\caption{Pairwise subtype association between the Konecny and Verhaak classifiers. Each classifier produces a real-valued subtype score per patient; from this score, a margin value can be defined as the difference between the top two subtype scores. We assessed subtype association, considering only patients for whom the margin values are in the top 75\%, top 50\%, and top 25\% of both classifiers. Using these margin value cutoffs, we observed an increase in between-classifier concordance.}
+\end{figure}
 
-<<Helland_vs_Konecny_margin_contingency, out.width="0.8\\textwidth">>=
+\subsection{Helland vs Konecny}
+
+\begin{figure}[H]
+
+<<Helland_vs_Konecny_margin_contingency, out.width="0.75\\textwidth">>=
 do.call(grid.arrange, margin.contingency.plots[[3]], c(ncol=2))
 @
 
-<<Helland_vs_Konecny_margin_scatter, fig.width=5, fig.height=5, out.width="0.5\\textwidth">>=
+<<Helland_vs_Konecny_margin_scatter, fig.width=5, fig.height=5, out.width="0.4\\textwidth">>=
 margin.scatterplots[[3]]
 @
+
+\caption{Pairwise subtype association between the Helland and Konecny classifiers. Each classifier produces a real-valued subtype score per patient; from this score, a margin value can be defined as the difference between the top two subtype scores. We assessed subtype association, considering only patients for whom the margin values are in the top 75\%, top 50\%, and top 25\% of both classifiers. Using these margin value cutoffs, we observed an increase in between-classifier concordance.}
+\end{figure}
 
 % The below code is not getting printed
 % <<Forest_plots, eval=FALSE>>=
