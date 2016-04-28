@@ -507,7 +507,7 @@ We sought to further investigate the association of margin values with subtype c
 In the following plot, we can see the relationship between the margin cutoffs and the percent of dataset removed.
 
 \begin{figure}[H]
-<<margin_cuttoffs_versus_percentage removed, out.width="0.5\\textwidth">>=
+<<margin_cuttoffs_versus_percentage removed, fig.width=8, fig.height=7, out.width="0.6\\textwidth">>=
 xvals <- seq(0, 1, length.out = 3000)
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
 margin_cutoff = margin_scatterplot.df$margin[1500]
