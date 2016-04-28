@@ -17,7 +17,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -126,31 +126,6 @@ esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(
 save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
 @
 
-% BELOW CODE IS NOT USED
-% <<load_data_from_files>>=
-% load("esets.not.rescaled.classified.RData")
-% esets.with.survival <- esets.not.rescaled.classified
-% esets.with.survival <- lapply(esets.with.survival, function(eset) {
-%   eset[,!is.na(eset$days_to_death) & !is.na(eset$vital_status)]
-%   })
-% 
-% esets.with.survival <- esets.with.survival[sapply(esets.with.survival, ncol) > 0]
-% eset.names <- names(esets.with.survival)
-% esets.with.survival <-lapply(eset.names, function(eset.name) {
-%   esets.with.survival[[eset.name]]$data.source <- eset.name
-%   return(esets.with.survival[[eset.name]])
-%   })
-% names(esets.with.survival) <- eset.names
-% 
-% ovarian.publication.years <- read.csv("ovarian_publication_years.csv", stringsAsFactors = FALSE)
-% if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
-%   stop("Check \"ovarian_publication_years.csv\"")
-% }
-% ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
-% esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
-% save(esets.with.survival, file = "esets.with.survival.RData")
-% @
-
 \tableofcontents
 <<Pooled_survival_prepare_data>>=
 subtype.names <- c("Konecny", "Verhaak", "Helland", "Bentink")
@@ -202,8 +177,6 @@ data.counts[,1] <- as.character(data.counts[,1])
 data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
 print(xtable(data.counts), include.rownames=FALSE)
 @
-
-% Survival analysis moved to end of document by Lavanya
 
 <<Contingency_tables, out.width="0.75\\textwidth", fig.width=8, fig.height=15>>=
 pair.matrix <- combn(subtype.names,2)
@@ -341,7 +314,6 @@ margin.scatterplots[[3]]
 % addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
 % @
 
-% Below section added by Lavanya
 \section{Contingency of subtypes}
 
 <<Subtype_mapping>>=

@@ -1,5 +1,5 @@
 
-getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE) {
+getRandomForestConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.scaled), purest.subtypes = TRUE) {
   
   ### Load training data
   print("Loading training data")
@@ -42,19 +42,11 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
 #  
 #  verhaak.entrez.ids <- do.call(c, as.list(org.Hs.egALIAS2EG)[verhaak.gene.symbols])
 #  
-#  entrez.id.union <- unique(do.call(c, list(helland.entrez.ids, konecny.entrez.ids, verhaak.entrez.ids)))
-#  save(verhaak.entrez.ids, file="verhaak.entrez.ids.RData")
+#  entrez.id. <- unique(do.call(c, list(helland.entrez.ids, konecny.entrez.ids, verhaak.entrez.ids)))
 #  save(entrez.id.union, file="entrez.id.union.RData")
   load("entrez.id.union.RData")
-  load("verhaak.entrez.ids.RData")
-  
-  dataset.names.to.keep <- .dataset.names.to.keep
-  
-  esets.not.rescaled.classified <- esets.not.rescaled.classified[dataset.names.to.keep]
   
   esets.merged <- MetaGx::datasetMerging(esets.not.rescaled.classified, method = "intersect", standardization = "none")
-  
-  esets.merged <- esets.merged[fData(esets.merged)$EntrezGene.ID %in% verhaak.entrez.ids,]
   
   subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
                                         Verhaak=c("IMR", "DIF", "PRO", "MES"),
@@ -64,7 +56,6 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   
   cases.to.keep <- 
     if (purest.subtypes) { 
-      print("Purest subtypes")
       purest_subtypes <- rownames(Filtered_intersection_pooled.subtypes)
       (exprs(esets.merged) %>% colnames) %in% delete_leading_dataset_string(purest_subtypes)
     } else {
@@ -80,24 +71,13 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   train.labels <- training.dataset$Verhaak.subtypes
   levels(train.labels) <- paste0(levels(train.labels), "_consensus")
   
-  intersecting.entrez.ids <- as.character(intersect(fData(training.dataset)$EntrezGene.ID, fData(eset)$EntrezGene.ID))
+  intersecting.gene.names <- as.character(intersect(rownames(exprs(training.dataset)), rownames(exprs(eset))))
   
   print("Training Random Forest...")
+  rf.model <- randomForest(x=t(exprs(training.dataset)[intersecting.gene.names,]), y=train.labels)
   
-  train.expression.matrix <- t(exprs(training.dataset)[match(intersecting.entrez.ids, fData(training.dataset)$EntrezGene.ID),])
-  
-  train.pairwise.matrix <-
-    apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) train.expression.matrix[,pair[1]] > train.expression.matrix[,pair[2]])
-  
-  rf.model <- randomForest(x=train.pairwise.matrix, y=train.labels)
-  
-  test.expression.matrix <- t(exprs(eset)[match(intersecting.entrez.ids, fData(eset)$EntrezGene.ID),])
-  
-  test.pairwise.matrix <-
-    apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) test.expression.matrix[,pair[1]] > test.expression.matrix[,pair[2]])
-  
-  my.predictions <- predict(rf.model, newdata = test.pairwise.matrix)
-  my.predictions.probs <- predict(rf.model, newdata = test.pairwise.matrix, type = 'prob')
+  my.predictions <- predict(rf.model, newdata = t(exprs(eset)))
+  my.predictions.probs <- predict(rf.model, newdata = t(exprs(eset)), type = 'prob')
   
   eset$Ovarian.subtypes.rf <- my.predictions
   
