@@ -214,7 +214,7 @@ The first is a random forest classifier, trained on patients that were concordan
 
 The second consensus classifier is based on binary gene pairs, and was designed to be appropriate for classifying expression profiles in small (e.g. single-sample) independent datasets.
 
-<<consensus_rf_contingency_plots, fig.width=10, fig.height=11>>=
+<<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
     contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Helland))
@@ -252,7 +252,42 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
 grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
 
-<<genepair_contingency_plots>>=
+<<genepair_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
+contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
+  if(comparison.group == "Helland") {
+    contingency.m <- melt(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Helland))
+    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Helland))
+  } else if(comparison.group == "Verhaak") {
+    contingency.m <- melt(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Verhaak))
+    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Verhaak))
+  } else if(comparison.group == "Konecny") {
+    contingency.m <- melt(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Konecny))
+    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Konecny))
+  } else if(comparison.group == "Concordant_Classification") {
+    contingency.m <- melt(table(pooled.subtypes$Consensus.genepairs.rf[pooled.subtypes$concordant], pooled.subtypes$Verhaak[pooled.subtypes$concordant]))
+    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.genepairs.rf[pooled.subtypes$concordant], pooled.subtypes$Verhaak[pooled.subtypes$concordant]))
+  }
+  colnames(contingency.m)[1:2] <- c("Consensus_Gene_Pairs_RF", comparison.group)
+  
+  cramers.v <- vcd::assocstats(contingency.matrix)[["cramer"]]
+  
+  stat.text <- sprintf("n = %d\nPercent Concordant = %.2f%%\nCramer's v = %.2f", sum(contingency.matrix), 100 * sum(diag(contingency.matrix)) / sum(contingency.matrix), cramers.v)
+  
+  p <- ggplot(contingency.m, aes_string("Consensus_Gene_Pairs_RF", comparison.group)) + 
+    geom_tile(aes(fill = value), colour = "black") + 
+    scale_fill_gradient(name="Frequency", low="white", high="#00802b") + 
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
+    geom_text(label=as.character(contingency.matrix), colour="black") + xlab("Consensus Gene-Pairs RF\n\n\n\n\n")
+  
+  p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-5.2)
+  
+  gt <- ggplot_gtable(ggplot_build(p))
+  gt$layout$clip[gt$layout$name == "panel"] <- "off"
+    
+  return(gt)
+})
+
+grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
 
 <<survival_plots, fig.width=9, fig.height=9>>=
