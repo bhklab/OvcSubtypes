@@ -77,7 +77,8 @@ for(dataset.name in dataset.names) {
 \date{\today}
 \maketitle
 
-<<contingency_tables, results='markup'>>=
+\tableofcontents
+<<contingency_tables, results='markup', eval=FALSE>>=
 table(unlist(classification.vals.genepairs.rf), unlist(classification.vals.rf))
 
 # Get the margins, given the list of probabilities of datasets
@@ -214,6 +215,7 @@ The first is a random forest classifier, trained on patients that were concordan
 
 The second consensus classifier is based on binary gene pairs, and was designed to be appropriate for classifying expression profiles in small (e.g. single-sample) independent datasets.
 
+\begin{figure}[H]
 <<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
@@ -251,7 +253,10 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
 
 grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
+\caption{Contingency plots showing concordance of subtype classification between the Consensus Random Forest classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Random Forest classifier and the patients concordantly classified between the three classifiers. Classification by the Consensus Random Forest classifier was performed using leave-one-dataset-out validation, with the classification for each dataset performed by training on all other datasets. The Consensus Random Forest classifier is trained using genes that are present in all training datasets. Gene expression in each dataset is scaled per gene to have a mean of 0 and variance of 1; a random forest is trained using \texttt{R} package \texttt{randomForest} to classify patients in the validation dataset.}
+\end{figure}
 
+\begin{figure}[H]
 <<genepair_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
@@ -289,6 +294,9 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
 
 grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
+\caption{Contingency plots showing concordance of subtype classification between the Binary Gene Pair classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Binary Gene Pair classifier and the patients concordantly classified between the three classifiers. The binary gene pair works by training a random forest classifier on a binary feature matrix that represents the pairwise greater-than or less-than relationships between genes in a given gene set. This classifier does not require rescaling of the gene expression set, and can therefore be used to classify gene expression profiles at a single-sample level. Like the Consensus Random Forest classifier, this classifier outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification.}
+\end{figure}
+
 
 <<survival_plots, fig.width=9, fig.height=9>>=
 layout(matrix(1:4, nrow = 2, byrow = TRUE))
