@@ -82,8 +82,8 @@ args <- commandArgs(trailingOnly = TRUE)
 #  k=4)
 
 config.grid <- data.frame(
-  gene.set=rep(c("tcga", "tothill", "konecny"), each=16),
-  algorithm=rep(c("nmf", "kmeans", "nmf"), each=16),
+  gene.set=rep(c("tcga", "tothill", "konecny"), each=15),
+  algorithm=rep(c("nmf", "kmeans", "nmf"), each=15),
   dataset.index=rep(1:15,3),
   k=4
   )
