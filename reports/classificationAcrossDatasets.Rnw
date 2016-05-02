@@ -17,7 +17,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -61,6 +61,7 @@ library(genefu)
 library(Biobase)
 library(dplyr)
 library(VennDiagram)
+library(colorfulVennPlot)
 @
 
 <<load_data>>=
@@ -124,6 +125,23 @@ esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(
   })
 esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
 save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+@
+
+<<Concordantly classified patients>>=
+subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
+                                      Verhaak=c("IMR", "DIF", "PRO", "MES"),
+                                      Helland=c("C2", "C4", "C5", "C1"))
+
+
+esets.not.rescaled.classified.concordant <- lapply(esets.not.rescaled.classified, function(eset) {
+concordant <- match(eset$Konecny, subtype.correspondances$Konecny) ==
+  match(eset$Verhaak, subtype.correspondances$Verhaak) &
+  match(eset$Verhaak, subtype.correspondances$Verhaak) ==
+  match(eset$Helland, subtype.correspondances$Helland)
+  return(eset[,concordant])
+})
+
+save(esets.not.rescaled.classified.concordant, file="esets.not.rescaled.classified.concordant.RData")
 @
 
 \tableofcontents
