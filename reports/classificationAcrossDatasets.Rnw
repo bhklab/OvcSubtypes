@@ -61,13 +61,11 @@ library(genefu)
 library(Biobase)
 library(dplyr)
 library(VennDiagram)
+library(colorfulVennPlot)
 @
 
 <<load_data>>=
-if(file.exists("esets.not.rescaled.RData")) {
-  load("esets.not.rescaled.RData")
-} else {
-	source("docs/reproduce.results.patientselection.config")
+source("docs/reproduce.results.patientselection.config")
 
 rule.1 <- c("sample_type","^tumor$")
 rule.2 <- c("histological_type","^ser$")
@@ -87,14 +85,13 @@ rescale <- FALSE
 
 source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
 	
-	esets.not.rescaled <- esets
-	# remove any genes with NA values
-	esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
-	# only keep esets with at least 10000 genes
-	esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(x) nrow(x) > 10000)]
-	
-	save(esets.not.rescaled, file="esets.not.rescaled.RData")
-}
+esets.not.rescaled <- esets
+# remove any genes with NA values
+esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
+# only keep esets with at least 10000 genes
+esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(x) nrow(x) > 10000)]
+
+save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
 
 <<classify_data>>=
@@ -126,30 +123,22 @@ esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(
 save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
 @
 
-% BELOW CODE IS NOT USED
-% <<load_data_from_files>>=
-% load("esets.not.rescaled.classified.RData")
-% esets.with.survival <- esets.not.rescaled.classified
-% esets.with.survival <- lapply(esets.with.survival, function(eset) {
-%   eset[,!is.na(eset$days_to_death) & !is.na(eset$vital_status)]
-%   })
-% 
-% esets.with.survival <- esets.with.survival[sapply(esets.with.survival, ncol) > 0]
-% eset.names <- names(esets.with.survival)
-% esets.with.survival <-lapply(eset.names, function(eset.name) {
-%   esets.with.survival[[eset.name]]$data.source <- eset.name
-%   return(esets.with.survival[[eset.name]])
-%   })
-% names(esets.with.survival) <- eset.names
-% 
-% ovarian.publication.years <- read.csv("ovarian_publication_years.csv", stringsAsFactors = FALSE)
-% if(!setequal(ovarian.publication.years$dataset, names(esets.with.survival))) {
-%   stop("Check \"ovarian_publication_years.csv\"")
-% }
-% ovarian.publication.years <- ovarian.publication.years[order(ovarian.publication.years$publication.year),]
-% esets.with.survival <- esets.with.survival[ovarian.publication.years$dataset]
-% save(esets.with.survival, file = "esets.with.survival.RData")
-% @
+<<Concordantly classified patients>>=
+subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
+                                      Verhaak=c("IMR", "DIF", "PRO", "MES"),
+                                      Helland=c("C2", "C4", "C5", "C1"))
+
+
+esets.not.rescaled.classified.concordant <- lapply(esets.not.rescaled.classified, function(eset) {
+concordant <- match(eset$Konecny.subtypes, subtype.correspondances$Konecny) ==
+  match(eset$Verhaak.subtypes, subtype.correspondances$Verhaak) &
+  match(eset$Verhaak.subtypes, subtype.correspondances$Verhaak) ==
+  match(eset$Helland.subtypes, subtype.correspondances$Helland)
+  return(eset[,concordant])
+})
+
+save(esets.not.rescaled.classified.concordant, file="esets.not.rescaled.classified.concordant.RData")
+@
 
 \tableofcontents
 <<Pooled_survival_prepare_data>>=
@@ -214,6 +203,7 @@ We applied our implementation of the subtype classifiers of Helland, Verhaak, Ko
 \begin{figure}[H]
 \centering
 <<Contingency_tables, out.width="0.55\\textwidth", fig.width=8, fig.height=15>>=
+
 pair.matrix <- combn(subtype.names,2)
 # Modifications to order for aesthetic reasons
 pair.matrix <- pair.matrix[,c(4,5,1,3,2,6)]
@@ -366,7 +356,6 @@ margin.scatterplots[[3]]
 % addpoly(rma.out[[3]], mlab="Random Effects", row=-1, atransf=exp, annotate=TRUE)
 % @
 
-% Below section added by Lavanya
 \section{Contingency of subtypes}
 
 <<Subtype_mapping>>=
