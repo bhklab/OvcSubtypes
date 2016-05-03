@@ -341,7 +341,7 @@ pred.str.df <- rbind(combined.ps.m, combined.ps.concordant.m)
 
 colnames(pred.str.df)[2:3] <- c("pred.strength", "Method")
 
-ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
+ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.2, cex=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
 
 @
 
