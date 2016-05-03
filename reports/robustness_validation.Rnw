@@ -2,6 +2,7 @@
 
 <<load_data_from_files>>=
 load("esets.not.rescaled.classified.RData")
+load("esets.not.rescaled.classified.concordant.RData")
 
 # These are the dataset names with TCGA RNASeq removed
 dataset.names <- names(esets.not.rescaled.classified)
@@ -29,13 +30,41 @@ classifier.subtypes <- lapply(c("Konecny.subtypes", "Verhaak.subtypes", "Helland
   return(subtype.classes)
 })
 
-names(classifier.subtypes) <- c("Konecny", "Verhaak", "Helland")
+clustering.subtypes.concordant <- list()
+
+for(dirname in c("konecny_nmf_4", "tcga_nmf_4", "tothill_kmeans_4")) {
+  cluster.classes <- list()
+  for(current.eset.name in dataset.names) {
+    cluster.classes[[current.eset.name]] <- list()
+    filenames <- Sys.glob(paste0("may2clusters_concordant/", dirname, "/", current.eset.name, "_*_classes.txt"))
+    for(filename in filenames) {
+      cluster.classes[[current.eset.name]][[length(cluster.classes[[current.eset.name]])+1]] <- scan(filename, what=character(0))
+    }
+  }
+  clustering.subtypes.concordant[[dirname]] <- cluster.classes
+}
+
+
+classifier.subtypes.concordant <- lapply(c("Konecny.subtypes", "Verhaak.subtypes", "Helland.subtypes"), function(subtype.colname) {
+  subtype.classes <- list()
+  for(current.eset.name in dataset.names) {
+    subtype.classes[[current.eset.name]] <- as.character(pData(esets.not.rescaled.classified.concordant[[current.eset.name]])[,subtype.colname])
+  }
+  return(subtype.classes)
+})
+
+names(classifier.subtypes.concordant) <- c("Konecny", "Verhaak", "Helland")
 
 # Remove clustering/classification subtypes performed on the original dataset
 clustering.subtypes$tcga_nmf_4$TCGA <- NULL
 clustering.subtypes$tothill_kmeans_4$GSE9891 <- NULL
 classifier.subtypes$Verhaak$TCGA <- NULL
 classifier.subtypes$Helland$GSE9891 <- NULL
+
+clustering.subtypes.concordant$tcga_nmf_4$TCGA <- NULL
+clustering.subtypes.concordant$tothill_kmeans_4$GSE9891 <- NULL
+classifier.subtypes.concordant$Verhaak$TCGA <- NULL
+classifier.subtypes.concordant$Helland$GSE9891 <- NULL
 
 getAdjacencyMatrix <- function(classes) {
   adj.matrix <- matrix(NA, nrow=length(classes), ncol=length(classes))
@@ -128,6 +157,9 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
+tcga.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Verhaak[[x]], clustering.subtypes.concordant$tcga_nmf_4[[x]][[y]])$ps))
+colnames(tcga.ps.vals.concordant) <- names(classifier.subtypes.concordant$Verhaak)
+
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
@@ -176,9 +208,11 @@ ggplot(tcga.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_poi
 @
 
 <<Tothill_pred_str, cache=TRUE>>=
-
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
+
+tothill.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Helland[[x]], clustering.subtypes.concordant$tothill_kmeans_4[[x]][[y]])$ps))
+colnames(tothill.ps.vals.concordant) <- names(classifier.subtypes.concordant$Helland)
 
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
@@ -285,10 +319,29 @@ We performed each clustering algorithm 100 times for each dataset, producing 100
 <<ps_combined_boxplot, out.width="0.7\\textwidth">>=
 
 set.seed(900)
-combined.ps <- sapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) apply(x, 2, median))
+combined.ps <- lapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
 combined.ps.m <- melt(combined.ps)
+combined.ps.m$variable <- NULL
+
 my.boxplot <- ggplot(combined.ps.m, aes(x=L1, y=value)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + geom_jitter(position=position_jitter(0.1)) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) 
 my.boxplot
+
+@
+
+<<ps_paired_boxplots>>=
+set.seed(900)
+combined.ps.concordant <- lapply(list(Tothill=tothill.ps.vals.concordant, TCGA=tcga.ps.vals.concordant, Konecny=konecny.ps.vals.concordant), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
+combined.ps.concordant.m <- melt(combined.ps.concordant)
+combined.ps.concordant.m$variable <- NULL
+
+combined.ps.concordant.m$Data <- "Concordant"
+combined.ps.m$Data <- "All"
+
+pred.str.df <- rbind(combined.ps.m, combined.ps.concordant.m)
+
+colnames(pred.str.df)[2:3] <- c("pred.strength", "Method")
+
+ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
 
 @
 
