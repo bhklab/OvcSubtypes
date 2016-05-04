@@ -30,13 +30,15 @@ classifier.subtypes <- lapply(c("Konecny.subtypes", "Verhaak.subtypes", "Helland
   return(subtype.classes)
 })
 
+names(classifier.subtypes) <- c("Konecny", "Verhaak", "Helland")
+
 clustering.subtypes.concordant <- list()
 
 for(dirname in c("konecny_nmf_4", "tcga_nmf_4", "tothill_kmeans_4")) {
   cluster.classes <- list()
   for(current.eset.name in dataset.names) {
     cluster.classes[[current.eset.name]] <- list()
-    filenames <- Sys.glob(paste0("may2clusters_concordant/", dirname, "/", current.eset.name, "_*_classes.txt"))
+    filenames <- Sys.glob(paste0("may3clusters_concordant/", dirname, "/", current.eset.name, "_*_classes.txt"))
     for(filename in filenames) {
       cluster.classes[[current.eset.name]][[length(cluster.classes[[current.eset.name]])+1]] <- scan(filename, what=character(0))
     }
@@ -135,25 +137,6 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 %Consensus k-means NMF & TCGA gene set Tothill gene set Top 1000 by MAD Top 1500 by MAD Top 2000 by MAD Top 2500 by MAD Top 3000 by MAD & 2 3 4 5 6 7 8 9 10
 %\\ \hline \end{tabular}
 <<TCGA_pred_str, cache=TRUE>>=
-
-.getSubtypeSpecificRandIndexValues <- function(classifier.subtypes.list, clustering.subtypes.list, ordered.classes, main) {
-    consistency.list.of.matrices <- lapply(1:length(classifier.subtypes.list), function(x) {
-      distance.per.subtype <- sapply(ordered.classes, function(subtype) {
-        sapply(1:100, function(y) {
-                subtype.specific.counts <- as.vector(table(clustering.subtypes.list[[x]][[y]][classifier.subtypes.list[[x]] == subtype]))
-                return( sum(sapply(subtype.specific.counts, choose, k=2)) / (choose(sum(subtype.specific.counts), 2)))
-               })
-      })
-      return(distance.per.subtype)
-    })
-    names(consistency.list.of.matrices) <- names(classifier.subtypes.list)
-    distance.per.subtype.means <- sapply(consistency.list.of.matrices, function(x) apply(x, 2, mean))
-    distance.per.subtype.means.m <- melt(distance.per.subtype.means)
-    boxplot(value ~ Var1, distance.per.subtype.means.m, outline=FALSE, ylab="Subtype-specific Rand Index", main=main)
-    stripchart(value ~ Var1, distance.per.subtype.means.m, add=TRUE, vertical=TRUE, method='jitter', pch=21)
-    return(distance.per.subtype.means)
-  }
-
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
