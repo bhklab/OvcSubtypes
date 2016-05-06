@@ -1,7 +1,9 @@
 
 
-<<load_data_from_files>>=
+<<load_data_from_files, cache=FALSE>>=
+knitr::opts_chunk$set(cache=FALSE)
 load("esets.not.rescaled.classified.RData")
+load("esets.not.rescaled.classified.concordant.RData")
 
 # These are the dataset names with TCGA RNASeq removed
 dataset.names <- names(esets.not.rescaled.classified)
@@ -31,69 +33,49 @@ classifier.subtypes <- lapply(c("Konecny.subtypes", "Verhaak.subtypes", "Helland
 
 names(classifier.subtypes) <- c("Konecny", "Verhaak", "Helland")
 
+clustering.subtypes.concordant <- list()
+
+for(dirname in c("konecny_nmf_4", "tcga_nmf_4", "tothill_kmeans_4")) {
+  cluster.classes <- list()
+  for(current.eset.name in dataset.names) {
+    cluster.classes[[current.eset.name]] <- list()
+    filenames <- Sys.glob(paste0("may3clusters_concordant/", dirname, "/", current.eset.name, "_*_classes.txt"))
+    for(filename in filenames) {
+      cluster.classes[[current.eset.name]][[length(cluster.classes[[current.eset.name]])+1]] <- scan(filename, what=character(0))
+    }
+  }
+  clustering.subtypes.concordant[[dirname]] <- cluster.classes
+}
+
+
+classifier.subtypes.concordant <- lapply(c("Konecny.subtypes", "Verhaak.subtypes", "Helland.subtypes"), function(subtype.colname) {
+  subtype.classes <- list()
+  for(current.eset.name in dataset.names) {
+    subtype.classes[[current.eset.name]] <- as.character(pData(esets.not.rescaled.classified.concordant[[current.eset.name]])[,subtype.colname])
+  }
+  return(subtype.classes)
+})
+
+names(classifier.subtypes.concordant) <- c("Konecny", "Verhaak", "Helland")
+
 # Remove clustering/classification subtypes performed on the original dataset
 clustering.subtypes$tcga_nmf_4$TCGA <- NULL
 clustering.subtypes$tothill_kmeans_4$GSE9891 <- NULL
 classifier.subtypes$Verhaak$TCGA <- NULL
 classifier.subtypes$Helland$GSE9891 <- NULL
 
-getAdjacencyMatrix <- function(classes) {
-  adj.matrix <- matrix(NA, nrow=length(classes), ncol=length(classes))
-	for(i in 1:(length(classes)-1)) {
-		for(j in (i+1):length(classes)) {
-			if(classes[i] == classes[j]) { adj.matrix[i,j] <- adj.matrix[j,i] <- 1 } else { adj.matrix[i,j] <- adj.matrix[j,i] <- 0 }
-		}
-	}
-  return(adj.matrix)
-}
+clustering.subtypes.concordant$tcga_nmf_4$TCGA <- NULL
+clustering.subtypes.concordant$tothill_kmeans_4$GSE9891 <- NULL
+classifier.subtypes.concordant$Verhaak$TCGA <- NULL
+classifier.subtypes.concordant$Helland$GSE9891 <- NULL
 
-getMeanAdjMatrices <- function(configs.to.keep) {
-  cluster.class.list.tokeep <- cluster.class.list[configs.to.keep]
-  lapply(names(cluster.class.list.tokeep[[1]]), function(dataset.name) {
-  mean.adj.matrix <- matrix(0, nrow=length(cluster.class.list.tokeep[[1]][[dataset.name]]), ncol=length(cluster.class.list.tokeep[[1]][[dataset.name]]))
-  total <- 0
-  for(cluster.config.index in 1:length(cluster.class.list.tokeep)) {
-    total <- total + 1
-    cluster.classes <- cluster.class.list.tokeep[[cluster.config.index]]
-    for(i in 1:(length(cluster.classes[[dataset.name]])-1)) {
-      for(j in (i+1):length(cluster.classes[[dataset.name]])) {
-        mean.adj.matrix[i,j] <- mean.adj.matrix[i,j] + (cluster.classes[[dataset.name]][i] == cluster.classes[[dataset.name]][j])
-        mean.adj.matrix[j,i] <- mean.adj.matrix[j,i] + (cluster.classes[[dataset.name]][i] == cluster.classes[[dataset.name]][j])
-      }
-    }
-  }
-  mean.adj.matrix <- mean.adj.matrix / total
-  diag(mean.adj.matrix) <- NA
-  names(mean.adj.matrix) <- names(cluster.class.list[[1]])
-  return(mean.adj.matrix)
-})
-}
-
-#cluster.adjacency.list <- lapply(cluster.class.list, function(cluster.classes) {
-#  lapply(cluster.classes, getAdjacencyMatrix)
-#})
-
-#cluster.adjacency.means <- do.call(function(x,y) {
-#  for(i in 1:length(x)) sum(x[[i]], y[[i]], na.rm=TRUE)
-#}, cluster.adjacency.list)
-
-getMeanPairwiseSimilarityMeasure <- function(class.list, metricFunction) {
-  out.vals <- c()
-  for(i in 1:(length(class.list) - 1)) {
-    for(j in (i+1):length(class.list)) {
-      vals <- sapply(1:length(class.list[[i]]), function(x) metricFunction(class.list[[i]][[x]], class.list[[j]][[x]]))
-      out.vals <- c(out.vals, vals)
-    }
-  }
-  return(out.vals)
-}
 @
 
 
 An important trait of a robust molecular subtyping scheme is that it should be present and discoverable in multiple datasets. We performed de novo clustering in \Sexpr{length(dataset.names)} independent ovarian datasets using the authors' original gene lists and clustering method. We compared these de novo cluster groupings to the labels from our implemented classifiers using the prediction strength statistic of Tibshirani and Walther, 2005.
 
 
-In order to permit comparability between subtyping schemes, all datasets were filtered to patients with high-grade serous ovarian carcinomas.
+In order to permit comparability between subtyping schemes, all datasets were filtered to patients with late-stage, high-grade serous ovarian carcinomas.
 %I performed clustering on 11 datasets from MetaGxOvarian:
 %\Sexpr{dataset.names}
 
@@ -105,28 +87,12 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 %\hline Algorithm & Gene Set & k \\ \hline 
 %Consensus k-means NMF & TCGA gene set Tothill gene set Top 1000 by MAD Top 1500 by MAD Top 2000 by MAD Top 2500 by MAD Top 3000 by MAD & 2 3 4 5 6 7 8 9 10
 %\\ \hline \end{tabular}
-<<TCGA_pred_str, cache=TRUE>>=
-
-.getSubtypeSpecificRandIndexValues <- function(classifier.subtypes.list, clustering.subtypes.list, ordered.classes, main) {
-    consistency.list.of.matrices <- lapply(1:length(classifier.subtypes.list), function(x) {
-      distance.per.subtype <- sapply(ordered.classes, function(subtype) {
-        sapply(1:100, function(y) {
-                subtype.specific.counts <- as.vector(table(clustering.subtypes.list[[x]][[y]][classifier.subtypes.list[[x]] == subtype]))
-                return( sum(sapply(subtype.specific.counts, choose, k=2)) / (choose(sum(subtype.specific.counts), 2)))
-               })
-      })
-      return(distance.per.subtype)
-    })
-    names(consistency.list.of.matrices) <- names(classifier.subtypes.list)
-    distance.per.subtype.means <- sapply(consistency.list.of.matrices, function(x) apply(x, 2, mean))
-    distance.per.subtype.means.m <- melt(distance.per.subtype.means)
-    boxplot(value ~ Var1, distance.per.subtype.means.m, outline=FALSE, ylab="Subtype-specific Rand Index", main=main)
-    stripchart(value ~ Var1, distance.per.subtype.means.m, add=TRUE, vertical=TRUE, method='jitter', pch=21)
-    return(distance.per.subtype.means)
-  }
-
+<<TCGA_pred_str, cache=FALSE>>=
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
+
+tcga.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Verhaak[[x]], clustering.subtypes.concordant$tcga_nmf_4[[x]][[y]])$ps))
+colnames(tcga.ps.vals.concordant) <- names(classifier.subtypes.concordant$Verhaak)
 
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
@@ -175,10 +141,12 @@ tcga.mean.ps.df$prediction.strength <- sapply(tcga.mean.ps.df$dataset.size, func
 ggplot(tcga.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<Tothill_pred_str, cache=TRUE>>=
-
+<<Tothill_pred_str, cache=FALSE>>=
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
+
+tothill.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Helland[[x]], clustering.subtypes.concordant$tothill_kmeans_4[[x]][[y]])$ps))
+colnames(tothill.ps.vals.concordant) <- names(classifier.subtypes.concordant$Helland)
 
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
@@ -226,9 +194,12 @@ ggplot(tothill.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_
 ggplot(tothill.pred.str.trend.combined[tothill.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<Konecny_pred_str, cache=TRUE>>=
+<<Konecny_pred_str, cache=FALSE>>=
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
+
+konecny.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Konecny[[x]], clustering.subtypes.concordant$konecny_nmf_4[[x]][[y]])$ps))
+colnames(konecny.ps.vals.concordant) <- names(classifier.subtypes.concordant$Konecny)
 
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
 @
@@ -280,27 +251,43 @@ ggplot(konecny.pred.str.trend.combined[konecny.pred.str.trend.combined$dataset.n
 
 Each dataset was clustered according to our implementation of the clustering algorithms and gene sets of Konecny, TCGA, and Tothill. Each dataset was also classified using our implementation of the corresponding classification algorithms of Konecny, TCGA/Verhaak, and Tothill/Helland. This produced two sets of subtype labels for each validation dataset, from which we computed prediction strength.
 
-We performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. In the boxplot below, each data point represents the median estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
+We performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. In the boxplot below, each data point represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
 
 <<ps_combined_boxplot, out.width="0.7\\textwidth">>=
 
 set.seed(900)
-combined.ps <- sapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) apply(x, 2, median))
+combined.ps <- lapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=konecny.ps.vals), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
 combined.ps.m <- melt(combined.ps)
-my.boxplot <- ggplot(combined.ps.m, aes(x=L1, y=value)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + geom_jitter(position=position_jitter(0.1)) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) 
-my.boxplot
+combined.ps.m$variable <- NULL
+
+ggplot(combined.ps.m, aes(x=L1, y=value, fill="red")) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(color="black", outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) + theme(legend.position='none')
+@
+
+Next, we compared the Prediction Strength for only the concordantly classified patients. Using only the patients classified concordantly using the classifiers of Helland, Verhaak, and Konecny, we performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. Each data point in the boxplot below represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
+
+<<ps_paired_boxplots, fig.width=10, out.width="0.85\\textwidth">>=
+set.seed(900)
+combined.ps.concordant <- lapply(list(Tothill=tothill.ps.vals.concordant, TCGA=tcga.ps.vals.concordant, Konecny=konecny.ps.vals.concordant), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
+combined.ps.concordant.m <- melt(combined.ps.concordant)
+combined.ps.concordant.m$variable <- NULL
+
+combined.ps.concordant.m$Data <- "Concordant"
+combined.ps.m$Data <- "All"
+
+pred.str.df <- rbind(combined.ps.m, combined.ps.concordant.m)
+
+colnames(pred.str.df)[2:3] <- c("pred.strength", "Method")
+
+#ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.2, cex=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
+
+ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(aes(fill=Data), outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
 
 @
 
-<<dataset_barplot, fig.width=8, fig.height=5, eval=FALSE>>=
-
-par(mar=c(5.1,10,4.1,2.1))
-barplot(sapply(esets.not.rescaled.classified[dataset.names], function(x) ncol(exprs(x))), horiz=TRUE, las=2, col="darkblue", main="HGS sample sizes")
-par(mar=c(5.1, 4.1, 4.1, 2.1))
-@
+The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
 
 \pagebreak
-Next, we computed Prediction Strength using various dataset sizes. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
+Next, we computed Prediction Strength using various dataset sizes. Using classifier margins to determine cutoffs, we subsetted the pre-clustered and pre-classified datasets. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
 \subsection{TCGA/Verhaak}
 <<tcga_pred_str_margin_trend>>=
 
@@ -320,61 +307,4 @@ For the clustering algorithm and classifier described in Konecny (2014), we obse
 <<konecny_pred_str_margin_trend>>=
 
 ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
-@
-
-\pagebreak
-\section{Prediction Strength: Supplemental}
-
-For each classification and clustering algorithm, we produced a stripplot of the prediction strength values for each of the 100 clustering runs.
-
-\pagebreak
-\subsection{TCGA/Verhaak}
-Using the subtype labels from the implemented Verhaak classifier, compared against de novo clustering with NMF, k = 4, and the same gene list used by the authors:
-
-
-<<TCGA_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
-
-
-par(mar=c(10,4.1,4.1,2.1))
-stripchart(as.data.frame(tcga.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
-par(mar=c(5.1, 4.1, 4.1, 2.1))
-@
-
-<<tcga_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
-
-tcga.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Verhaak, clustering.subtypes$tcga_nmf_4, tcga.ordered.classes, main="TCGA")
-@
-
-\pagebreak
-\subsection{Tothill/Helland}
-
-Using the subtype labels from the implemented Tothill/Helland classifier, compared against de novo clustering with consensus k-means, k = 4, and the gene list produced by the methods used by the authors:
-
-
-<<Tothill_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
-
-par(mar=c(10,4.1,4.1,2.1))
-stripchart(as.data.frame(tothill.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
-par(mar=c(5.1, 4.1, 4.1, 2.1))
-@
-
-<<tothill_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
-
-tothill.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Helland, clustering.subtypes$tothill_kmeans_4, tothill.ordered.classes, main="Tothill")
-@
-
-\pagebreak
-\subsection{Konecny}
-Using the subtype labels from the implemented Konecny classifier, compared against de novo clustering with consensus k-means, k = 4, and the top 2000 genes by MAD:
-
-<<Konecny_pred_str_plot, width=800, height=800, out.width="0.6\\textwidth">>=
-
-par(mar=c(10,4.1,4.1,2.1))
-stripchart(as.data.frame(konecny.ps.vals), vertical=TRUE, method="jitter", pch=20, cex=0.8, las=2, ylim = c(0,1), ylab="Prediction Strength")
-par(mar=c(5.1, 4.1, 4.1, 2.1))
-@
-
-<<konecny_adj_rand, out.width="0.6\\textwidth", eval=FALSE>>=
-
-konecny.adj.rand <- .getSubtypeSpecificRandIndexValues(classifier.subtypes$Konecny, clustering.subtypes$konecny_nmf_4, konecny.ordered.classes, "Konecny")
 @
