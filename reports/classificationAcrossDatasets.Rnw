@@ -95,7 +95,7 @@ save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
 
 <<classify_data>>=
-
+set.seed(450)
 # Subtype classification
 esets.not.rescaled.classified <- esets.not.rescaled
 # Remove TCGA.RNASeqV2
