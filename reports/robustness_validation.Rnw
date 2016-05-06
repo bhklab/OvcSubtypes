@@ -75,7 +75,7 @@ classifier.subtypes.concordant$Helland$GSE9891 <- NULL
 An important trait of a robust molecular subtyping scheme is that it should be present and discoverable in multiple datasets. We performed de novo clustering in \Sexpr{length(dataset.names)} independent ovarian datasets using the authors' original gene lists and clustering method. We compared these de novo cluster groupings to the labels from our implemented classifiers using the prediction strength statistic of Tibshirani and Walther, 2005.
 
 
-In order to permit comparability between subtyping schemes, all datasets were filtered to patients with high-grade serous ovarian carcinomas.
+In order to permit comparability between subtyping schemes, all datasets were filtered to patients with late-stage, high-grade serous ovarian carcinomas.
 %I performed clustering on 11 datasets from MetaGxOvarian:
 %\Sexpr{dataset.names}
 
@@ -260,7 +260,7 @@ combined.ps <- lapply(list(Tothill=tothill.ps.vals, TCGA=tcga.ps.vals, Konecny=k
 combined.ps.m <- melt(combined.ps)
 combined.ps.m$variable <- NULL
 
-ggplot(combined.ps.m, aes(x=L1, y=value, fill="red")) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black", outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) + theme(legend.position='none')
+ggplot(combined.ps.m, aes(x=L1, y=value, fill="red")) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(color="black", outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) + theme(legend.position='none')
 @
 
 Next, we compared the Prediction Strength for only the concordantly classified patients. Using only the patients classified concordantly using the classifiers of Helland, Verhaak, and Konecny, we performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. Each data point in the boxplot below represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
@@ -280,14 +280,14 @@ colnames(pred.str.df)[2:3] <- c("pred.strength", "Method")
 
 #ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.2, cex=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
 
-ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_boxplot(geom='errorbar') + geom_boxplot(aes(fill=Data), outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
+ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(aes(fill=Data), outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
 
 @
 
 The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
 
 \pagebreak
-Next, we computed Prediction Strength using various dataset sizes. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
+Next, we computed Prediction Strength using various dataset sizes. Using classifier margins to determine cutoffs, we subsetted the pre-clustered and pre-classified datasets. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
 \subsection{TCGA/Verhaak}
 <<tcga_pred_str_margin_trend>>=
 
