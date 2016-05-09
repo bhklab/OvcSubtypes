@@ -1019,7 +1019,7 @@ get_concordance_all_methods <- function(subtype_order, compare = c("self", "othe
 
 @
 
-The first set of plots give concordance of the filtered dataset (i.e., patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the filtered dataset with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
+The first set of plots give concordance of the dataset at various levels of margins removed (i.e., proportion of patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the dataset at various levels of margins removed with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
 
 
 
