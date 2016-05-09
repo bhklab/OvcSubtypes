@@ -592,7 +592,7 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
 )
 @
 
-The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
+The following are the venndiagrams showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
 
 
 <<venn_setup, results = 'hide'>>=
@@ -689,29 +689,52 @@ draw_venn_formargin <- function (margin,margin_overlay){
 margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
 dev.off()
 draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
-
 @
+
+<<Alternate_venn_rep, results="asis">>=
+subtype_order <- 1
+margin <- 1
+margin_overlay <- margin_overlay_cutoff
+
+par(mfrow=c(1,2))
+vals_margin <- get_overlaps_margin[[margin]][[subtype_order]]$lengths 
+names(vals_margin) <- c("111", "110", "101", "011", "100", "010", "001") 
+cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin)+1)[vals_margin+1]
+venn_all <- plotVenn(vals_margin, names(vals_margin), Colors=cols)
+ 
+ 
+vals_margin_overlay <- get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths 
+names(vals_margin_overlay) <- c("111", "110", "101", "011", "100", "010", "001") 
+cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals_margin_overlay+1]
+venn_filtered <- plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
+
+# not working
+grid.arrange(
+venn_all, top = "Venn Diagrams of subtype IMR", ncol = 2)
+@
+
+
 Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
 
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 
-<<Figure1-ConsensusAnalysis, results = 'as.is'>>=
+<<Figure1-ConsensusAnalysis, results="asis">>=
 venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
 # Two-way Contingencies
-Pane_A = grid.arrange(
+Pane_A <- grid.arrange(
 contingency.plots[[1]],
 contingency.plots[[3]],
 contingency.plots[[5]], top = "A.", ncol = 1)
 
 # Margins Versus Two-way Concordances
-Pane_B = grid.arrange(
+Pane_B <- grid.arrange(
 margin.scatterplots[[1]],
 margin.scatterplots[[2]],
 margin.scatterplots[[3]], top = "B.", ncol = 1)
 
 # Percentage of data removed versus three-way concordance
-Pane_C = grid.arrange(
+Pane_C <- grid.arrange(
 subtype_scatterplots, top = "C.")
 
 # Venn Diagrams showing the number of patients in each subtype stratified by the methods
