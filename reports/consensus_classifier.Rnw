@@ -28,6 +28,7 @@ library(randomForest)
 library(survcomp)
 library(RColorBrewer)
 library(dplyr)
+library(reshape2)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
@@ -153,6 +154,7 @@ The second consensus classifier is based on binary gene pairs, and was designed 
 
 \begin{figure}[H]
 <<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
+
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
     contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Helland))
