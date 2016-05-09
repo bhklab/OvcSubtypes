@@ -1058,7 +1058,7 @@ grid_arrange_shared_legend <- function(...) {
 grid_arrange_shared_legend(get_subtype_concordance(1), get_subtype_concordance(2), get_subtype_concordance(3), get_subtype_concordance(4))
 @
 
-<<pairwise_contingency, fig.width=15, fig.height=4>>=
+<<pairwise_contingency>>=
 margin.scatterplots_pairwise <- 
     apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
     margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
