@@ -277,14 +277,14 @@ for(data.subset in c("all", "concordant")) {
     cols <- 1:4
     title <- paste0("Combined Classifier: ", classifier)
     if(data.subset == "concordant") {
-      title <- paste0(title, ", concordant cases")
+      title <- paste0(title, "\n (concordant cases)")
     }
     if(data.subset == "concordant.cutoff") {
       title <- paste0(title, ", concordant, RF margin > 0.5")
     }
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-    title(title, cex.main=1)
+    title(title, cex.main=2)
     text(0,0.05, text, cex=0.85, pos=4)
   }
 }
