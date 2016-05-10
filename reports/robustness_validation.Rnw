@@ -106,7 +106,7 @@ tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(datas
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(length(classifier.subtypes$Verhaak[[dataset.name]]), 50, by = -1)
+  xvals <- seq(0, length(classifier.subtypes$Verhaak[[dataset.name]]), by = 25)[-1:-2]
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
@@ -135,12 +135,6 @@ tcga.mean.ps.df <- data.frame(dataset.size=unique(tcga.pred.str.trend.combined$d
 tcga.mean.ps.df$prediction.strength <- sapply(tcga.mean.ps.df$dataset.size, function(dataset.size) mean(tcga.pred.str.trend.combined$prediction.strength[tcga.pred.str.trend.combined$dataset.size==dataset.size]))
 @
 
-
-
-<<tcga_pred_str_margin_trend_average, eval=FALSE>>=
-ggplot(tcga.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
-
 <<Tothill_pred_str, cache=TRUE>>=
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
@@ -159,7 +153,7 @@ tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(da
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(length(classifier.subtypes$Helland[[dataset.name]]), 50, by=-1)
+  xvals <- seq(0, length(classifier.subtypes$Helland[[dataset.name]]), by=25)[-1:-2]
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
@@ -220,7 +214,7 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
   
-  xvals <- seq(length(classifier.subtypes$Konecny[[dataset.name]]), 50, by=-1)
+  xvals <- seq(0, length(classifier.subtypes$Konecny[[dataset.name]]), by=25)[-1:-2]
   
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
@@ -317,7 +311,7 @@ For the clustering algorithm and classifier described in Tothill (2008) and Hell
 
 ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
-Note that Prediction Strength for the TCGA dataset drops to zero between the dataset sizes of 58 and 68. This is an artifact in the Prediction Strength statistic that occurs when the number of samples in a class is very small; for lower than 58 patients, only three subtypes are produced from both clustering and classification. 
+%Note that Prediction Strength for the TCGA dataset drops to zero between the dataset sizes of 58 and 68. This is an artifact in the Prediction Strength statistic that occurs when the number of samples in a class is very small; for lower than 58 patients, only three subtypes are produced from both clustering and classification. 
 
 \pagebreak
 <<tothill_pred_str_margin_trend_tcga>>=
