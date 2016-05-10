@@ -74,7 +74,7 @@ for(dataset.name in dataset.names) {
 
 \title{Consensus Classifier for High-grade serous ovarian carcinoma}
 
-\author{Gregory M. Chen, Lavanya Kannan}
+\author{Gregory M. Chen}
 \date{\today}
 \maketitle
 
