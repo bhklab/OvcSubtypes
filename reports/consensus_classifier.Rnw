@@ -245,7 +245,7 @@ par(mar=c(5.1, 8, 4.1, 2.1))
 
 for(data.subset in c("all", "concordant")) {
   par(mar=c(5.1, 5, 4.1, 2.1))
-    for(classifier in c("Random Forest", "Gene Pairs Random Forest")) {
+    for(classifier in c("Random Forest", "Gene Pairs RF")) {
     pooled.subtypes.current <- pooled.subtypes
     
     if (classifier == "Random Forest"){
@@ -271,7 +271,7 @@ for(data.subset in c("all", "concordant")) {
     text <- ""
     text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
     for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", gsub("_consensus", "", levels(pooled.subtypes.current$group)[i+1]), hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
     }
     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
     cols <- 1:4
@@ -284,7 +284,7 @@ for(data.subset in c("all", "concordant")) {
     }
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-    title(title, cex.main=2)
+    title(title, cex.main=1.5)
     text(0,0.05, text, cex=0.85, pos=4)
   }
 }
