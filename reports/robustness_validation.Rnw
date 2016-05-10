@@ -1,7 +1,7 @@
 
 
-<<load_data_from_files, cache=FALSE>>=
-knitr::opts_chunk$set(cache=FALSE)
+<<load_data_from_files, cache=TRUE>>=
+knitr::opts_chunk$set(cache=TRUE)
 load("esets.not.rescaled.classified.RData")
 load("esets.not.rescaled.classified.concordant.RData")
 
@@ -87,7 +87,7 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 %\hline Algorithm & Gene Set & k \\ \hline 
 %Consensus k-means NMF & TCGA gene set Tothill gene set Top 1000 by MAD Top 1500 by MAD Top 2000 by MAD Top 2500 by MAD Top 3000 by MAD & 2 3 4 5 6 7 8 9 10
 %\\ \hline \end{tabular}
-<<TCGA_pred_str, cache=FALSE>>=
+<<TCGA_pred_str, cache=TRUE>>=
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
@@ -106,7 +106,7 @@ tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(datas
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(length(classifier.subtypes$Verhaak[[dataset.name]]), 50, by = -25)
+  xvals <- seq(length(classifier.subtypes$Verhaak[[dataset.name]]), 50, by = -1)
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
@@ -141,7 +141,7 @@ tcga.mean.ps.df$prediction.strength <- sapply(tcga.mean.ps.df$dataset.size, func
 ggplot(tcga.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
 @
 
-<<Tothill_pred_str, cache=FALSE>>=
+<<Tothill_pred_str, cache=TRUE>>=
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 
@@ -159,7 +159,7 @@ tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(da
   
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(length(classifier.subtypes$Helland[[dataset.name]]), 50, by=-25)
+  xvals <- seq(length(classifier.subtypes$Helland[[dataset.name]]), 50, by=-1)
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
@@ -181,20 +181,27 @@ for(dataset.name in names(tothill.pred.str.trend)) {
 }
 
 tothill.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), tothill.pred.str.trend)
-
-tothill.mean.ps.df <- data.frame(dataset.size=unique(tothill.pred.str.trend.combined$dataset.size))
-tothill.mean.ps.df$prediction.strength <- sapply(tothill.mean.ps.df$dataset.size, function(dataset.size) mean(tothill.pred.str.trend.combined$prediction.strength[tothill.pred.str.trend.combined$dataset.size==dataset.size]))
 @
 
-<<tothill_pred_str_margin_trend_average, eval=FALSE>>=
-ggplot(tothill.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+
+<<tothill_pred_str_margin_trend_computation_only_tcga>>=
+#tothill.pred.str.trend.tcga.xvals <- seq(50, length(classifier.subtypes$Helland[[dataset.name]]), by=50)
+tothill.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
+tothill.pred.str.trend.tcga.ps.vals <- sapply(tothill.pred.str.trend.tcga.xvals, function(x) {
+    median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
+    # calculate Prediction Strength; use the top x samples (by margin)
+    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
+    samples.to.keep <- margin.vals > quantile(margin.vals, x)
+    #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
+    current.ps <- ps.cluster(classifier.subtypes$Helland$TCGA[samples.to.keep], clustering.subtypes$tothill_kmeans_4$TCGA[[median.clustering.index]][samples.to.keep])$ps
+    return(current.ps)
+  })
+
+tothill.pred.str.trend.tcga <- data.frame(percent.removed=tothill.pred.str.trend.tcga.xvals, prediction.strength=tothill.pred.str.trend.tcga.ps.vals)
+tothill.pred.str.trend.tcga$percent.removed <- tothill.pred.str.trend.tcga$percent.removed * 100
 @
 
-<<tothill_pred_str_margin_trend_tcga, eval=FALSE>>=
-ggplot(tothill.pred.str.trend.combined[tothill.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
-
-<<Konecny_pred_str, cache=FALSE>>=
+<<Konecny_pred_str, cache=TRUE>>=
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
 
@@ -213,7 +220,7 @@ konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(da
   # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
   median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
   
-  xvals <- seq(length(classifier.subtypes$Konecny[[dataset.name]]), 50, by=-25)
+  xvals <- seq(length(classifier.subtypes$Konecny[[dataset.name]]), 50, by=-1)
   
   ps.vals <- sapply(xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
@@ -237,16 +244,23 @@ for(dataset.name in names(konecny.pred.str.trend)) {
 
 konecny.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), konecny.pred.str.trend)
 
-konecny.mean.ps.df <- data.frame(dataset.size=unique(konecny.pred.str.trend.combined$dataset.size))
-konecny.mean.ps.df$prediction.strength <- sapply(konecny.mean.ps.df$dataset.size, function(dataset.size) mean(konecny.pred.str.trend.combined$prediction.strength[konecny.pred.str.trend.combined$dataset.size==dataset.size]))
 @
 
-<<konecny_pred_str_margin_trend_average, eval=FALSE>>=
-ggplot(konecny.mean.ps.df, aes(y=prediction.strength, x = dataset.size)) + geom_point(size=4) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: konecny/Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
-@
+<<konecny_pred_str_margin_trend_computation_only_tcga>>=
+#konecny.pred.str.trend.tcga.xvals <- seq(50, length(classifier.subtypes$Helland[[dataset.name]]), by=50)
+konecny.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
+konecny.pred.str.trend.tcga.ps.vals <- sapply(konecny.pred.str.trend.tcga.xvals, function(x) {
+    median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
+    # calculate Prediction Strength; use the top x samples (by margin)
+    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Konecny.margins
+    samples.to.keep <- margin.vals > quantile(margin.vals, x)
+    #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
+    current.ps <- ps.cluster(classifier.subtypes$Konecny$TCGA[samples.to.keep], clustering.subtypes$konecny_nmf_4$TCGA[[median.clustering.index]][samples.to.keep])$ps
+    return(current.ps)
+  })
 
-<<konecny_pred_str_margin_trend_tcga, eval=FALSE>>=
-ggplot(konecny.pred.str.trend.combined[konecny.pred.str.trend.combined$dataset.name=="TCGA",], aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=2) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse()
+konecny.pred.str.trend.tcga <- data.frame(percent.removed=konecny.pred.str.trend.tcga.xvals, prediction.strength=konecny.pred.str.trend.tcga.ps.vals)
+konecny.pred.str.trend.tcga$percent.removed <- konecny.pred.str.trend.tcga$percent.removed * 100
 @
 
 Each dataset was clustered according to our implementation of the clustering algorithms and gene sets of Konecny, TCGA, and Tothill. Each dataset was also classified using our implementation of the corresponding classification algorithms of Konecny, TCGA/Verhaak, and Tothill/Helland. This produced two sets of subtype labels for each validation dataset, from which we computed prediction strength.
@@ -303,6 +317,15 @@ For the clustering algorithm and classifier described in Tothill (2008) and Hell
 
 ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
+Note that Prediction Strength for the TCGA dataset drops to zero between the dataset sizes of 58 and 68. This is an artifact in the Prediction Strength statistic that occurs when the number of samples in a class is very small; for lower than 58 patients, only three subtypes are produced from both clustering and classification. 
+
+\pagebreak
+<<tothill_pred_str_margin_trend_tcga>>=
+
+ggplot(tothill.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.removed, fill="TCGA")) + geom_point(size=2, colour="#E76BF3") + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend: Tothill/Helland") + geom_line(colour="#E76BF3") + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
+@
+This plot shows the prediction stregth trend for the TCGA dataset using the methods of Tothill/Helland, with Prediction Strength shown as a function of percentage of dataset removed. As previously described, we used classifier margins to determine cutoffs, and subsetted the pre-clustered and pre-classified datasets. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
+
 \pagebreak
 \subsection{Konecny}
 For the clustering algorithm and classifier described in Konecny (2014), we observed an increase in robustness of subtypes in the TCGA dataset.
@@ -310,3 +333,12 @@ For the clustering algorithm and classifier described in Konecny (2014), we obse
 
 ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
 @
+\pagebreak
+<<konecny_pred_str_margin_trend_tcga>>=
+
+ggplot(konecny.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.removed, fill="TCGA")) + geom_point(size=2, colour="#E76BF3") + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend: Konecny") + geom_line(colour="#E76BF3") + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
+@
+
+This plot shows the prediction stregth trend for the TCGA dataset using the methods of Konecny, with Prediction Strength shown as a function of percentage of dataset removed. As previously described, we used classifier margins to determine cutoffs, and subsetted the pre-clustered and pre-classified datasets. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
+
+
