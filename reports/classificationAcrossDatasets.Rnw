@@ -709,7 +709,7 @@ cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals
 venn_filtered <- plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
 
 # not working
-multiplot(plotlist = plots, ncol = 2)
+#multiplot(plotlist = plots, ncol = 2)
 @
 
 
@@ -870,7 +870,6 @@ print(xtable(fit$conf.int), include.rownames=FALSE)
 @ 
 Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
 
-Question: Why are the Hazard ratios in the above table different from those printed on the survival plots? (check code below which computes the HR for each of the subtypes for different margins -  HR at cutoff is more than the value at 0 before becoming random - any other observations?)
 
 
 <<hr_plots, out.width="0.8\\textwidth">>=
@@ -888,7 +887,7 @@ get_hr <- function (margin) {
 
   # fit the coxph model
   # coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
-  coxph.model = coxph(surv.obj ~ notIMR, survival_filtered_margin.df)
+  coxph.model = coxph(surv.obj ~ notIMR + strata(data.source), survival_filtered_margin.df)
   fit = summary(coxph.model)
   # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
   fit$conf.int[,c(1,3,4)]  
@@ -908,7 +907,7 @@ ss = smooth.spline(xvals[1:2250], extract_hr)
 ss_l = smooth.spline(xvals[1:2250], extract_lower_CI)
 ss_u = smooth.spline(xvals[1:2250], extract_upper_CI)
 hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr, lower = ss_l$y, upper = ss_u$y)
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(0, 3) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
+ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
 
 @
 
