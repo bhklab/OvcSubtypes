@@ -595,7 +595,7 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
 The following are the venndiagrams showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
 
 
-<<venn_setup, results = 'hide'>>=
+<<venn_setup, results = 'asis', fig.keep='high', out.width="0.8\\textwidth">>=
  # the overlaps obtained by get_overlap function are numbers of non-intersecting regions of the venn - they had to be computed for the whole areas again for strange reason - maybe there is a simpler function in the VennDiagram that would replace parts of the below function
 get_venn_margin_subtype <- function(margin,subtype_order){
     overlaps = get_overlaps_margin[[margin]][[subtype_order]]$lengths
@@ -661,7 +661,7 @@ overlay_venn <- function(subtype_order, margin, margin_overlay)
 }
 @
 
-<<Subtype_venn_diagrams, out.width="0.8\\textwidth">>=
+<<Subtype_venn_diagrams, results = 'asis', out.width="0.8\\textwidth", fig.keep='high'>>=
 #grid.newpage()
 draw_venn <- function (margin,margin_overlay, subtype_order){
   
@@ -691,7 +691,7 @@ dev.off()
 draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
 @
 
-<<Alternate_venn_rep, results="asis">>=
+<<Alternate_venn_rep, results='asis', out.width="0.8\\textwidth", fig.keep='high'>>=
 subtype_order <- 1
 margin <- 1
 margin_overlay <- margin_overlay_cutoff
@@ -709,8 +709,7 @@ cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals
 venn_filtered <- plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
 
 # not working
-grid.arrange(
-venn_all, top = "Venn Diagrams of subtype IMR", ncol = 2)
+multiplot(plotlist = plots, ncol = 2)
 @
 
 
@@ -719,7 +718,7 @@ Below is a summary of the consensus analysis in the form of a figure in the main
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 
-<<Figure1-ConsensusAnalysis, results="asis">>=
+<<Figure1-ConsensusAnalysis, results="asis", fig.keep='high'>>=
 venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
 # Two-way Contingencies
 Pane_A <- grid.arrange(
@@ -864,7 +863,8 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
 
 % Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
 <<HR, echo = TRUE, results='asis'>>=
-coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
+
+coxph.model = coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df)
 fit = summary(coxph.model)
 print(xtable(fit$conf.int), include.rownames=FALSE)
 @ 
