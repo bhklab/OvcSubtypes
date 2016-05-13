@@ -88,15 +88,19 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   
   train.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) train.expression.matrix[,pair[1]] > train.expression.matrix[,pair[2]])
+  train.pairwise.vals <- as.data.frame(train.pairwise.matrix)
+  train.pairwise.vals[] <- lapply(train.pairwise.vals, function(x) factor(x, levels=c("FALSE", "TRUE")))
   
-  rf.model <- randomForest(x=train.pairwise.matrix, y=train.labels)
+  rf.model <- randomForest(x=train.pairwise.vals, y=train.labels)
   
   test.expression.matrix <- t(exprs(eset)[match(intersecting.entrez.ids, fData(eset)$EntrezGene.ID),])
+  test.pairwise.vals <- as.data.frame(test.pairwise.matrix)
+  test.pairwise.vals[] <- lapply(test.pairwise.vals, function(x) factor(x, levels=c("FALSE", "TRUE")))
   
   test.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) test.expression.matrix[,pair[1]] > test.expression.matrix[,pair[2]])
   
-  my.predictions <- predict(rf.model, newdata = test.pairwise.matrix)
+  my.predictions <- predict(rf.model, newdata = test.pairwise.vals)
   my.predictions.probs <- predict(rf.model, newdata = test.pairwise.matrix, type = 'prob')
   
   eset$Ovarian.subtypes.rf <- my.predictions
