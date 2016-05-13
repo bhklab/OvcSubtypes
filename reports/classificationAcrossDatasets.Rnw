@@ -737,7 +737,7 @@ Pane_A, Pane_B, Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,1,2,2,2,2,2,3,3
 \pagebreak
 
 \section{Survival Analysis}
-<<Pooled_survival_plot, fig.height=12>>=
+<<Pooled_survival_plot, fig.height=12, out.width="0.8\\textwidth">>=
 # layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
 layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
@@ -839,6 +839,8 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   text(0,0.05, text, cex=0.85, pos=4)
   @
 
+
+\pagebreak
 % Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
 <<HR, echo = FALSE, results='asis', eval=FALSE>>=
 coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
