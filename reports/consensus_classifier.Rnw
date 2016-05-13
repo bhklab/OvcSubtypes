@@ -28,7 +28,6 @@ library(randomForest)
 library(survcomp)
 library(RColorBrewer)
 library(dplyr)
-library(reshape2)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
@@ -74,7 +73,7 @@ for(dataset.name in dataset.names) {
 
 \title{Consensus Classifier for High-grade serous ovarian carcinoma}
 
-\author{Gregory M. Chen}
+\author{Gregory M. Chen, Lavanya Kannan}
 \date{\today}
 \maketitle
 
@@ -141,18 +140,19 @@ pooled.subtypes$data.source <- factor(pooled.subtypes$data.source)
 save(pooled.subtypes, file = "pooled.subtypes.RData")
 @
 
-\section{Consensus Classifier: Description}
+\section{Consensus Classifiers: Description}
 
-We sought to develop a subtype classifier that represents the consensus of published HGS ovarian cancer subtype classifiers. We designed this classifier to be trained on multiple datasets, applicable across platforms, and able to produce a real-valued confidence score that can discriminate between patients that are of well-defined or intermediate subtypes. 
+We sought to develop a subtype classifier that represents the consensus of published HGS ovarian cancer subtype classifiers. We designed this classifier to be trained on multiple datasets, applicable across platforms, and able to discriminate between patients that are of well-defined or intermediate subtypes. To this end, we present two consensus classifiers:
 
-We present a consensus subtype classifier based on binary gene pairs. This classifier was designed to be appropriate for classifying expression profiles in small (e.g. single-sample) independent datasets, and does not require rescaling of gene expression values. This classifier is trained on patients that were concordantly classified by the Helland, Verhaak, and Konecny classifiers across our ovarian cancer data compendium. This classifier uses a binarized gene pairs across platforms to classify patients in independent datasets; it outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification. Our leave-one-dataset-out validation results in Figure \ref{fig:roccurves} indicate that the real-valued score from this consensus classifier is effective at discriminating between patients of well-defined or intermediate subtypes.
+The first is a random forest classifier, trained on patients that were concordantly classified by the Helland, Verhaak, and Konecny classifiers across our ovarian cancer data compendium. This classifier uses normalized gene expression across platforms to classify patients in independent datasets; it outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification. Our leave-one-dataset-out validation results in Figure \ref{fig:roccurves} indicate that the real-valued score from this consensus classifier is effective at discriminating between patients of well-defined or intermediate subtypes.
 
-\section{Consensus Classifier: Concordance}
-%\subsection{Consensus Random Forest Classifier}
+The second consensus classifier is based on binary gene pairs, and was designed to be appropriate for classifying expression profiles in small (e.g. single-sample) independent datasets.
 
-%\begin{figure}[H]
-<<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth", eval=FALSE>>=
+\section{Consensus Classifiers: Concordance}
+\subsection{Consensus Random Forest Classifier}
 
+\begin{figure}[H]
+<<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
     contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Helland))
@@ -189,9 +189,10 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
 
 grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
-%\caption{Contingency plots showing concordance of subtype classification between the Consensus Random Forest classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Random Forest classifier and the patients concordantly classified between the three classifiers. Classification by the Consensus Random Forest classifier was performed using leave-one-dataset-out validation, with the classification for each dataset performed by training on all other datasets. The Consensus Random Forest classifier is trained using genes that are present in all training datasets. Gene expression in each dataset is scaled per gene to have a mean of 0 and variance of 1; a random forest is trained using \texttt{R} package \texttt{randomForest} to classify patients in the validation dataset.}
-%\end{figure}
+\caption{Contingency plots showing concordance of subtype classification between the Consensus Random Forest classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Random Forest classifier and the patients concordantly classified between the three classifiers. Classification by the Consensus Random Forest classifier was performed using leave-one-dataset-out validation, with the classification for each dataset performed by training on all other datasets. The Consensus Random Forest classifier is trained using genes that are present in all training datasets. Gene expression in each dataset is scaled per gene to have a mean of 0 and variance of 1; a random forest is trained using \texttt{R} package \texttt{randomForest} to classify patients in the validation dataset.}
+\end{figure}
 
+\subsection{Consensus Gene-Pairs Classifier}
 \begin{figure}[H]
 <<genepair_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
@@ -230,19 +231,19 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
 
 grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
 @
-\caption{Contingency plots showing concordance of subtype classification between the Consensus Gene Pairs classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Classifier and the patients concordantly classified between the three classifiers. Classification was performed using leave-one-dataset-out validation. The classifier works by training a random forest classifier on a binary feature matrix that represents the pairwise greater-than or less-than relationships between genes in a given gene set. This classifier does not require rescaling of the gene expression set, and can therefore be used to classify gene expression profiles at a single-sample level. Since the feature size for this classifier increases quadratically with respect to the size of the original gene set, we used the smallest gene set of the original subtype classifiers (the gene set of Verhaak et al.), which contains 100 gene symbols. Like the Consensus Random Forest classifier, this classifier outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification.}
+\caption{Contingency plots showing concordance of subtype classification between the Consensus Gene Pairs classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Binary Gene Pair classifier and the patients concordantly classified between the three classifiers. The binary gene pair works by training a random forest classifier on a binary feature matrix that represents the pairwise greater-than or less-than relationships between genes in a given gene set. This classifier does not require rescaling of the gene expression set, and can therefore be used to classify gene expression profiles at a single-sample level. Since the feature size for this classifier increases quadratically with respect to the size of the original gene set, we used the smallest gene set of the original subtype classifiers (the gene set of Verhaak et al.), which contains 100 gene symbols. Like the Consensus Random Forest classifier, this classifier outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification.}
 \end{figure}
 \pagebreak
 \section{Survival Analysis}
-<<survival_plots, fig.width=12, fig.height=6>>=
-layout(matrix(1:2, nrow = 1, byrow = TRUE))
+<<survival_plots, fig.width=9, fig.height=9>>=
+layout(matrix(1:4, nrow = 2, byrow = TRUE))
 
-#par(mar=c(5.1, 8, 4.1, 2.1))
+par(mar=c(5.1, 8, 4.1, 2.1))
+
 
 for(data.subset in c("all", "concordant")) {
-  #par(mar=c(5.1, 5, 4.1, 2.1))
-  
-    for(classifier in c("Gene Pairs RF")) {
+  par(mar=c(5.1, 5, 4.1, 2.1))
+    for(classifier in c("Random Forest", "Gene Pairs Random Forest")) {
     pooled.subtypes.current <- pooled.subtypes
     
     if (classifier == "Random Forest"){
@@ -268,20 +269,20 @@ for(data.subset in c("all", "concordant")) {
     text <- ""
     text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
     for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", gsub("_consensus", "", levels(pooled.subtypes.current$group)[i+1]), hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
     }
     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
     cols <- 1:4
     title <- paste0("Combined Classifier: ", classifier)
     if(data.subset == "concordant") {
-      title <- paste0(title, "\n (concordant cases)")
+      title <- paste0(title, ", concordant cases")
     }
     if(data.subset == "concordant.cutoff") {
       title <- paste0(title, ", concordant, RF margin > 0.5")
     }
     
     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-    title(title, cex.main=1.5)
+    title(title, cex.main=1)
     text(0,0.05, text, cex=0.85, pos=4)
   }
 }
@@ -323,17 +324,35 @@ for(data.subset in c("all", "concordant")) {
 #    text(0,0.05, text, cex=0.85, pos=4)
 @
 
+<<hr_vals_per_cutoff, eval=FALSE>>=
+rf.cutoff <- seq(0,1,length.out = 100)
+hr.vals <- sapply(rf.cutoff, function(x) {
+  pooled.subtypes.current <- pooled.subtypes[pooled.subtypes$Consensus.rf.maxprob > x,]
+  hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$Consensus.rf, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
+  return(hr.out$hazard.ratio)
+})
+hr.vals <- as.data.frame(t(as.data.frame(hr.vals)))
+@
+
+<<RF_maxprob, eval=FALSE>>=
+## These four figures give some characteristics of the consensus random forest margins and max probs.
+layout(matrix(1:4, nrow = 2, byrow = TRUE))
+hist(pooled.subtypes$Consensus.rf.maxprob)
+hist(pooled.subtypes$Consensus.rf.margin)
+plot(pooled.subtypes$Consensus.rf.maxprob, pooled.subtypes$Consensus.rf.margin)
+boxplot(pooled.subtypes$Consensus.rf.maxprob ~ pooled.subtypes$concordant)
+@
 \pagebreak
 \section{Margin Analysis}
 
-The Consensus Classifier produces a real-valued margin for each classified patient; this margin value is the difference between the highest subtype score and the second-highest subtype score. This margin value is a measure of the level of `certainty' of each classification; that is, a higher margin indicates greater certainty. We sought to investigate the ability of the margin values to discriminate between patients of concordant or non-concordant classification across subtypes.
+Each subtype classifier produces a real-valued margin for each classified patient; this margin value is the difference between the highest subtype score and the second-highest subtype score. This margin value is a measure of the level of `certainty' of each classification; that is, a higher margin indicates greater certainty. We sought to investigate the ability of the margin values to discriminate between patients of concordant or non-concordant classification across subtypes.
 
 We segregated patients into two categories: concordant patients (n = \Sexpr{sum(pooled.subtypes$concordant)}) which were classified concordantly between the Helland, Verhaak, and Konecny classifiers; and non-concordant patients (n = \Sexpr{sum(!pooled.subtypes$concordant)}) which were not classified concordantly between all three subtype classifiers.
 
 \subsection{Margin Boxplots}
 \begin{figure}[H]
 {\centering
-<<boxplots, fig.width=8, fig.height=8, out.width="0.8\\textwidth">>=
+<<boxplots, fig.width=8, fig.height=12, out.width="0.8\\textwidth">>=
 
 margin.comparison.cases.to.include <- pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$data.source != "TCGA"
 
@@ -349,10 +368,10 @@ konecny.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.incl
 consensus.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 consensus.genepairs.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.genepairs.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus Gene-Pairs RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.genepair.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 
-grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=2)
+grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, grob(), consensus.rf.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=3)
 @
 }
-\caption{Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the Consensus Classifier, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test.}
+\caption{Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the Consensus Random Forest classifier, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test.}
 \end{figure}
 
 \subsection{Margin ROC Curves}
@@ -364,7 +383,7 @@ plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.c
 plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[2], lwd=2, add=TRUE)
 plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[3], lwd=2, add=TRUE)
 plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
-#plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[5], lwd=2, add=TRUE)
+plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[5], lwd=2, add=TRUE)
 
 # get AUCs
 aucs <- numeric(0)
@@ -372,14 +391,14 @@ aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$He
 aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA"], pooled.subtypes$concordant[pooled.subtypes$data.source != "TCGA"]), "auc")@y.values))
 aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins, pooled.subtypes$concordant), "auc")@y.values))
 aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin, pooled.subtypes$concordant), "auc")@y.values))
-#aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin, pooled.subtypes$concordant), "auc")@y.values))
+aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin, pooled.subtypes$concordant), "auc")@y.values))
 abline(a=0, b= 1,lty=3)
 
-legend("bottomright", paste0(c("Helland", "Verhaak", "Konecny", "Consensus Gene-Pairs RF"), paste(", AUC:",sprintf("%.3f", aucs))), lwd=2, col=roc.colors, bty="n")
+legend("bottomright", paste0(c("Helland", "Verhaak", "Konecny", "Consensus Gene-Pairs RF", "Consensus RF"), paste(", AUC:",sprintf("%.3f", aucs))), lwd=2, col=roc.colors, bty="n")
 title("ROC curves for predicting concordance")
 @
 }
-\caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Classifier was performed using leave-one-dataset-out validation. The Consensus Classifier was effective (AUC = \Sexpr{sprintf("%.3f", aucs[4])}) at discriminating between patients of well-defined or intermediate subtypes.}
+\caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Random Forest classifier and Consensus Gene-Pairs classifier was performed using leave-one-dataset-out validation. Both consensus classifiers were effective at discriminating between patients of well-defined or intermediate subtypes.}
 \label{fig:roccurves}
 \end{figure}
 
