@@ -45,8 +45,6 @@ load("esets.not.rescaled.classified.RData")
 
 dataset.names <- names(esets.not.rescaled.classified)
 
-classification.vals.rf <- list()
-classification.vals.rf.prob <- list()
 classification.vals.genepairs.rf <- list()
 classification.vals.genepairs.rf.prob <- list()
 
@@ -57,11 +55,7 @@ for(dataset.name in dataset.names) {
   left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
   training.dataset.names <- dataset.names[dataset.names != dataset.name]
   
-  consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
   consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
-  
-  classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
-  classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
   
   classification.vals.genepairs.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
   classification.vals.genepairs.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
