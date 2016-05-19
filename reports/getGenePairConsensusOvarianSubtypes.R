@@ -1,5 +1,5 @@
 
-getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE) {
+getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE, remove.using.cutoff=FALSE, percentage.dataset.removed = 0.75) {
   
   ### Load training data
   print("Loading training data")
@@ -89,7 +89,6 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   train.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) train.expression.matrix[,pair[1]] > train.expression.matrix[,pair[2]])
   train.pairwise.vals <- as.data.frame(train.pairwise.matrix)
-  train.pairwise.vals[] <- lapply(train.pairwise.vals, function(x) factor(x, levels=c("FALSE", "TRUE")))
   
   rf.model <- randomForest(x=train.pairwise.vals, y=train.labels)
   
@@ -98,12 +97,18 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   test.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) test.expression.matrix[,pair[1]] > test.expression.matrix[,pair[2]])
   test.pairwise.vals <- as.data.frame(test.pairwise.matrix)
-  test.pairwise.vals[] <- lapply(test.pairwise.vals, function(x) factor(x, levels=c("FALSE", "TRUE")))
   
   my.predictions <- predict(rf.model, newdata = test.pairwise.vals)
   my.predictions.probs <- predict(rf.model, newdata = test.pairwise.matrix, type = 'prob')
   
+  if(remove.using.cutoff) {
+    my.predictions.margins <- rowMax(my.predictions.probs) - apply(my.predictions.probs, 1, function(row) sort(row)[3])
+    my.predictions[ecdf(my.predictions.margins)(my.predictions.margins) < 0.75] <- NA
+  }
+  
   eset$Ovarian.subtypes.rf <- my.predictions
+  
+  
   
   return(list(Annotated.eset=eset, rf.probs=my.predictions.probs))
 }
