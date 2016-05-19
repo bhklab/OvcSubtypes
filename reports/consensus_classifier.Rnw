@@ -16,7 +16,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -29,11 +29,11 @@ library(survcomp)
 library(RColorBrewer)
 library(dplyr)
 library(reshape2)
+library(grid)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
 
-source("getRandomForestConsensusOvarianSubtypes.R")
 source("getGenePairConsensusOvarianSubtypes.R")
 source("~/repos/MetaGx/R/datasetMerging.R")
 source("~/repos/MetaGx/R/stripWhiteSpace.R")
@@ -46,10 +46,12 @@ load("esets.not.rescaled.classified.RData")
 
 dataset.names <- names(esets.not.rescaled.classified)
 
-classification.vals.rf <- list()
-classification.vals.rf.prob <- list()
 classification.vals.genepairs.rf <- list()
 classification.vals.genepairs.rf.prob <- list()
+
+# Store values that have NAs for patients that are not classified due to default margin cutoffs
+classification.vals.genepairs.default.cutoff.rf <- list()
+classification.vals.genepairs.default.cutoff.rf.prob <- list()
 
 sample_ids <- list()
 
@@ -57,17 +59,19 @@ for(dataset.name in dataset.names) {
   # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
   left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
   training.dataset.names <- dataset.names[dataset.names != dataset.name]
-  
-  consensus.classifier.output.rf <- getRandomForestConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
-  consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names)
-  
-  classification.vals.rf[[dataset.name]] <- consensus.classifier.output.rf$Annotated.eset$Ovarian.subtypes.rf
-  classification.vals.rf.prob[[dataset.name]] <- consensus.classifier.output.rf$rf.probs
+  print(paste("Classifying eset", dataset.name))
+  consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names, remove.using.cutoff = FALSE)
   
   classification.vals.genepairs.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
   classification.vals.genepairs.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
   
-  sample_ids[[dataset.name]] <- paste(dataset.name,".",consensus.classifier.output.rf$Annotated.eset %>% exprs %>% colnames, sep="")
+  classification.vals.genepairs.default.cutoff.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
+  classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+  
+  current.margins <- rowMax(consensus.classifier.output.genepairs.rf$rf.probs) - apply(consensus.classifier.output.genepairs.rf$rf.probs, 1, function(row) sort(row)[3])
+  
+  classification.vals.genepairs.default.cutoff.rf[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
+  classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
 }
 
 @
@@ -112,16 +116,16 @@ pooled.subtypes$concordant <- match(pooled.subtypes$Konecny, subtype.corresponda
   match(pooled.subtypes$Verhaak, subtype.correspondances$Verhaak) ==
   match(pooled.subtypes$Helland, subtype.correspondances$Helland)
 
-pooled.subtypes$Consensus.rf <- unlist(classification.vals.rf)
-pooled.subtypes$Consensus.rf.margin <- unlist(lapply(classification.vals.rf.prob, function(rf.probs) apply(rf.probs, 1, function(x) max(x) - sort(x)[3]))) 
-pooled.subtypes$Consensus.rf.maxprob <- unlist(lapply(classification.vals.rf.prob, function(rf.probs) apply(rf.probs, 1, max))) 
 pooled.subtypes$Consensus.genepairs.rf <- unlist(classification.vals.genepairs.rf)
 pooled.subtypes$Consensus.genepairs.rf.margin <- unlist(lapply(classification.vals.genepairs.rf.prob, function(rf.probs) apply(rf.probs, 1, function(x) max(x) - sort(x)[3]))) 
 pooled.subtypes$Consensus.genepairs.rf.maxprob <- unlist(lapply(classification.vals.genepairs.rf.prob, function(rf.probs) apply(rf.probs, 1, max))) 
 
+pooled.subtypes$Consensus.genepairs.default.cutoff.rf <- unlist(classification.vals.genepairs.default.cutoff.rf)
+pooled.subtypes$Consensus.genepairs.default.cutoff.rf.margin <- unlist(lapply(classification.vals.genepairs.default.cutoff.rf.prob, function(rf.probs) apply(rf.probs, 1, function(x) max(x) - sort(x)[3]))) 
+pooled.subtypes$Consensus.genepairs.default.cutoff.rf.maxprob <- unlist(lapply(classification.vals.genepairs.default.cutoff.rf.prob, function(rf.probs) apply(rf.probs, 1, max))) 
+
 # reorder factor levels. Note, this should be done in the original function
-pooled.subtypes$Consensus.rf <- factor(pooled.subtypes$Consensus.rf, levels(pooled.subtypes$Consensus.rf)[c(2,1,4,3)])
-pooled.subtypes$Consensus.genepairs.rf <- factor(pooled.subtypes$Consensus.genepairs.rf, levels(pooled.subtypes$Consensus.rf)[c(1,2,3,4)])
+pooled.subtypes$Consensus.genepairs.rf <- factor(pooled.subtypes$Consensus.genepairs.rf, levels(pooled.subtypes$Consensus.genepairs.rf)[c(2,1,4,3)])
 
 pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
 pooled.subtypes$days_to_death <- NULL
@@ -148,49 +152,6 @@ We sought to develop a subtype classifier that represents the consensus of publi
 We present a consensus subtype classifier based on binary gene pairs. This classifier was designed to be appropriate for classifying expression profiles in small (e.g. single-sample) independent datasets, and does not require rescaling of gene expression values. This classifier is trained on patients that were concordantly classified by the Helland, Verhaak, and Konecny classifiers across our ovarian cancer data compendium. This classifier uses a binarized gene pairs across platforms to classify patients in independent datasets; it outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification. Our leave-one-dataset-out validation results in Figure \ref{fig:roccurves} indicate that the real-valued score from this consensus classifier is effective at discriminating between patients of well-defined or intermediate subtypes.
 
 \section{Consensus Classifier: Concordance}
-%\subsection{Consensus Random Forest Classifier}
-
-%\begin{figure}[H]
-<<consensus_rf_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth", eval=FALSE>>=
-
-contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
-  if(comparison.group == "Helland") {
-    contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Helland))
-    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Helland))
-  } else if(comparison.group == "Verhaak") {
-    contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Verhaak))
-    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Verhaak))
-  } else if(comparison.group == "Konecny") {
-    contingency.m <- melt(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Konecny))
-    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.rf, pooled.subtypes$Konecny))
-  } else if(comparison.group == "Concordant_Classification") {
-    contingency.m <- melt(table(pooled.subtypes$Consensus.rf[pooled.subtypes$concordant], pooled.subtypes$Verhaak[pooled.subtypes$concordant]))
-    contingency.matrix <- as.matrix(table(pooled.subtypes$Consensus.rf[pooled.subtypes$concordant], pooled.subtypes$Verhaak[pooled.subtypes$concordant]))
-  }
-  colnames(contingency.m)[1:2] <- c("Consensus_RF", comparison.group)
-  
-  cramers.v <- vcd::assocstats(contingency.matrix)[["cramer"]]
-  
-  stat.text <- sprintf("n = %d\nPercent Concordant = %.2f%%\nCramer's v = %.2f", sum(contingency.matrix), 100 * sum(diag(contingency.matrix)) / sum(contingency.matrix), cramers.v)
-  
-  p <- ggplot(contingency.m, aes_string("Consensus_RF", comparison.group)) + 
-    geom_tile(aes(fill = value), colour = "black") + 
-    scale_fill_gradient(name="Frequency", low="white", high="#00802b") + 
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
-    geom_text(label=as.character(contingency.matrix), colour="black") + xlab("Consensus RF\n\n\n\n\n")
-  
-  p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-5.2)
-  
-  gt <- ggplot_gtable(ggplot_build(p))
-  gt$layout$clip[gt$layout$name == "panel"] <- "off"
-    
-  return(gt)
-})
-
-grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2)
-@
-%\caption{Contingency plots showing concordance of subtype classification between the Consensus Random Forest classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Random Forest classifier and the patients concordantly classified between the three classifiers. Classification by the Consensus Random Forest classifier was performed using leave-one-dataset-out validation, with the classification for each dataset performed by training on all other datasets. The Consensus Random Forest classifier is trained using genes that are present in all training datasets. Gene expression in each dataset is scaled per gene to have a mean of 0 and variance of 1; a random forest is trained using \texttt{R} package \texttt{randomForest} to classify patients in the validation dataset.}
-%\end{figure}
 
 \begin{figure}[H]
 <<genepair_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
@@ -340,13 +301,11 @@ margin.comparison.cases.to.include <- pooled.subtypes$data.source != "GSE9891" &
 helland.boxplot.pval <- wilcox.test(pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Helland.margins[pooled.subtypes$data.source != "GSE9891" & pooled.subtypes$concordant==FALSE])$p.value
 verhaak.boxplot.pval <- wilcox.test(pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==TRUE], pooled.subtypes$Verhaak.margins[pooled.subtypes$data.source != "TCGA" & pooled.subtypes$concordant==FALSE])$p.value
 konecny.boxplot.pval <- wilcox.test(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE], pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE])$p.value
-consensus.rf.boxplot.pval <- wilcox.test(pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
 consensus.genepair.rf.boxplot.pval <- wilcox.test(pooled.subtypes$Consensus.genepairs.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.genepair.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
 
 helland.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Helland.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Helland Classifier Margins") + xlab(sprintf("p = %.2E", helland.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 verhaak.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Verhaak.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Verhaak Classifier Margins") + xlab(sprintf("p = %.2E", verhaak.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 konecny.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Konecny.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Konecny Classifier Margins") + xlab(sprintf("p = %.2E", konecny.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
-consensus.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 consensus.genepairs.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.genepairs.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus Gene-Pairs RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.genepair.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 
 grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=2)
