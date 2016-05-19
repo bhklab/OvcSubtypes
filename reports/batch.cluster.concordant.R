@@ -82,9 +82,9 @@ args <- commandArgs(trailingOnly = TRUE)
 #  k=4)
 
 config.grid <- data.frame(
-  gene.set=rep(c("tcga", "tothill", "konecny"), each=16),
-  algorithm=rep(c("nmf", "kmeans", "nmf"), each=16),
-  dataset.index=rep(1:16,3),
+  gene.set=rep(c("tcga", "tothill", "konecny"), each=15),
+  algorithm=rep(c("nmf", "kmeans", "nmf"), each=15),
+  dataset.index=rep(1:15,3),
   k=4
   )
 
@@ -103,8 +103,8 @@ algorithm <- config.grid$algorithm[config.id]
 dataset.index <- config.grid$dataset.index[config.id]
 k <- config.grid$k[config.id]
 
-out.dir <- paste0("may3clusters_concordant/", gene.set, "_", algorithm, "_", k)
-dir.create("may3clusters_concordant/")
+out.dir <- paste0("may6clusters_concordant/", gene.set, "_", algorithm, "_", k)
+dir.create("may6clusters_concordant/")
 dir.create(out.dir)
 
 current.eset <- esets.not.rescaled.classified.concordant[[dataset.index]]

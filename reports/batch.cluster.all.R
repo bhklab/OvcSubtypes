@@ -64,7 +64,7 @@ set.seed(660 + task.id * 100)
   return(classes)
 }
 
-load("esets.not.rescaled.RData")
+load("esets.not.rescaled.classified.RData")
 
 options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE)
@@ -81,9 +81,9 @@ args <- commandArgs(trailingOnly = TRUE)
 #  k=4)
 
 config.grid <- data.frame(
-  gene.set=rep(c("tcga", "tothill", "konecny"), each=16),
-  algorithm=rep(c("nmf", "kmeans", "nmf"), each=16),
-  dataset.index=rep(1:16,3),
+  gene.set=rep(c("tcga", "tothill", "konecny"), each=15),
+  algorithm=rep(c("nmf", "kmeans", "nmf"), each=15),
+  dataset.index=rep(1:15,3),
   k=4
   )
 
@@ -102,12 +102,12 @@ algorithm <- config.grid$algorithm[config.id]
 dataset.index <- config.grid$dataset.index[config.id]
 k <- config.grid$k[config.id]
 
-out.dir <- paste0("apr12clusters/", gene.set, "_", algorithm, "_", k)
-dir.create("apr12clusters/")
+out.dir <- paste0("may6_clusters/", gene.set, "_", algorithm, "_", k)
+dir.create("may6_clusters/")
 dir.create(out.dir)
 
-current.eset <- esets.not.rescaled[[dataset.index]]
-current.eset.name <- names(esets.not.rescaled)[dataset.index]
+current.eset <- esets.not.rescaled.classified[[dataset.index]]
+current.eset.name <- names(esets.not.rescaled.classified)[dataset.index]
 
 if(gene.set == "tcga") {
   tcga.matrix <- read.delim("docs/TCGA_489_UE.top1500.txt", sep="\t", header=TRUE)
