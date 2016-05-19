@@ -286,7 +286,7 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     })
     scatterplot.df <- data.frame(margin=xvals, concordance=concordance)
     scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
-    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Margin (quantile)") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2])) + ylim(0, 1)
+    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=0) + geom_line(size=0) + theme_bw() + xlab("Margin (quantile)") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2])) + ylim(0, 1)
     return(scatterplot)
   })
 @
@@ -581,104 +581,590 @@ newdata <- mydata[order(All),]
 %We choose a cutoff of \Sexpr{sprintf("%0.2f", margin_cutoff)} (corresponding to \Sexpr{ sprintf("%0.2f", margin_scatterplot.df$percent[margin_scatterplot.df$margin == margin_cutoff])}\% of data removed) after which the amount of dataset removed increases drastically and removed the patients that had lower subtype margins in any of the following schemes Konecny, Verhaak or Tothill. The resulting dataset has high subtype concordance as shown in the subtype concordance curves.
 
 %The resulting dataset is as below:
-
-<<dataset_barplots, out.width="0.8\\textwidth", eval=FALSE>>=
+\begin{figure}[H]
+<<dataset_barplots, out.width="0.8\\textwidth">>=
 
 barplot(as.matrix(newdata) %>% t, main="HGS sample sizes", 
         beside=TRUE, 
-        horiz=TRUE, las=2
-        #col=terrain.colors(13)
-)
-@
+        horiz=TRUE, las=2, 
+        col=terrain.colors(3),
+        legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods"),
+       )
 
-<<<<<<< HEAD
+@
+\caption{Barplot showing the total number of samples, number of samples after removing margins, and number of samples that are concordant across methods in each of the datasets we considered.}
+\end{figure}
+
+
 The following are the venndiagrams showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
 
+<<modified_venn_diagram>>=
+draw.triple.venn_adapted <- function (area1, area2, area3, n12, n23, n13, n123, overlay_another = FALSE, overlay_area1=0, overlay_area2=0, overlay_area3=0, overlay_n12=0, overlay_n23=0, overlay_n13=0, overlay_n123=0,category = rep("", 
+    3), rotation = 1, reverse = FALSE, euler.d = TRUE, scaled = TRUE, 
+    lwd = rep(2, 3), lty = rep("solid", 3), col = rep("black", 
+        3), fill = NULL, alpha = rep(0.5, 3), label.col = rep("black", 
+        7), cex = rep(1, 7), fontface = rep("plain", 7), fontfamily = rep("serif", 
+        7), cat.pos = c(-40, 40, 180), cat.dist = c(0.05, 0.05, 
+        0.025), cat.col = rep("black", 3), cat.cex = rep(1, 3), 
+    cat.fontface = rep("plain", 3), cat.fontfamily = rep("serif", 
+        3), cat.just = list(c(0.5, 1), c(0.5, 1), c(0.5, 0)), 
+    cat.default.pos = "outer", cat.prompts = FALSE, rotation.degree = 0, 
+    rotation.centre = c(0.5, 0.5), ind = TRUE, sep.dist = 0.05, 
+    offset = 0, cex.prop = NULL, print.mode = "raw", sigdigs = 3, 
+    direct.area = FALSE, area.vector = 0, ...) 
+{
+    if (length(category) == 1) {
+        cat <- rep(category, 3)
+    }
+    else if (length(category) != 3) {
+        flog.error("Unexpected parameter length for 'category'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'category'")
+    }
+    if (length(lwd) == 1) {
+        lwd <- rep(lwd, 3)
+    }
+    else if (length(lwd) != 3) {
+        flog.error("Unexpected parameter length for 'lwd'", name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'lwd'")
+    }
+    if (length(lty) == 1) {
+        lty <- rep(lty, 3)
+    }
+    else if (length(lty) != 3) {
+        flog.error("Unexpected parameter length for 'lty'", name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'lty'")
+    }
+    if (length(col) == 1) {
+        col <- rep(col, 3)
+    }
+    else if (length(col) != 3) {
+        flog.error("Unexpected parameter length for 'col'", name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'col'")
+    }
+    if (length(label.col) == 1) {
+        label.col <- rep(label.col, 7)
+    }
+    else if (length(label.col) != 7) {
+        flog.error("Unexpected parameter length for 'label.col'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'label.col'")
+    }
+    if (length(cex) == 1) {
+        cex <- rep(cex, 7)
+    }
+    else if (length(cex) != 7) {
+        flog.error("Unexpected parameter length for 'cex'", name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cex'")
+    }
+    if (length(fontface) == 1) {
+        fontface <- rep(fontface, 7)
+    }
+    else if (length(fontface) != 7) {
+        flog.error("Unexpected parameter length for 'fontface'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'fontface'")
+    }
+    if (length(fontfamily) == 1) {
+        fontfamily <- rep(fontfamily, 7)
+    }
+    else if (length(fontfamily) != 7) {
+        flog.error("Unexpected parameter length for 'fontfamily'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'fontfamily'")
+    }
+    if (length(fill) == 1) {
+        fill <- rep(fill, 3)
+    }
+    else if (length(fill) != 3 & length(fill) != 0) {
+        flog.error("Unexpected parameter length for 'fill'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'fill'")
+    }
+    if (length(alpha) == 1) {
+        alpha <- rep(alpha, 3)
+    }
+    else if (length(alpha) != 3 & length(alpha) != 0) {
+        flog.error("Unexpected parameter length for 'alpha'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'alpha'")
+    }
+    if (length(cat.pos) == 1) {
+        cat.pos <- rep(cat.pos, 3)
+    }
+    else if (length(cat.pos) != 3) {
+        flog.error("Unexpected parameter length for 'cat.pos'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.pos'")
+    }
+    if (length(cat.dist) == 1) {
+        cat.dist <- rep(cat.dist, 3)
+    }
+    else if (length(cat.dist) != 3) {
+        flog.error("Unexpected parameter length for 'cat.dist'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.dist'")
+    }
+    if (length(cat.col) == 1) {
+        cat.col <- rep(cat.col, 3)
+    }
+    else if (length(cat.col) != 3) {
+        flog.error("Unexpected parameter length for 'cat.col'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.col'")
+    }
+    if (length(cat.cex) == 1) {
+        cat.cex <- rep(cat.cex, 3)
+    }
+    else if (length(cat.cex) != 3) {
+        flog.error("Unexpected parameter length for 'cat.cex'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.cex'")
+    }
+    if (length(cat.fontface) == 1) {
+        cat.fontface <- rep(cat.fontface, 3)
+    }
+    else if (length(cat.fontface) != 3) {
+        flog.error("Unexpected parameter length for 'cat.fontface'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.fontface'")
+    }
+    if (length(cat.fontfamily) == 1) {
+        cat.fontfamily <- rep(cat.fontfamily, 3)
+    }
+    else if (length(cat.fontfamily) != 3) {
+        flog.error("Unexpected parameter length for 'cat.fontfamily'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter length for 'cat.fontfamily'")
+    }
+    if (!(class(cat.just) == "list" & length(cat.just) == 3)) {
+        flog.error("Unexpected parameter format for 'cat.just'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter format for 'cat.just'")
+    }
+    else if (!(length(cat.just[[1]]) == 2 & length(cat.just[[2]]) == 
+        2 & length(cat.just[[3]]) == 2)) {
+        flog.error("Unexpected parameter format for 'cat.just'", 
+            name = "VennDiagramLogger")
+        stop("Unexpected parameter format for 'cat.just'")
+    }
+    if (euler.d == FALSE & scaled == TRUE) {
+        flog.error("Uninterpretable parameter combination\nPlease set both euler.d = FALSE and scaled = FALSE to force Venn diagrams.", 
+            name = "VennDiagramLogger")
+        stop("Uninterpretable parameter combination\nPlease set both euler.d = FALSE and scaled = FALSE to force Venn diagrams.")
+    }
+    if (offset > 1 | offset < 0) {
+        flog.error("'Offset' must be between 0 and 1.  Try using 'rotation.degree = 180' to achieve offsets in the opposite direction.", 
+            name = "VennDiagramLogger")
+        stop("'Offset' must be between 0 and 1.  Try using 'rotation.degree = 180' to achieve offsets in the opposite direction.")
+    }
+    cat.pos <- cat.pos + rotation.degree
+    if (direct.area) {
+        areas <- area.vector
+        for (i in 1:7) {
+            assign(paste("a", i, sep = ""), area.vector[i])
+        }
+    }
+    else {
+        a1 <- area1 - n12 - n13 + n123
+        a2 <- n12 - n123
+        a3 <- area2 - n12 - n23 + n123
+        a4 <- n13 - n123
+        a5 <- n123
+        a6 <- n23 - n123
+        a7 <- area3 - n13 - n23 + n123
+        areas <- c(a1, a2, a3, a4, a5, a6, a7)
+    }
+    
+    overlay_a1 <- overlay_area1 - overlay_n12 - overlay_n13 + overlay_n123
+    overlay_a2 <- overlay_n12 - overlay_n123
+    overlay_a3 <- overlay_area2 - overlay_n12 - overlay_n23 + overlay_n123
+    overlay_a4 <- overlay_n13 - overlay_n123
+    overlay_a5 <- overlay_n123
+    overlay_a6 <- overlay_n23 - overlay_n123
+    overlay_a7 <- overlay_area3 - overlay_n13 - overlay_n23 + overlay_n123
+    overlay_areas <- c(overlay_a1, overlay_a2, overlay_a3, overlay_a4, overlay_a5, overlay_a6, overlay_a7)
+    
+    
+    if (euler.d) {
+        special.code <- VennDiagram::decide.special.case(areas)
+        if (special.code %in% c("121AO", "100", "033", "011A", 
+            "021AA", "022AAOO", "011O", "112AA", "122AAOO", "010", 
+            "110", "130", "001", "012AA", "120", "022AAAO", "032", 
+            "111A", "023")) {
+            if (special.code %in% c("022AAAO", "022AAOO", "023", 
+                "032", "120", "121AO", "122AAOO", "130")) {
+                f1 <- VennDiagram::draw.sp.case.scaled
+            }
+            else {
+                f1 <- VennDiagram::draw.sp.case.preprocess
+            }
+            rst <- f1(sp.case.name = special.code, a1 = areas[1], 
+                a2 = areas[2], a3 = areas[3], a4 = areas[4], 
+                a5 = areas[5], a6 = areas[6], a7 = areas[7], 
+                category = category, reverse = reverse, cat.default.pos = cat.default.pos, 
+                lwd = lwd, lty = lty, col = col, label.col = label.col, 
+                cex = cex, fontface = fontface, fontfamily = fontfamily, 
+                cat.pos = cat.pos, cat.dist = cat.dist, cat.col = cat.col, 
+                cat.cex = cat.cex, cat.fontface = cat.fontface, 
+                cat.fontfamily = cat.fontfamily, cat.just = cat.just, 
+                cat.prompts = cat.prompts, fill = fill, alpha = alpha, 
+                print.mode = print.mode, sigdigs = sigdigs, ...)
+            rst <- VennDiagram::adjust.venn(VennDiagram::rotate.venn.degrees(gList1 = rst, 
+                angle = rotation.degree, x.centre = rotation.centre[1], 
+                y.centre = rotation.centre[2]), ...)
+            if (ind) {
+                grid.draw(rst)
+            }
+            return(rst)
+        }
+    }
+    rotated <- VennDiagram::rotate(areas, category, lwd, lty, 
+        col, label.col, cex, fontface, fontfamily, cat.col, cat.cex, 
+        cat.fontface, cat.fontfamily, alpha, rotation, reverse, 
+        fill)
+    for (i in 1:length(areas)) {
+        areas[i] <- rotated[[1]][i]
+    }
+    category <- rotated[[2]]
+    lwd <- rotated$lwd
+    lty <- rotated$lty
+    col <- rotated$col
+    label.col <- rotated$label.col
+    cex <- rotated$cex
+    fontface <- rotated$fontface
+    fontfamily <- rotated$fontfamily
+    cat.col <- rotated$cat.col
+    cat.cex <- rotated$cat.cex
+    cat.fontface <- rotated$cat.fontface
+    cat.fontfamily <- rotated$cat.fontfamily
+    fill <- rotated$fill
+    alpha <- rotated$alpha
+    areas.error <- c("a1 <- area1 - n12 - n13 + n123", "a2 <- n12 - n123", 
+        "a3 <- area2 - n12 - n23 + n123", "a4 <- n13 - n123", 
+        "a5 <- n123", "a6 <- n23 - n123", "a7 <- area3 - n13 - n23 + n123")
+    for (i in 1:length(areas)) {
+        if (areas[i] < 0) {
+            flog.error(paste("Impossible:", areas.error[i], "produces negative area"), 
+                name = "VennDiagramLogger")
+            stop(paste("Impossible:", areas.error[i], "produces negative area"))
+        }
+    }
+    for (i in 1:length(areas)) {
+        if (areas[i]) {
+            scaled <- FALSE
+        }
+    }
+    is.defaults <- TRUE
+    if (is.expression(category)) {
+        is.defaults <- FALSE
+    }
+    if (all(cat.default.pos != "outer", cat.default.pos != "text", 
+        !is.defaults, cat.prompts)) {
+        flog.info("No default location recognized.  Automatically changing to 'outer'", 
+            name = "VennDiagramLogger")
+        cat.default.pos <- "outer"
+    }
+    if (all(cat.default.pos == "outer", !is.defaults, cat.prompts)) {
+        flog.info("Placing category labels at default outer locations.  Use 'cat.pos' and 'cat.dist' to modify location.", 
+            name = "VennDiagramLogger")
+        flog.info(paste("Current 'cat.pos':", cat.pos[1], "degrees,", 
+            cat.pos[2], "degrees"), name = "VennDiagramLogger")
+        flog.info(paste("Current 'cat.dist':", cat.dist[1], ",", 
+            cat.dist[2]), name = "VennDiagramLogger")
+    }
+    if (all(cat.default.pos == "text", !is.defaults, cat.prompts)) {
+        flog.info("Placing category labels at default text locations.  Use 'cat.pos' and 'cat.dist' to modify location.", 
+            name = "VennDiagramLogger")
+        flog.info(paste("Current 'cat.pos':", cat.pos[1], "degrees,", 
+            cat.pos[2], "degrees"), name = "VennDiagramLogger")
+        flog.info(paste("Current 'cat.dist':", cat.dist[1], ",", 
+            cat.dist[2]), name = "VennDiagramLogger")
+    }
+    grob.list <- gList()
+    if (!exists("overrideTriple")) {
+        r1 <- sqrt(100/pi)
+        r2 <- r1
+        r3 <- r1
+    }
+    else {
+        r1 <- sqrt(area1/pi)
+        r2 <- sqrt(area2/pi)
+        r3 <- sqrt(area3/pi)
+    }
+    max.circle.size = 0.2
+    shrink.factor <- max.circle.size/r1
+    r1 <- r1 * shrink.factor
+    r2 <- r2 * shrink.factor
+    r3 <- r3 * shrink.factor
+    if (!exists("overrideTriple")) {
+        a <- find.dist(100, 100, 40) * shrink.factor
+        b <- a
+        c <- a
+    }
+    else {
+        a <- find.dist(area1, area2, n12) * shrink.factor
+        b <- find.dist(area2, area3, n23) * shrink.factor
+        c <- find.dist(area1, area3, n13) * shrink.factor
+    }
+    x.centres <- vector(mode = "numeric", length = 3)
+    y.centres <- vector(mode = "numeric", length = 3)
+    beta <- (a^2 + c^2 - b^2)/(2 * a * c)
+    gamma <- sqrt(1 - beta^2)
+    x.centres[1] <- (r1 - r2 - a + 1)/2
+    x.centres[3] <- x.centres[1] + c * beta
+    y.centres[3] <- (r3 - r1 + 1 - c * gamma)/2
+    y.centres[1] <- y.centres[3] + c * gamma
+    x.centres[2] <- x.centres[1] + a
+    y.centres[2] <- y.centres[1]
+    radii <- c(r1, r2, r3)
+    for (i in 1:3) {
+        grob.list <- gList(grob.list, VennDiagram::ellipse(x = x.centres[i], 
+            y = y.centres[i], a = radii[i], b = radii[i], gp = gpar(lty = 0, 
+                fill = fill[i], alpha = alpha[i])))
+    }
+    for (i in 1:3) {
+        grob.list <- gList(grob.list, VennDiagram::ellipse(x = x.centres[i], 
+            y = y.centres[i], a = radii[i], b = radii[i], gp = gpar(lwd = lwd[i], 
+                lty = lty[i], col = col[i], fill = "transparent")))
+    }
+    new.x.centres <- vector(mode = "numeric", length = 3)
+    new.y.centres <- vector(mode = "numeric", length = 3)
+    # cell.labels <- areas
+    cell.labels <- 
+      if (overlay_another) 
+        paste0(round( 100*overlay_areas/sum(overlay_areas), 1), "%",
+                          " (", round( 100*areas/sum(areas), 1), "%)"
+                          )
+        
+    else 
+      paste0(areas," (", round( 100*areas/sum(areas), 1), "%)")
+    
+    cell.x <- vector(mode = "numeric", length = 7)
+    cell.y <- vector(mode = "numeric", length = 7)
+    x.cept.12 <- (r1^2 - r2^2 - x.centres[1]^2 + x.centres[2]^2)/(2 * 
+        (x.centres[2] - x.centres[1]))
+    y.cept.12.1 <- sqrt(r1^2 - (x.cept.12 - x.centres[1])^2) + 
+        y.centres[1]
+    y.cept.12.2 <- -sqrt(r1^2 - (x.cept.12 - x.centres[1])^2) + 
+        y.centres[1]
+    theta <- acos((a^2 + c^2 - b^2)/(2 * a * c))
+    new.x.centres[3] <- x.centres[1] + c
+    l.x.cept.13 <- (r1^2 - r3^2 - x.centres[1]^2 + new.x.centres[3]^2)/(2 * 
+        (new.x.centres[3] - x.centres[1]))
+    l.y.cept.13.1 <- sqrt(r1^2 - (l.x.cept.13 - x.centres[1])^2) + 
+        y.centres[1]
+    l.y.cept.13.2 <- -sqrt(r1^2 - (l.x.cept.13 - x.centres[1])^2) + 
+        y.centres[1]
+    rot <- sqrt(2 * r1^2 - 2 * r1^2 * cos(theta))
+    x.cept.13.1 <- l.x.cept.13 + rot * cos(pi/2 - atan((l.y.cept.13.1 - 
+        y.centres[1])/(l.x.cept.13 - x.centres[1])) + theta/2)
+    x.cept.13.2 <- l.x.cept.13 + rot * cos(pi/2 - atan((l.y.cept.13.2 - 
+        y.centres[1])/(l.x.cept.13 - x.centres[1])) + theta/2)
+    y.cept.13.1 <- l.y.cept.13.1 - rot * sin(pi/2 - atan((l.y.cept.13.1 - 
+        y.centres[1])/(l.x.cept.13 - x.centres[1])) + theta/2)
+    y.cept.13.2 <- l.y.cept.13.2 - rot * sin(pi/2 - atan((l.y.cept.13.2 - 
+        y.centres[1])/(l.x.cept.13 - x.centres[1])) + theta/2)
+    theta <- -acos((a^2 + b^2 - c^2)/(2 * a * b))
+    new.x.centres[3] <- x.centres[2] - b
+    l.x.cept.23 <- (r2^2 - r3^2 - x.centres[2]^2 + new.x.centres[3]^2)/(2 * 
+        (new.x.centres[3] - x.centres[2]))
+    l.y.cept.23.1 <- sqrt(r2^2 - (l.x.cept.23 - x.centres[2])^2) + 
+        y.centres[2]
+    l.y.cept.23.2 <- -sqrt(r2^2 - (l.x.cept.23 - x.centres[2])^2) + 
+        y.centres[2]
+    rot <- sqrt(2 * r2^2 - 2 * r2^2 * cos(theta))
+    x.cept.23.1 <- l.x.cept.23 + rot * cos(pi/2 - atan((y.centres[2] - 
+        l.y.cept.23.1)/(x.centres[2] - l.x.cept.23)) + theta/2)
+    x.cept.23.2 <- l.x.cept.23 + rot * cos(pi/2 - atan((y.centres[2] - 
+        l.y.cept.23.2)/(x.centres[2] - l.x.cept.23)) + theta/2)
+    y.cept.23.1 <- l.y.cept.23.1 - rot * sin(pi/2 - atan((y.centres[2] - 
+        l.y.cept.23.1)/(x.centres[2] - l.x.cept.23)) + theta/2)
+    y.cept.23.2 <- l.y.cept.23.2 - rot * sin(pi/2 - atan((y.centres[2] - 
+        l.y.cept.23.2)/(x.centres[2] - l.x.cept.23)) + theta/2)
+    m <- (y.cept.23.2 - y.cept.23.1)/(x.cept.23.2 - x.cept.23.1)
+    y.sect <- m * (x.cept.12 - x.cept.23.1) + y.cept.23.1
+    cell.x[5] <- x.cept.12
+    cell.y[5] <- y.sect
+    m <- (y.cept.13.2 - y.cept.13.1)/(x.cept.13.2 - x.cept.13.1)
+    y0 <- y.centres[2]
+    x0 <- x.centres[2]
+    b <- y.cept.13.1 - m * x.cept.13.1
+    x.sect <- (m * y0 + x0 - m * b)/(m^2 + 1) + sqrt(r2^2 - ((y0 - 
+        m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    y.sect <- (m^2 * y0 + m * x0 + b)/(m^2 + 1) + m * sqrt(r2^2 - 
+        ((y0 - m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    cell.x[3] <- (x.cept.13.1 + x.sect)/2
+    cell.y[3] <- (y.cept.13.1 + y.sect)/2
+    m <- (y.cept.23.2 - y.cept.23.1)/(x.cept.23.2 - x.cept.23.1)
+    y0 <- y.centres[1]
+    x0 <- x.centres[1]
+    b <- y.cept.23.1 - m * x.cept.23.1
+    x.sect <- (m * y0 + x0 - m * b)/(m^2 + 1) - sqrt(r1^2 - ((y0 - 
+        m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    y.sect <- (m^2 * y0 + m * x0 + b)/(m^2 + 1) - m * sqrt(r1^2 - 
+        ((y0 - m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    cell.x[1] <- (x.cept.23.1 + x.sect)/2
+    cell.y[1] <- (y.cept.23.1 + y.sect)/2
+    y.sect <- -sqrt(r3^2 - (x.cept.12 - x.centres[3])^2) + y.centres[3]
+    cell.x[7] <- x.cept.12
+    cell.y[7] <- (y.cept.12.2 + y.sect)/2
+    m <- (y.cept.23.2 - y.cept.23.1)/(x.cept.23.2 - x.cept.23.1)
+    y0 <- y.centres[1]
+    x0 <- x.centres[1]
+    b <- y.cept.23.1 - m * x.cept.23.1
+    x.sect <- (m * y0 + x0 - m * b)/(m^2 + 1) + sqrt(r1^2 - ((y0 - 
+        m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    y.sect <- (m^2 * y0 + m * x0 + b)/(m^2 + 1) + m * sqrt(r1^2 - 
+        ((y0 - m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    cell.x[6] <- (x.cept.23.2 + x.sect)/2
+    cell.y[6] <- (y.cept.23.2 + y.sect)/2
+    m <- (y.cept.13.2 - y.cept.13.1)/(x.cept.13.2 - x.cept.13.1)
+    y0 <- y.centres[2]
+    x0 <- x.centres[2]
+    b <- y.cept.13.1 - m * x.cept.13.1
+    x.sect <- (m * y0 + x0 - m * b)/(m^2 + 1) - sqrt(r2^2 - ((y0 - 
+        m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    y.sect <- (m^2 * y0 + m * x0 + b)/(m^2 + 1) - m * sqrt(r2^2 - 
+        ((y0 - m * x0 - b)/sqrt(1 + m^2))^2)/sqrt(1 + m^2)
+    cell.x[4] <- (x.cept.13.2 + x.sect)/2
+    cell.y[4] <- (y.cept.13.2 + y.sect)/2
+    y.sect <- sqrt(r3^2 - (x.cept.12 - x.centres[3])^2) + y.centres[3]
+    cell.x[2] <- x.cept.12
+    cell.y[2] <- (y.cept.12.1 + y.sect)/2
+    if (length(cex.prop) > 0) {
+        if (length(cex.prop) != 1) 
+            flog.error("Value passed to cex.prop is not length 1", 
+                name = "VennDiagramLogger")
+        stop("Value passed to cex.prop is not length 1")
+        func = cex.prop
+        if (class(cex.prop) != "function") {
+            if (cex.prop == "lin") {
+                func = function(x) x
+            }
+            else if (cex.prop == "log10") {
+                func = log10
+            }
+            else flog.error(paste0("Unknown value passed to cex.prop: ", 
+                cex.prop), name = "VennDiagramLogger")
+            stop(paste0("Unknown value passed to cex.prop: ", 
+                cex.prop))
+        }
+        maxArea = max(areas)
+        for (i in 1:length(areas)) {
+            cex[i] = cex[i] * func(areas[i])/func(maxArea)
+            if (cex[i] <= 0) 
+                stop(paste0("Error in rescaling of area labels: the label of area ", 
+                  i, " is less than or equal to zero"))
+        }
+    }
+    processedLabels <- rep("", length(cell.labels))
+    if (print.mode[1] == "percent") {
+        processedLabels <- paste(signif(cell.labels/sum(cell.labels) * 
+            100, digits = sigdigs), "%", sep = "")
+        if (isTRUE(print.mode[2] == "raw")) {
+            processedLabels <- paste(processedLabels, "\n(", 
+                cell.labels, ")", sep = "")
+        }
+    }
+    if (print.mode[1] == "raw") {
+        processedLabels <- cell.labels
+        if (isTRUE(print.mode[2] == "percent")) {
+            processedLabels <- paste(processedLabels, "\n(", 
+                paste(signif(cell.labels/sum(cell.labels) * 100, 
+                  digits = sigdigs), "%)", sep = ""), sep = "")
+        }
+    }
+    for (i in 1:7) {
+        grob.list <- gList(grob.list, textGrob(label = processedLabels[i], 
+            x = cell.x[i], y = cell.y[i], gp = gpar(col = label.col[i], 
+                cex = cex[i], fontface = fontface[i], fontfamily = fontfamily[i])))
+    }
+    text.location.mapping <- c(1, 3, 7)
+    for (i in 1:3) {
+        if ("outer" == cat.default.pos) {
+            this.cat.pos <- find.cat.pos(x = x.centres[i], y = y.centres[i], 
+                pos = cat.pos[i], dist = cat.dist[i], r = radii[i])
+        }
+        else if ("text" == cat.default.pos) {
+            this.cat.pos <- find.cat.pos(x = cell.x[text.location.mapping[i]], 
+                y = cell.y[text.location.mapping[i]], pos = cat.pos[i], 
+                dist = cat.dist[i])
+        }
+        else {
+            flog.error("Invalid setting of cat.default.pos", 
+                name = "VennDiagramLogger")
+            stop("Invalid setting of cat.default.pos")
+        }
+        grob.list <- gList(grob.list, textGrob(label = category[i], 
+            x = this.cat.pos$x, y = this.cat.pos$y, just = cat.just[[i]], 
+            gp = gpar(col = cat.col[i], cex = cat.cex[i], fontface = cat.fontface[i], 
+                fontfamily = cat.fontfamily[i])))
+    }
+    grob.list <- VennDiagram::adjust.venn(VennDiagram::rotate.venn.degrees(gList1 = grob.list, 
+        angle = rotation.degree, x.centre = rotation.centre[1], 
+        y.centre = rotation.centre[2]), ...)
+    if (ind) {
+        grid.draw(grob.list)
+    }
+    return(grob.list)
+}
+@
 
-<<venn_setup, results = 'asis', fig.keep='high', out.width="0.8\\textwidth">>=
-=======
-%The following are the venndiagram showing the 3-way concordance of each subtype of the whole dataset versus the filtered dataset. 
+<<venn_setup>>=
+
+# function to convert overlaps to area - this seems to be missing in the venn diagram package 
+get_areas_from_overlaps <- function(overlaps){
+  area1 = overlaps[[5]] + overlaps[[3]] + overlaps[[2]] + overlaps[[1]]
+  area2 = overlaps[[6]] + overlaps[[4]] + overlaps[[2]] + overlaps[[1]] 
+  area3 = overlaps[[7]] + overlaps[[4]] + overlaps[[3]] + overlaps[[1]] 
+  n12 = overlaps[[2]] + overlaps[[1]]
+  n23 = overlaps[[4]] + overlaps[[1]] 
+  n13 = overlaps[[3]] + overlaps[[1]] 
+  n123 = overlaps[[1]]
+  c(area1,area2,area3,n12,n23,n13,n123)
+}
 
 
-<<venn_setup, results = 'hide', eval=FALSE>>=
->>>>>>> db80ce4d27944e1e7f57816dd35314dd1e227677
+
  # the overlaps obtained by get_overlap function are numbers of non-intersecting regions of the venn - they had to be computed for the whole areas again for strange reason - maybe there is a simpler function in the VennDiagram that would replace parts of the below function
-get_venn_margin_subtype <- function(margin,subtype_order){
-    overlaps = get_overlaps_margin[[margin]][[subtype_order]]$lengths
+get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALSE, margin_overlay = 1500){
+    margin_areas = get_overlaps_margin[[margin]][[subtype_order]]$lengths %>% get_areas_from_overlaps
+    overlay_margin_areas = 
+      if (overlay_another)
+      get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths %>% get_areas_from_overlaps else c(0,0,0,0,0,0,0)
  #dev.control('enable')   
     venn_dia <- 
-      draw.triple.venn(area1 = overlaps[[5]] + overlaps[[3]] + overlaps[[2]] + overlaps[[1]], 
-                                area2 = overlaps[[6]] + overlaps[[4]] + overlaps[[2]] + overlaps[[1]], 
-                                area3 = overlaps[[7]] + overlaps[[4]] + overlaps[[3]] + overlaps[[1]], 
-                                n12 = overlaps[[2]] + overlaps[[1]], 
-                                n23 = overlaps[[4]] + overlaps[[1]], 
-                                n13 = overlaps[[3]] + overlaps[[1]], 
-                                n123 = overlaps[[1]], 
+      draw.triple.venn_adapted(area1 = margin_areas[[1]], 
+                                area2 = margin_areas[[2]], 
+                                area3 = margin_areas[[3]], 
+                                n12 = margin_areas[[4]], 
+                                n23 = margin_areas[[5]], 
+                                n13 = margin_areas[[6]], 
+                                n123 = margin_areas[[7]], 
+                                overlay_another = overlay_another,
+                                overlay_area1 = overlay_margin_areas[[1]], 
+                                overlay_area2 = overlay_margin_areas[[2]], 
+                                overlay_area3 = overlay_margin_areas[[3]], 
+                                overlay_n12 = overlay_margin_areas[[4]], 
+                                overlay_n23 = overlay_margin_areas[[5]], 
+                                overlay_n13 = overlay_margin_areas[[6]], 
+                                overlay_n123 = overlay_margin_areas[[7]], 
                                 category = subtype.names[1:3], filename = NULL, 
                                 #fill = c("blue", "yellow", "green")   
                                 fill = c("gold", "orange", "orchid3")
     )
 
   }
-
-# the below functions are adapted fromhttp://stackoverflow.com/questions/23794942/adding-extra-texts-to-a-venn-diagram-drawn-using-venndiagram-r-package to overlay additional text to the venndiagram areas
-addlab <- function(lab, x, y, xoffset = 0, yoffset = 0) {
-  grid.text(lab, unit(as.numeric(x) + xoffset, "npc"), 
-            unit(as.numeric(y) - yoffset, "npc"), 
-            draw = FALSE)
-}
-
-overlay_text <- function (venn.plot,margin = 1,margin_overlay,subtype_order){
-  overlaps_margin = get_overlaps_margin[[margin]][[subtype_order]]$lengths %>% as.vector 
-  ov = overlaps_margin[c(5,2,6,3,1,4,7)]
-  ov_percent = round(ov/sum(ov), 2) 
-  overlaps_margin_overlay = get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths %>% as.vector 
-  ov_new = overlaps_margin_overlay[c(5,2,6,3,1,4,7)]
-  ov_new_percent = round(ov_new/sum(ov_new), 2) 
-  lbls <- gList()
-  o <- 1 ## counter
-  for(i in 7:13) {
-    ## Check if it is a grid.text object
-    if(regexpr("text", venn.plot[[i]]$name) > 0) {
-      ## Write counter value under the existing label
-      # lbls <- gList(lbls, addlab(ov_new[[o]], venn.plot[[i]]$x, venn.plot[[i]]$y, 0.05))
-      lbls <- gList(lbls, addlab(paste("(", ov_percent[[o]],")",sep = ""), venn.plot[[i]]$x, venn.plot[[i]]$y, xoffset = 0.1), addlab(paste(ov_new[[o]],"(", ov_new_percent[[o]], ")", sep=""), venn.plot[[i]]$x, venn.plot[[i]]$y, xoffset = 0.05, yoffset = 0.05))
-      # overlaps_margin_overlay[[o]]
-      ## Increase the counter
-      o <- o + 1
-    }
-  }
-  lbls
-}
-
-
-
-overlay_venn <- function(subtype_order, margin, margin_overlay)
-{ 
-  pdf("tmp.pdf", width=17.5, height=5)
-  p <- get_venn_margin_subtype(margin,subtype_order)
- 
-  dev.off()
- 
-  gList(p, 
-    overlay_text(p, margin, margin_overlay,subtype_order)
-        )
-  
-}
 @
 
-<<<<<<< HEAD
-<<Subtype_venn_diagrams, results = 'asis', out.width="0.8\\textwidth", fig.keep='high'>>=
-=======
-<<Subtype_venn_diagrams, out.width="0.8\\textwidth", eval=FALSE>>=
->>>>>>> db80ce4d27944e1e7f57816dd35314dd1e227677
-#grid.newpage()
+
+<<Subtype_venn_diagrams, out.width="0.8\\textwidth">>=
 draw_venn <- function (margin,margin_overlay, subtype_order){
   
-  pdf("tmp1.pdf", width=17.5, height=5)
-  q <- overlay_venn(subtype_order,margin,margin_overlay)
-  
-  dev.off()
+  #pdf("tmp1.pdf", width=17.5, height=5)
+  q <- get_venn_margin_subtype(margin,subtype_order, overlay_another = TRUE, margin_overlay) 
+  #dev.off()
   
   grid.arrange(
     gTree(children = q),
@@ -692,459 +1178,498 @@ draw_venn_formargin <- function (margin,margin_overlay){
     dv3 <- draw_venn(margin,margin_overlay,3)
     dv4 <- draw_venn(margin,margin_overlay,4)
     dev.off()
-    grid.arrange(dv1,dv2,dv3,dv4,top="Number of patients in each subtype")
+    grid.arrange(dv1,dv2,dv3,dv4,top="Number of patients classified as subtype", ncol = 1, width =   1)
 }
 
-
+#dev.off()
 margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
-dev.off()
+
 draw_venn_formargin(1,margin_overlay_cutoff) # since there are 3000 x values; 1 being for all datasets
 @
-
-<<Alternate_venn_rep, results='asis', out.width="0.8\\textwidth", fig.keep='high'>>=
-subtype_order <- 1
-margin <- 1
-margin_overlay <- margin_overlay_cutoff
-
-par(mfrow=c(1,2))
-vals_margin <- get_overlaps_margin[[margin]][[subtype_order]]$lengths 
-names(vals_margin) <- c("111", "110", "101", "011", "100", "010", "001") 
-cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin)+1)[vals_margin+1]
-venn_all <- plotVenn(vals_margin, names(vals_margin), Colors=cols)
- 
- 
-vals_margin_overlay <- get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths 
-names(vals_margin_overlay) <- c("111", "110", "101", "011", "100", "010", "001") 
-cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals_margin_overlay+1]
-venn_filtered <- plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
-
-# not working
-#multiplot(plotlist = plots, ncol = 2)
-@
-<<<<<<< HEAD
-
-
-Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
-=======
-%Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
->>>>>>> db80ce4d27944e1e7f57816dd35314dd1e227677
-
-% Main Figures of the manuscript
-%figure 1 - pairwise concordance, venn_diagram, scatterplot 
-
-<<Figure1-ConsensusAnalysis, results="asis", fig.keep='high'>>=
-venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
-# Two-way Contingencies
-Pane_A <- grid.arrange(
-contingency.plots[[1]],
-contingency.plots[[3]],
-contingency.plots[[5]], top = "A.", ncol = 1)
-
-# Margins Versus Two-way Concordances
-Pane_B <- grid.arrange(
-margin.scatterplots[[1]],
-margin.scatterplots[[2]],
-margin.scatterplots[[3]], top = "B.", ncol = 1)
-
-# Percentage of data removed versus three-way concordance
-Pane_C <- grid.arrange(
-subtype_scatterplots, top = "C.")
-
-# Venn Diagrams showing the number of patients in each subtype stratified by the methods
-Pane_D <- grid.arrange(
-venn_dia, top = "D.")
-
-layout_mat <- matrix(c(1,2,3,4,5,6,7,8,8), nrow = 3, byrow = FALSE)
-grid.arrange(
-contingency.plots[[1]],
-contingency.plots[[3]],
-contingency.plots[[5]],
-margin.scatterplots[[1]],
-margin.scatterplots[[2]],
-margin.scatterplots[[3]],
-subtype_scatterplots,
-venn_dia, layout_matrix = layout_mat, widths=c(10,10,15)
-)
-
-grid.arrange(
-Pane_A, Pane_B, Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,1,2,2,2,2,2,3,3,4,4,4), nrow = 5, byrow = FALSE), widths=c(10,10,15), heights = c(10,10,10,10,10)
-)
-@
-
-\pagebreak
-
-\section{Survival Analysis}
-<<Pooled_survival_plot, fig.height=12>>=
-# layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
-layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
-#par(mfrow=c(2,2))
-#par(mar=c(5,1,0,1))
-par(mar=c(5.1, 8, 4.1, 2.1))
-#for(subtype.name in subtype.names[1:3]) {
-for(subtype.name in subtype.names) {
-  #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
-  par(mar=c(5.1, 5, 4.1, 2.1))
-  survival.df <- pooled.subtypes.survival
-  survival.df$groups <- survival.df[,subtype.name]
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
-  text <- ""
-  text <- paste0(text, "n = ", nrow(survival.df), "\n")
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(text, sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  if(subtype.name == "Bentink") {
-    cols <- c("orange", "blue")
-  }
-  title <- subtype.name
-  if(title == "Verhaak") {
-    title <- "TCGA / Verhaak"
-  }
-  if(title == "Helland") {
-    title <- "Tothill / Helland"
-  }
-  km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-  #dev.off()
-}
-
-##########################
-## below is the survival plot for the patients with classified as same subtypes across the methods 
-survival_filtered_all.df <- intersection_pooled.subtypes.survival
-  survival_filtered_all.df$groups <- 
-  survival_filtered_all.df[,"Verhaak"] 
-# since we name the subtypes of the filtered set to that of Verhaak
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered_all.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival_filtered_all.df$groups, surv.time=survival_filtered_all.df$years_to_death, surv.event=survival_filtered_all.df$vital_status, strat=survival_filtered_all.df$data.source)
-  text <- ""
-  text <- paste0(text, "n = ", nrow(survival_filtered_all.df), "\n")
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered_all.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  
-  title <- "Concordantly Classified Cases"
-  
-  km.coxph.plot(surv.obj ~ groups, survival_filtered_all.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered_all.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-
-################
-
-## below is the survival plot AFTER removing the patients with low margin 
-survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
-  survival_filtered.df$groups <- 
-  survival_filtered.df[,"Verhaak"] 
-# since we name the subtypes of the filtered set to that of Verhaak
-  
-  pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
-  
-  hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
-  
-  text <- ""
-  text <- paste0(text, "n = ", nrow(survival_filtered.df), "\n")
-  if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
-  } else {
-    for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-    }
-     text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-  }
-  cols <- 1:4
-  
-  title <- "Filtered (after margins)"
-  
-  km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-  title(title, cex.main=2)
-  text(0,0.05, text, cex=0.85, pos=4)
-  @
-
-% Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
-<<<<<<< HEAD
-<<HR, echo = TRUE, results='asis'>>=
-
-coxph.model = coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df)
-fit = summary(coxph.model)
-print(xtable(fit$conf.int), include.rownames=FALSE)
-@ 
-Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
-
-
-=======
-<<HR, echo = FALSE, results='asis', eval=FALSE>>=
-coxph.model = coxph(surv.obj ~ groups, survival_filtered.df)
-fit = summary(coxph.model)
-print(xtable(fit$conf.int), include.rownames=FALSE)
-@ 
->>>>>>> db80ce4d27944e1e7f57816dd35314dd1e227677
-
-<<hr_plots, out.width="0.8\\textwidth", eval=FALSE>>=
-get_hr <- function (margin) {
-  # For each margin, extract the dataset 
-  dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin), only.survival = TRUE)[[i]]$parts[[1]]}) %>% unlist
-  Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
-  survival_filtered_margin.df <- Filtered_intersection_margin
-  survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
-  survival_filtered_margin.df$notIMR <- survival_filtered_margin.df$groups 
-  notIMR <- c("MES", "PRO", "DIF") 
-  for(i in seq_along(notIMR)) 
-     survival_filtered_margin.df$notIMR <- 
-    gsub(notIMR[i], "notIMR", survival_filtered_margin.df$notIMR, fixed = TRUE)
-
-  # fit the coxph model
-  # coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
-  coxph.model = coxph(surv.obj ~ notIMR + strata(data.source), survival_filtered_margin.df)
-  fit = summary(coxph.model)
-  # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
-  fit$conf.int[,c(1,3,4)]  
-}
-
-xvals <- seq(0, 0.75, length.out = 2250)
-
-all_hrs_CI = lapply(xvals,get_hr)
-extract_hr = lapply(1:2250,function (i) all_hrs_CI[[i]][[1]]) %>% unlist
-extract_lower_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[2]]) %>% unlist
-extract_upper_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[3]]) %>% unlist
-@
- 
-<<HR_plots, out.width="0.8\\textwidth", eval=FALSE>>=
- 
-ss = smooth.spline(xvals[1:2250], extract_hr)
-ss_l = smooth.spline(xvals[1:2250], extract_lower_CI)
-ss_u = smooth.spline(xvals[1:2250], extract_upper_CI)
-hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr, lower = ss_l$y, upper = ss_u$y)
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
-
-@
-
-<<marginal_dataset>>=
-BigDF = pooled.subtypes
-SmallDF = Filtered_intersection_pooled.subtypes
-marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
-@
-
-
-%\section{Prediction of the patients that are removed into combination of subtypes}
-%Below is our prediction of combinations of subtypes in the remaining of the \Sexpr{(length(row.names(marginal_dataset)))} patients that were removed. The subtypes under different algorithms are mapped to the Varhaak subtypes using high concordance. The frequency of each combination of subtypes in the dataset is given below.  
-
-<<marginal_dataset_classification, results='asis', eval=FALSE>>=
-levels(marginal_dataset$"Konecny") <- subtypes[[2]]
-levels(marginal_dataset$"Helland") <- subtypes[[2]]
-subtype_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
-       function (i) 
-        marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
-       ) 
-unique_combinations = subtype_combinations %>% unique
-sorted_unique_comb = unique_combinations[order(sapply(unique_combinations,'[[',1))]
-map_comb = sapply(sorted_unique_comb,
-                  function (i) {subtypes[[2]][i]}
-                  )
-
-
-## function to check if two vectors with unique elements and sorted are the same
-vecMatch <- function(x, want) {
-    isTRUE(all.equal(x, want))
-}
-
-which_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
-       function (i) 
-        sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
-       ) %>% unlist
-
-summary_comb <- as.data.frame(table(which_combinations))
-summary_c <- summary_comb[with(summary_comb,order(Freq)),]
-row.names(summary_c) <- 
-  sapply(map_comb, function (s) paste(s,collapse=" "))[summary_c[,1]]
-
-print(xtable(summary_c[-1]), include.rownames=TRUE)
-@
-
-\section{Subtype-Specific Concordance}
-
-<<best_method>>=
-# For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
-methods = 1:3
-margin_vals <- seq(100, 0, length.out = 3000)
-
-get_patients_method <- 
-  function(subtype_order,margin_percent)
-    lapply(1:3, function(subtype.method) get_subtype_patients(subtype_order,margin_percent, subtype.method))
-
-get_patients_marginpercent_method <- 
-  function (subtype_order)
-lapply(1:3000, function (index)
-get_patients_method(subtype_order,margin_vals[[index]]))
-
-get_subtype_patients_marginpercent_method <-
-  lapply(1:4, get_patients_marginpercent_method)
-
-get_overlaps_for <- function(index,subtype.method,subtype_order)
-get_overlaps(margin_vals[[index]],methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
-
-
-get_two_way_overlaps <-
-  function(subtype.method, go)
-  {
-    if (subtype.method == 3) {go[[1]] + go[[2]]}
-    else {
-      if (subtype.method == 2) {go[[1]] + go[[3]]}
-      else {go[[1]] + go[[4]]}
-    }
-  }
-
-
-find_proportion <- function(subtype.method, subtype_order, index, compare = c("self", "other.two", "all")){
-  go <- get_overlaps_margin[[index]][[subtype_order]]$lengths 
-    if (compare == "self") 
-  {     
-    go[[1]]/length(get_subtype_patients_marginpercent_method[[subtype_order]][[index]][[subtype.method]] %>% unlist)
-  }
-  else if (compare == "other.two")
-   go[[1]]/get_two_way_overlaps(subtype.method,go)
-
-    else go[[1]]/sum(go[1:4]) # not sure what to use
-
-}
-
-get_concordance <- function(subtype.method,subtype_order,compare = c("self", "other.two", "all")){
- 
-  lapply(# margin_vals[1:1500],
-       1:3000,
-       function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare)) %>% unlist
-
-}
-
-get_concordance_all_subtypes <- function(subtype.method, compare = c("self", "other.two", "all"))
-  lapply(1:4, function (i) get_concordance(subtype.method,i, compare))
-
-get_concordance_all_methods <- function(subtype_order, compare = c("self", "other.two", "all"))
-  lapply(1:3, function (method) get_concordance(method,subtype_order, compare))
-
-@
-
-The first set of plots give concordance of the dataset at various levels of margins removed (i.e., proportion of patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the dataset at various levels of margins removed with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
-
-
-
-<<get_best_method_plots, fig.width=15, fig.height=4>>=
-get_method_concordance <- function (subtype.method, compare = c("self", "other.two", "all")) {
-sc = get_concordance_all_subtypes(subtype.method,compare)
- smc.df <- data.frame( percent = percent, IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
- smc.df[is.na(smc.df)] <- NA 
- smc.df <- na.omit(smc.df)
-
-smc_long.df <- melt(smc.df, id = "percent")                      
-
-txt <- if (compare == "self") "within the method" else 
-  if (compare == "other.two") "under the other two methods" else "all the methods"
-ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
-}
-
-grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3)
-@
-
-<<concordance_plots_2, fig.width=15, fig.height=4>>=
-grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance(i, compare = "other.two")), ncol = 3)
-
-@
-
-
-In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed, also stratified by each individual method. Each subtype is labelled by the name provied by Verhaak et al.
-
-<<subtype_concordance, out.width="0.8\\textwidth">>= 
-get_subtype_concordance <- function (subtype_order, compare = c("self", "other.two", "all")) {
-concordance <- lapply(1:3000, function(i) {
-  go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
-  go[[1]]/sum(go)  
-  }) %>% as.numeric
-sc = get_concordance_all_methods(subtype_order,compare)
-
- smc.df <- data.frame( percent = percent, All = concordance, Konecny = sc[[1]], Varhaak= sc[[2]], Helland = sc[[3]])
- smc.df[is.na(smc.df)] <- NA 
- smc.df <- na.omit(smc.df)
- smc_long.df <- melt(smc.df, id = "percent")                      
- 
-
-ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])) + theme(legend.title=element_blank()) + theme(legend.position="top")
-}
-
-
-## combined plot, shared legend from https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
-grid_arrange_shared_legend <- function(...) {
-    plots <- list(...)
-    g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
-    legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-    lheight <- sum(legend$height)
-    grid.arrange(
-        do.call(arrangeGrob, lapply(plots, function(x)
-            x + theme(legend.position="none"))),
-        legend,
-        ncol = 1,
-        heights = unit.c(unit(1, "npc") - lheight, lheight))
-}
-@
-
-<<margin.scatterplots_for_subtypes, out.width="0.8\\textwidth">>=
-grid_arrange_shared_legend(get_subtype_concordance(1), get_subtype_concordance(2), get_subtype_concordance(3), get_subtype_concordance(4))
-@
-
-<<pairwise_contingency>>=
-margin.scatterplots_pairwise <- 
-    apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
-    margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
-    margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]
-    
-    margins.1 <- ecdf(margins.1)(margins.1)
-    margins.2 <- ecdf(margins.2)(margins.2)
-  
-    xvals <- seq(0, 1, length.out = 3000)
-    concordance <- sapply(xvals, function(x) {
-      margin.boolean <- margins.1 > x & margins.2 > x
-      contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
-      sum(diag(contingency.matrix)) / sum(contingency.matrix)
-    })
- # compare with the method that is not in the pair
-    other.method = setdiff(subtype.names[1:3],subtype.name.pair)
-    subtype.method = which(subtype.names[1:3] == other.method)
-    sc = get_concordance_all_subtypes(subtype.method, compare = "other.two")
- 
-   smc_conc.df <- data.frame( percent = percent, Pairwise=concordance, IMR= sc[[1]], DIF = sc[[2]], PRO= sc[[3]], MES = sc[[4]])
- smc_conc.df[is.na(smc_conc.df)] <- NA 
- smc_conc.df <- na.omit(smc_conc.df)
-
-smc_c.df <- na.omit(smc_conc.df)
-  smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
-   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
-
-  })
-
-#grid.arrange(grobs = margin.scatterplots_pairwise,ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
-
-grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3)
-@
-
-% Main Figures of the manuscript
-%figure 1 - pairwise concordance, venn_diagram, scatterplot 
-
+% 
+% % <<Alternate_venn_rep, results='asis', out.width="0.8\\textwidth", fig.keep='high'>>=
+% % subtype_order <- 1
+% % margin <- 1
+% % margin_overlay <- margin_overlay_cutoff
+% % 
+% % 
+% % 
+% % vals_margin <- c(get_overlaps_margin[[margin]][[subtype_order]]$lengths[1:6],100(2%)) 
+% % names(vals_margin) <- c("hi", "110", "101", "011", "100", "010", "001") 
+% % cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin)+1)[vals_margin+1]
+% % 
+% %  
+% %  
+% % vals_margin_overlay <- get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths 
+% % names(vals_margin_overlay) <- c("111", "110", "101", "011", "100", "010", "001") 
+% % cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals_margin_overlay+1]
+% % 
+% % 
+% % 
+% % layout(matrix(c(1,2), nrow = 1, byrow = TRUE))
+% % par(mar=c(5.1, 8, 4.1, 2.1))
+% % plotVenn(vals_margin, names(vals_margin), Colors=cols)
+% % plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
+% % 
+% % # not working
+% % #multiplot(plotlist = plots, ncol = 2)
+% % @
+% 
+% 
+% %Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
+% % Main Figures of the manuscript
+% %figure 1 - pairwise concordance, venn_diagram, scatterplot 
+% 
+% <<Figure1-ConsensusAnalysis, results = 'hide', eval=FALSE>>=
+% venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
+% # Two-way Contingencies
+% Pane_A <- grid.arrange(
+% contingency.plots[[1]],
+% contingency.plots[[3]],
+% contingency.plots[[5]], top = "A.", ncol = 1)
+% 
+% # Margins Versus Two-way and three-way Concordances
+% Pane_B <- grid.arrange(
+% margin.scatterplots[[1]],
+% margin.scatterplots[[2]],
+% margin.scatterplots[[3]], 
+% subtype_scatterplots, top = "B.", ncol = 1)
+% 
+% # Venn Diagrams showing the number of patients in each subtype stratified by the methods
+% Pane_C <- grid.arrange(
+% venn_dia, top = "C.", ncol = 1)
+% 
+% 
+% grid.arrange(
+% Pane_A, Pane_B,  Pane_C, layout_matrix = matrix(c(1,1,1,1,2,2,2,2,3,3,3,3), nrow = 4, byrow = FALSE), widths=c(8,8,10), heights = c(10,10,10,10)
+% )
+% @
+% 
+% \pagebreak
+% 
+% \section{Survival Analysis}
+% <<Pooled_survival_plot, fig.height=12>>=
+% # layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
+% layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
+% #par(mfrow=c(2,2))
+% #par(mar=c(5,1,0,1))
+% par(mar=c(5.1, 8, 4.1, 2.1))
+% #for(subtype.name in subtype.names[1:3]) {
+% for(subtype.name in subtype.names) {
+%   #pdf(paste0(subtype.name, "_pooled_survival.pdf"), width=5, height=5)
+%   par(mar=c(5.1, 5, 4.1, 2.1))
+%   survival.df <- pooled.subtypes.survival
+%   survival.df$groups <- survival.df[,subtype.name]
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
+%   text <- ""
+%   text <- paste0(text, "n = ", nrow(survival.df), "\n")
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(text, sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   if(subtype.name == "Bentink") {
+%     cols <- c("orange", "blue")
+%   }
+%   title <- subtype.name
+%   if(title == "Verhaak") {
+%     title <- "TCGA / Verhaak"
+%   }
+%   if(title == "Helland") {
+%     title <- "Tothill / Helland"
+%   }
+%   km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+%   #dev.off()
+% }
+% 
+% ##########################
+% ## below is the survival plot for the patients with classified as same subtypes across the methods 
+% survival_filtered_all.df <- intersection_pooled.subtypes.survival
+%   survival_filtered_all.df$groups <- 
+%   survival_filtered_all.df[,"Verhaak"] 
+% # since we name the subtypes of the filtered set to that of Verhaak
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered_all.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival_filtered_all.df$groups, surv.time=survival_filtered_all.df$years_to_death, surv.event=survival_filtered_all.df$vital_status, strat=survival_filtered_all.df$data.source)
+%   text <- ""
+%   text <- paste0(text, "n = ", nrow(survival_filtered_all.df), "\n")
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered_all.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   
+%   title <- "Concordantly Classified Cases"
+%   
+%   km.coxph.plot(surv.obj ~ groups, survival_filtered_all.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered_all.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+% 
+% ################
+% 
+% ## below is the survival plot AFTER removing the patients with low margin 
+% survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
+%   survival_filtered.df$groups <- 
+%   survival_filtered.df[,"Verhaak"] 
+% # since we name the subtypes of the filtered set to that of Verhaak
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival_filtered.df$groups, surv.time=survival_filtered.df$years_to_death, surv.event=survival_filtered.df$vital_status, strat=survival_filtered.df$data.source)
+%   
+%   text <- ""
+%   text <- paste0(text, "n = ", nrow(survival_filtered.df), "\n")
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival_filtered.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   
+%   title <- "Filtered (after margins)"
+%   
+%   km.coxph.plot(surv.obj ~ groups, survival_filtered.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival_filtered.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+%   @
+% 
+% % Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
+% 
+% <<HR, echo = TRUE, results='asis'>>=
+% 
+% coxph.model = coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df)
+% fit = summary(coxph.model)
+% print(xtable(fit$conf.int), include.rownames=FALSE)
+% @ 
+% Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
+% 
+% 
+% 
+% <<hr_plots, out.width="0.8\\textwidth", eval=FALSE>>=
+% get_hr <- function (margin) {
+%   # For each margin, extract the dataset 
+%   dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin), only.survival = TRUE)[[i]]$parts[[1]]}) %>% unlist
+%   Filtered_intersection_margin = pooled.subtypes.survival[dataset_ids,] 
+%   survival_filtered_margin.df <- Filtered_intersection_margin
+%   survival_filtered_margin.df$groups <- survival_filtered_margin.df[,"Verhaak"] 
+%   survival_filtered_margin.df$notIMR <- survival_filtered_margin.df$groups 
+%   notIMR <- c("MES", "PRO", "DIF") 
+%   for(i in seq_along(notIMR)) 
+%      survival_filtered_margin.df$notIMR <- 
+%     gsub(notIMR[i], "notIMR", survival_filtered_margin.df$notIMR, fixed = TRUE)
+% 
+%   # fit the coxph model
+%   # coxph.model = coxph(surv.obj ~ groups, survival_filtered_margin.df)
+%   coxph.model = coxph(surv.obj ~ notIMR + strata(data.source), survival_filtered_margin.df)
+%   fit = summary(coxph.model)
+%   # extract the first column which corresponds to the HR of the three subtypes; 3rd and the 4th column correspond to CI
+%   fit$conf.int[,c(1,3,4)]  
+% }
+% 
+% xvals <- seq(0, 0.75, length.out = 2250)
+% 
+% all_hrs_CI = lapply(xvals,get_hr)
+% extract_hr = lapply(1:2250,function (i) all_hrs_CI[[i]][[1]]) %>% unlist
+% extract_lower_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[2]]) %>% unlist
+% extract_upper_CI = lapply(1:2250,function (i) all_hrs_CI[[i]][[3]]) %>% unlist
+% @
+%  
+% <<HR_plots, out.width="0.8\\textwidth", eval=FALSE>>=
+%  
+% ss = smooth.spline(xvals[1:2250], extract_hr)
+% ss_l = smooth.spline(xvals[1:2250], extract_lower_CI)
+% ss_u = smooth.spline(xvals[1:2250], extract_upper_CI)
+% hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr, lower = ss_l$y, upper = ss_u$y)
+% HR_plot <- ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper)) 
+% 
+% HR_plot
+% 
+% @
+% 
+% % Figure 2
+% <<Figure2-SurvivalAnalysis,out.width="0.8\\textwidth", eval=FALSE>>=
+% survival.df <- pooled.subtypes.survival
+% 
+% get_survival_curve <- function (subtype.order) {
+%   subtype.name <- subtype.names[[subtype.order]]
+%   survival.df$groups <- survival.df[,subtype.name]
+%   
+%   pval <- summary(coxph(surv.obj ~ groups + strata(data.source), survival.df))$sctest["pvalue"]
+%   
+%   hr.out <- survcomp::hazard.ratio(x=survival.df$groups, surv.time=survival.df$years_to_death, surv.event=survival.df$vital_status, strat=survival.df$data.source)
+%   text <- ""
+%   text <- paste0(text, "n = ", nrow(survival.df), "\n")
+%   if(length(hr.out$hazard.ratio) == 1) {
+%     text <- paste0(text, sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+%   } else {
+%     for(i in 1:length(hr.out$hazard.ratio)) {
+%       text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+%     }
+%      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
+%   }
+%   cols <- 1:4
+%   if(subtype.name == "Bentink") {
+%     cols <- c("orange", "blue")
+%   }
+%   title <- subtype.name
+%   if(title == "Verhaak") {
+%     title <- "TCGA / Verhaak"
+%   }
+%   if(title == "Helland") {
+%     title <- "Tothill / Helland"
+%   }
+%   km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+%   title(title, cex.main=2)
+%   text(0,0.05, text, cex=0.85, pos=4)
+%   
+%   fit = surv.obj ~ groups, survival.df
+%   
+%   #dev.off()
+% }
+% 
+% Pane_2_A <- {
+% layout(matrix(c(1,2,3,0,4,0), nrow = 2, byrow = TRUE))
+% par(mar=c(5.1, 8, 4.1, 2.1))
+% get_survival_curve(1)
+% get_survival_curve(2)
+% get_survival_curve(3)
+% ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle("Hazard Ratio of all other subtypes w.r.t. IMR") + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
+% }
+% 
+% Fig_2_Pane_B <- grid.arrange(
+% HR_plot, top = "B.", layout_matrix = matrix(c(0,0,0,0,1,0)))
+% 
+% Fig_2 <- 
+% 
+% 
+% 
+% <<marginal_dataset>>=
+% BigDF = pooled.subtypes
+% SmallDF = Filtered_intersection_pooled.subtypes
+% marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
+% @
+% 
+% 
+% %\section{Prediction of the patients that are removed into combination of subtypes}
+% %Below is our prediction of combinations of subtypes in the remaining of the \Sexpr{(length(row.names(marginal_dataset)))} patients that were removed. The subtypes under different algorithms are mapped to the Varhaak subtypes using high concordance. The frequency of each combination of subtypes in the dataset is given below.  
+% 
+% <<marginal_dataset_classification, results='asis', eval=FALSE>>=
+% levels(marginal_dataset$"Konecny") <- subtypes[[2]]
+% levels(marginal_dataset$"Helland") <- subtypes[[2]]
+% subtype_combinations = 
+% lapply(1:length(row.names(marginal_dataset)), 
+%        function (i) 
+%         marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
+%        ) 
+% unique_combinations = subtype_combinations %>% unique
+% sorted_unique_comb = unique_combinations[order(sapply(unique_combinations,'[[',1))]
+% map_comb = sapply(sorted_unique_comb,
+%                   function (i) {subtypes[[2]][i]}
+%                   )
+% 
+% 
+% ## function to check if two vectors with unique elements and sorted are the same
+% vecMatch <- function(x, want) {
+%     isTRUE(all.equal(x, want))
+% }
+% 
+% which_combinations = 
+% lapply(1:length(row.names(marginal_dataset)), 
+%        function (i) 
+%         sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
+%        ) %>% unlist
+% 
+% summary_comb <- as.data.frame(table(which_combinations))
+% summary_c <- summary_comb[with(summary_comb,order(Freq)),]
+% row.names(summary_c) <- 
+%   sapply(map_comb, function (s) paste(s,collapse=" "))[summary_c[,1]]
+% 
+% print(xtable(summary_c[-1]), include.rownames=TRUE)
+% @
+% 
+% \section{Subtype-Specific Concordance}
+% 
+% <<best_method>>=
+% # For each classifier and for each margin, find the proportion of each subtype that the classifier identifies. 
+% methods = 1:3
+% margin_vals <- seq(100, 0, length.out = 3000)
+% 
+% get_patients_method <- 
+%   function(subtype_order,margin_percent)
+%     lapply(1:3, function(subtype.method) get_subtype_patients(subtype_order,margin_percent, subtype.method))
+% 
+% get_patients_marginpercent_method <- 
+%   function (subtype_order)
+% lapply(1:3000, function (index)
+% get_patients_method(subtype_order,margin_vals[[index]]))
+% 
+% get_subtype_patients_marginpercent_method <-
+%   lapply(1:4, get_patients_marginpercent_method)
+% 
+% get_overlaps_for <- function(index,subtype.method,subtype_order)
+% get_overlaps(margin_vals[[index]],methods[!methods==subtype.method])[[subtype_order]]$lengths[[3]] 
+% 
+% 
+% get_two_way_overlaps <-
+%   function(subtype.method, go)
+%   {
+%     if (subtype.method == 3) {go[[1]] + go[[2]]}
+%     else {
+%       if (subtype.method == 2) {go[[1]] + go[[3]]}
+%       else {go[[1]] + go[[4]]}
+%     }
+%   }
+% 
+% 
+% find_proportion <- function(subtype.method, subtype_order, index, compare = c("self", "other.two", "all")){
+%   go <- get_overlaps_margin[[index]][[subtype_order]]$lengths 
+%     if (compare == "self") 
+%   {     
+%     go[[1]]/length(get_subtype_patients_marginpercent_method[[subtype_order]][[index]][[subtype.method]] %>% unlist)
+%   }
+%   else if (compare == "other.two")
+%    go[[1]]/get_two_way_overlaps(subtype.method,go)
+% 
+%     else go[[1]]/sum(go[1:4]) # not sure what to use
+% 
+% }
+% 
+% get_concordance <- function(subtype.method,subtype_order,compare = c("self", "other.two", "all")){
+%  
+%   lapply(# margin_vals[1:1500],
+%        1:3000,
+%        function (m_v) find_proportion(subtype.method,subtype_order, m_v, compare)) %>% unlist
+% 
+% }
+% 
+% get_concordance_all_subtypes <- function(subtype.method, compare = c("self", "other.two", "all"))
+%   lapply(1:4, function (i) get_concordance(subtype.method,i, compare))
+% 
+% get_concordance_all_methods <- function(subtype_order, compare = c("self", "other.two", "all"))
+%   lapply(1:3, function (method) get_concordance(method,subtype_order, compare))
+% 
+% @
+% 
+% The first set of plots give concordance of the dataset at various levels of margins removed (i.e., proportion of patients classified as the same subtype across the different methods) subtype patients classified within each method. The second set of plots give the concordance of the dataset at various levels of margins removed with the subtype patients not classified under the given method, but is classified as the same given subtype under the other two methods.
+% 
+% 
+% 
+% <<get_best_method_plots, fig.width=15, fig.height=4>>=
+% get_method_concordance <- function (subtype.method, compare = c("self", "other.two", "all")) {
+% sc = get_concordance_all_subtypes(subtype.method,compare)
+%  smc.df <- data.frame( percent = percent, IMR = sc[[1]], DIF= sc[[2]], PRO = sc[[3]], MES = sc[[4]])
+%  smc.df[is.na(smc.df)] <- NA 
+%  smc.df <- na.omit(smc.df)
+% 
+% smc_long.df <- melt(smc.df, id = "percent")                      
+% 
+% txt <- if (compare == "self") "within the method" else 
+%   if (compare == "other.two") "under the other two methods" else "all the methods"
+% ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab(paste0("Concordance with patients ", txt)) + ylim(0, 1) + ggtitle(paste0("Concordance of method ", subtype.names[[subtype.method]])) 
+% }
+% 
+% grid.arrange(grobs = lapply(1:3,get_method_concordance), ncol = 3)
+% @
+% 
+% <<concordance_plots_2, fig.width=15, fig.height=4>>=
+% grid.arrange(grobs = lapply(1:3,function (i) get_method_concordance(i, compare = "other.two")), ncol = 3)
+% 
+% @
+% 
+% 
+% In the below plots, we can see how the concordance rises for each subtype as the marginal datasets are removed, also stratified by each individual method. Each subtype is labelled by the name provied by Verhaak et al.
+% 
+% <<subtype_concordance, out.width="0.8\\textwidth">>= 
+% get_subtype_concordance <- function (subtype_order, compare = c("self", "other.two", "all")) {
+% concordance <- lapply(1:3000, function(i) {
+%   go <- get_overlaps_margin[[i]][[subtype_order]]$lengths  
+%   go[[1]]/sum(go)  
+%   }) %>% as.numeric
+% sc = get_concordance_all_methods(subtype_order,compare)
+% 
+%  smc.df <- data.frame( percent = percent, All = concordance, Konecny = sc[[1]], Varhaak= sc[[2]], Helland = sc[[3]])
+%  smc.df[is.na(smc.df)] <- NA 
+%  smc.df <- na.omit(smc.df)
+%  smc_long.df <- melt(smc.df, id = "percent")                      
+%  
+% 
+% ggplot(smc_long.df, aes(x = percent, y=value, colour=variable)) + scale_colour_manual(values=c("black", "red","green","blue")) + geom_line() + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle(paste0("Concordance of subtype ", subtypes[[2]][[subtype_order]])) + theme(legend.title=element_blank()) + theme(legend.position="top")
+% }
+% 
+% 
+% ## combined plot, shared legend from https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+% grid_arrange_shared_legend <- function(...) {
+%     plots <- list(...)
+%     g <- ggplotGrob(plots[[1]] + theme(legend.position="bottom"))$grobs
+%     legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+%     lheight <- sum(legend$height)
+%     grid.arrange(
+%         do.call(arrangeGrob, lapply(plots, function(x)
+%             x + theme(legend.position="none"))),
+%         legend,
+%         ncol = 1,
+%         heights = unit.c(unit(1, "npc") - lheight, lheight))
+% }
+% @
+% 
+% <<margin.scatterplots_for_subtypes, out.width="0.8\\textwidth">>=
+% grid_arrange_shared_legend(get_subtype_concordance(1), get_subtype_concordance(2), get_subtype_concordance(3), get_subtype_concordance(4))
+% @
+% 
+% <<pairwise_contingency>>=
+% margin.scatterplots_pairwise <- 
+%     apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
+%     margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
+%     margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]
+%     
+%     margins.1 <- ecdf(margins.1)(margins.1)
+%     margins.2 <- ecdf(margins.2)(margins.2)
+%   
+%     xvals <- seq(0, 1, length.out = 3000)
+%     concordance <- sapply(xvals, function(x) {
+%       margin.boolean <- margins.1 > x & margins.2 > x
+%       contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
+%       sum(diag(contingency.matrix)) / sum(contingency.matrix)
+%     })
+%  # compare with the method that is not in the pair
+%     other.method = setdiff(subtype.names[1:3],subtype.name.pair)
+%     subtype.method = which(subtype.names[1:3] == other.method)
+%     sc = get_concordance_all_subtypes(subtype.method, compare = "other.two")
+%  
+%    smc_conc.df <- data.frame( percent = percent, Pairwise=concordance, IMR= sc[[1]], DIF = sc[[2]], PRO= sc[[3]], MES = sc[[4]])
+%  smc_conc.df[is.na(smc_conc.df)] <- NA 
+%  smc_conc.df <- na.omit(smc_conc.df)
+% 
+% smc_c.df <- na.omit(smc_conc.df)
+%   smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
+%    ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
+% 
+%   })
+% 
+% #grid.arrange(grobs = margin.scatterplots_pairwise,ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+% 
+% grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3)
+% @
+% 
+% 
+% 
 
 \end{document}
 
