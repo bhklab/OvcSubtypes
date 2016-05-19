@@ -98,41 +98,20 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
 
-<<tcga_pred_str_margin_trend_computation>>=
-tcga.pred.str.trend <- lapply(names(classifier.subtypes$Verhaak), function(dataset.name) {
-  if(length(classifier.subtypes$Verhaak[[dataset.name]]) < 100) {
-    return(NA)
-  }
-  
-  # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
-  median.clustering.index <- which(tcga.ps.vals[,dataset.name] == median(tcga.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(0, length(classifier.subtypes$Verhaak[[dataset.name]]), by = 25)[-1:-2]
-  ps.vals <- sapply(xvals, function(x) {
+<<tcga_pred_str_margin_trend_computation_only_tcga>>=
+#tcga.pred.str.trend.tcga.xvals <- seq(50, length(classifier.subtypes$Verhaak[[dataset.name]]), by=50)
+tcga.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
+tcga.pred.str.trend.tcga.ps.vals <- sapply(tcga.pred.str.trend.tcga.xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
-    samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
-    if(sum(samples.to.keep) <= 1) {
-      return(NA)
-    }
-    current.ps <- ps.cluster(classifier.subtypes$Verhaak[[dataset.name]][samples.to.keep], clustering.subtypes$tcga_nmf_4[[dataset.name]][[median.clustering.index]][samples.to.keep])$ps
-    return(current.ps)
+    samples.to.keep <- margin.vals > quantile(margin.vals, x)
+    #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
+    ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Verhaak$TCGA[samples.to.keep], clustering.subtypes$tcga_nmf_4$TCGA[[run.index]][samples.to.keep])$ps)
+    return(mean(ps.vals))
   })
 
-  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
-  return(out.df)
-})
-
-names(tcga.pred.str.trend) <- names(classifier.subtypes$Verhaak)
-
-tcga.pred.str.trend <- tcga.pred.str.trend[!is.na(tcga.pred.str.trend)]
-
-for(dataset.name in names(tcga.pred.str.trend)) {
-  tcga.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
-}
-tcga.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), tcga.pred.str.trend)
-
-tcga.mean.ps.df <- data.frame(dataset.size=unique(tcga.pred.str.trend.combined$dataset.size))
-tcga.mean.ps.df$prediction.strength <- sapply(tcga.mean.ps.df$dataset.size, function(dataset.size) mean(tcga.pred.str.trend.combined$prediction.strength[tcga.pred.str.trend.combined$dataset.size==dataset.size]))
+tcga.pred.str.trend.tcga <- data.frame(percent.removed=tcga.pred.str.trend.tcga.xvals, prediction.strength=tcga.pred.str.trend.tcga.ps.vals)
+tcga.pred.str.trend.tcga$percent.removed <- tcga.pred.str.trend.tcga$percent.removed * 100
 @
 
 <<Tothill_pred_str, cache=TRUE>>=
@@ -145,50 +124,16 @@ colnames(tothill.ps.vals.concordant) <- names(classifier.subtypes.concordant$Hel
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
-<<tothill_pred_str_margin_trend_computation>>=
-tothill.pred.str.trend <- lapply(names(classifier.subtypes$Helland), function(dataset.name) {
-  if(length(classifier.subtypes$Helland[[dataset.name]]) < 100) {
-    return(NA)
-  }
-  
-  # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
-  median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
-  xvals <- seq(0, length(classifier.subtypes$Helland[[dataset.name]]), by=25)[-1:-2]
-  ps.vals <- sapply(xvals, function(x) {
-    # calculate Prediction Strength; use the top x samples (by margin)
-    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
-    samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
-    current.ps <- ps.cluster(classifier.subtypes$Helland[[dataset.name]][samples.to.keep], clustering.subtypes$tothill_kmeans_4[[dataset.name]][[median.clustering.index]][samples.to.keep])$ps
-    return(current.ps)
-  })
-
-  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
-  return(out.df)
-})
-
-names(tothill.pred.str.trend) <- names(classifier.subtypes$Helland)
-
-tothill.pred.str.trend <- tothill.pred.str.trend[!is.na(tothill.pred.str.trend)]
-
-for(dataset.name in names(tothill.pred.str.trend)) {
-  tothill.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
-}
-
-tothill.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), tothill.pred.str.trend)
-@
-
-
 <<tothill_pred_str_margin_trend_computation_only_tcga>>=
 #tothill.pred.str.trend.tcga.xvals <- seq(50, length(classifier.subtypes$Helland[[dataset.name]]), by=50)
 tothill.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
 tothill.pred.str.trend.tcga.ps.vals <- sapply(tothill.pred.str.trend.tcga.xvals, function(x) {
-    median.clustering.index <- which(tothill.ps.vals[,dataset.name] == median(tothill.ps.vals[,dataset.name][-100]))[1]
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
     samples.to.keep <- margin.vals > quantile(margin.vals, x)
     #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
-    current.ps <- ps.cluster(classifier.subtypes$Helland$TCGA[samples.to.keep], clustering.subtypes$tothill_kmeans_4$TCGA[[median.clustering.index]][samples.to.keep])$ps
-    return(current.ps)
+    ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Helland$TCGA[samples.to.keep], clustering.subtypes$tothill_kmeans_4$TCGA[[run.index]][samples.to.keep])$ps)
+    return(mean(ps.vals))
   })
 
 tothill.pred.str.trend.tcga <- data.frame(percent.removed=tothill.pred.str.trend.tcga.xvals, prediction.strength=tothill.pred.str.trend.tcga.ps.vals)
@@ -205,52 +150,16 @@ colnames(konecny.ps.vals.concordant) <- names(classifier.subtypes.concordant$Kon
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
 @
 
-<<konecny_pred_str_margin_trend_computation>>=
-konecny.pred.str.trend <- lapply(names(classifier.subtypes$Konecny), function(dataset.name) {
-  if(length(classifier.subtypes$Konecny[[dataset.name]]) < 100) {
-    return(NA)
-  }
-  
-  # Get the index of the median clustering (since there is an even number of clusterings, use the median of the first 99)
-  median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
-  
-  xvals <- seq(0, length(classifier.subtypes$Konecny[[dataset.name]]), by=25)[-1:-2]
-  
-  ps.vals <- sapply(xvals, function(x) {
-    # calculate Prediction Strength; use the top x samples (by margin)
-    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Konecny.margins
-    samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
-    current.ps <- ps.cluster(classifier.subtypes$Konecny[[dataset.name]][samples.to.keep], clustering.subtypes$konecny_nmf_4[[dataset.name]][[median.clustering.index]][samples.to.keep])$ps
-    return(current.ps)
-  })
-
-  out.df <- data.frame(dataset.size=xvals, prediction.strength=ps.vals)
-  return(out.df)
-})
-
-names(konecny.pred.str.trend) <- names(classifier.subtypes$Konecny)
-
-konecny.pred.str.trend <- konecny.pred.str.trend[!is.na(konecny.pred.str.trend)]
-
-for(dataset.name in names(konecny.pred.str.trend)) {
-  konecny.pred.str.trend[[dataset.name]]$dataset.name <- dataset.name
-}
-
-konecny.pred.str.trend.combined <- Reduce(function(...) merge(..., all=TRUE), konecny.pred.str.trend)
-
-@
-
 <<konecny_pred_str_margin_trend_computation_only_tcga>>=
 #konecny.pred.str.trend.tcga.xvals <- seq(50, length(classifier.subtypes$Helland[[dataset.name]]), by=50)
 konecny.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
 konecny.pred.str.trend.tcga.ps.vals <- sapply(konecny.pred.str.trend.tcga.xvals, function(x) {
-    median.clustering.index <- which(konecny.ps.vals[,dataset.name] == median(konecny.ps.vals[,dataset.name][-100]))[1]
     # calculate Prediction Strength; use the top x samples (by margin)
     margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Konecny.margins
     samples.to.keep <- margin.vals > quantile(margin.vals, x)
     #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
-    current.ps <- ps.cluster(classifier.subtypes$Konecny$TCGA[samples.to.keep], clustering.subtypes$konecny_nmf_4$TCGA[[median.clustering.index]][samples.to.keep])$ps
-    return(current.ps)
+    ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Konecny$TCGA[samples.to.keep], clustering.subtypes$konecny_nmf_4$TCGA[[run.index]][samples.to.keep])$ps)
+    return(mean(ps.vals))
   })
 
 konecny.pred.str.trend.tcga <- data.frame(percent.removed=konecny.pred.str.trend.tcga.xvals, prediction.strength=konecny.pred.str.trend.tcga.ps.vals)
@@ -335,4 +244,14 @@ ggplot(konecny.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.remov
 
 This plot shows the prediction stregth trend for the TCGA dataset using the methods of Konecny, with Prediction Strength shown as a function of percentage of dataset removed. As previously described, we used classifier margins to determine cutoffs, and subsetted the pre-clustered and pre-classified datasets. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
 
+\pagebreak
+<<tcga-together>>=
+all.tcga <- cbind(tcga.pred.str.trend.tcga, tothill.pred.str.trend.tcga$prediction.strength, konecny.pred.str.trend.tcga$prediction.strength)
+
+colnames(all.tcga)[2:4] <- c("TCGA", "Tothill", "Konecny")
+all.tcga.m <- melt(all.tcga, id="percent.removed")
+colnames(all.tcga.m)[2:3] <- c("Method", "Prediction.Strength")
+
+ggplot(all.tcga.m, aes(y=Prediction.Strength, x = percent.removed, colour=Method)) + geom_point(size=2) + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend using TCGA Data") + geom_line() + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
+@
 
