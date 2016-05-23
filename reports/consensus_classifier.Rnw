@@ -195,8 +195,10 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 \caption{Contingency plots showing concordance of subtype classification between the Consensus Gene Pairs classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Classifier and the patients concordantly classified between the three classifiers. Classification was performed using leave-one-dataset-out validation. The classifier works by training a random forest classifier on a binary feature matrix that represents the pairwise greater-than or less-than relationships between genes in a given gene set. This classifier does not require rescaling of the gene expression set, and can therefore be used to classify gene expression profiles at a single-sample level. Since the feature size for this classifier increases quadratically with respect to the size of the original gene set, we used the smallest gene set of the original subtype classifiers (the gene set of Verhaak et al.), which contains 100 gene symbols. Like the Consensus Random Forest classifier, this classifier outputs the subtype classification, in addition to a real-valued margin score which can discriminate between patients that are of well-defined or intermediate subtypes. A higher margin score can be interpreted as greater certainty of classification.}
 \end{figure}
 \pagebreak
+
 \section{Survival Analysis}
-<<survival_plots, fig.width=12, fig.height=12>>=
+\begin{figure}[H]
+<<survival_plots, fig.width=12, fig.height=12, out.width="0.8\\textwidth">>=
 layout(matrix(1:4, nrow = 2, byrow = TRUE))
 
 #par(mar=c(5.1, 8, 4.1, 2.1))
@@ -276,6 +278,9 @@ for(classifier in c("Gene Pairs RF", "Gene Pairs RF (default cutoff)")) {
 #    title(title, cex.main=1)
 #    text(0,0.05, text, cex=0.85, pos=4)
 @
+\caption{Survival curves for patients across our ovarian cancer data compendium. Classification was performed using leave-one-dataset-out validation. For the bottom two figures, classification with the consensus classifier was performed with the default cutoff, in which 0.75 of patients with the lowest margin are not classified.}
+\end{figure}
+
 
 \pagebreak
 \section{Margin Analysis}
