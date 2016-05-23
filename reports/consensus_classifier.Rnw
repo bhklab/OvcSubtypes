@@ -196,33 +196,25 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 \end{figure}
 \pagebreak
 \section{Survival Analysis}
-<<survival_plots, fig.width=12, fig.height=6>>=
-layout(matrix(1:2, nrow = 1, byrow = TRUE))
+<<survival_plots, fig.width=12, fig.height=12>>=
+layout(matrix(1:4, nrow = 2, byrow = TRUE))
 
 #par(mar=c(5.1, 8, 4.1, 2.1))
 
-for(data.subset in c("all", "concordant")) {
+for(classifier in c("Gene Pairs RF", "Gene Pairs RF (default cutoff)")) {
+  for(data.subset in c("all", "concordant")) {
   #par(mar=c(5.1, 5, 4.1, 2.1))
-  
-    for(classifier in c("Gene Pairs RF")) {
     pooled.subtypes.current <- pooled.subtypes
     
-    if (classifier == "Random Forest"){
-      pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
-    } else {
-      pooled.subtypes.current$group <- pooled.subtypes$Consensus.genepairs.rf
+    if (classifier == "Gene Pairs RF"){
+      pooled.subtypes.current$group <- pooled.subtypes.current$Consensus.genepairs.rf
+    } else if (classifier == "Gene Pairs RF (default cutoff)") {
+      pooled.subtypes.current$group <- pooled.subtypes.current$Consensus.genepairs.default.cutoff.rf
+      pooled.subtypes.current <- pooled.subtypes.current[!is.na(pooled.subtypes.current$Consensus.genepairs.default.cutoff.rf),]
     }
     
     if(data.subset == "concordant") {
-      pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$concordant,]
-    }
-    
-    if(data.subset == "concordant.cutoff") {
-      if(classifier == "Random Forest") {
-        pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.margin > 0.50 & pooled.subtypes$concordant,]
-      } else {
-        pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.genepairs.rf.margin > 0.50 & pooled.subtypes$concordant,]
-      }
+      pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes.current$concordant,]
     }
     
     pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
