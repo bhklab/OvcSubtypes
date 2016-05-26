@@ -1,11 +1,20 @@
 
-getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE, remove.using.cutoff=FALSE, percentage.dataset.removed = 0.75) {
+getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE, remove.using.cutoff=FALSE, percentage.dataset.removed = 0.75, rescale.genes = TRUE) {
   
   ### Load training data
   print("Loading training data")
   ## This file is produced from classificationAcrossDatasets.Rnw
   load("esets.not.rescaled.classified.RData")
   
+  
+  if(rescale.genes) {
+    exprs(eset) <- t(scale(t(exprs(eset))))
+    
+    esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+      exprs(eset) <- t(scale(t(exprs(eset))))
+      eset
+    })
+  }
 #  library("org.Hs.eg.db")
 #  konecny.supplementary.data <- read.xls(system.file("extdata", "jnci_JNCI_14_0249_s05.xls", package="MetaGx"), sheet=4)
 #  konecny.entrez.ids <- konecny.supplementary.data$EntrezGeneID
