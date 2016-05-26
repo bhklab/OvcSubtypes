@@ -16,7 +16,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -1147,8 +1147,12 @@ get_areas_from_overlaps <- function(overlaps){
   c(area1,area2,area3,n12,n23,n13,n123)
 }
 
+<<<<<<< HEAD
 
 
+=======
+<<venn_setup, results = 'asis', fig.keep='high', out.width="0.8\\textwidth">>=
+>>>>>>> 68b5bf2d4e51b7a942ffd1a1cb6a706af8f015a5
  # the overlaps obtained by get_overlap function are numbers of non-intersecting regions of the venn - they had to be computed for the whole areas again for strange reason - maybe there is a simpler function in the VennDiagram that would replace parts of the below function
 get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALSE, margin_overlay = 1500){
     margin_areas = get_overlaps_margin[[margin]][[subtype_order]]$lengths %>% get_areas_from_overlaps
@@ -1180,8 +1184,13 @@ get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALS
   }
 @
 
+<<<<<<< HEAD
 \begin{figure}[H]
 <<Subtype_venn_diagrams, fig.keep ='last', fig.width=4, fig.height=8>>=
+=======
+<<Subtype_venn_diagrams, results = 'asis', out.width="0.8\\textwidth", fig.keep='high'>>=
+#grid.newpage()
+>>>>>>> 68b5bf2d4e51b7a942ffd1a1cb6a706af8f015a5
 draw_venn <- function (margin,margin_overlay, subtype_order){
   q <- get_venn_margin_subtype(margin,subtype_order, overlay_another = TRUE, margin_overlay)   
   grid.arrange(
@@ -1205,6 +1214,7 @@ margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
 
 draw_venn_formargin(1,margin_overlay_cutoff)
 @
+<<<<<<< HEAD
 \caption{Venn diagrams showing the percentages of patients classified under each subtype by each method after removing 85\% of patients with the least distinct subtypes, the numbers in parenthesis are the percentages before filtering.}
 \end{figure}
 
@@ -1239,6 +1249,12 @@ draw_venn_formargin(1,margin_overlay_cutoff)
 % 
 % 
 %Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
+=======
+
+
+Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
+
+>>>>>>> 68b5bf2d4e51b7a942ffd1a1cb6a706af8f015a5
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 \begin{figure}[H]
@@ -1278,7 +1294,7 @@ Pane_A, Pane_B,  Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,2,2,4,4,3,3,4,
 \pagebreak
 
 \section{Survival Analysis}
-<<Pooled_survival_plot, fig.height=12>>=
+<<Pooled_survival_plot, fig.height=12, out.width="0.8\\textwidth">>=
 # layout(matrix(c(1,1,2,2,3,3,0,4,4,5,5,0), nrow = 2, byrow = TRUE))
 layout(matrix(c(1,2,3,4,5,6), nrow = 3, byrow = TRUE))
 #par(mfrow=c(2,2))
@@ -1380,8 +1396,13 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   text(0,0.05, text, cex=0.85, pos=4)
   @
 
-% Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
 
+\pagebreak
+% Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
+<<<<<<< HEAD
+
+=======
+>>>>>>> 68b5bf2d4e51b7a942ffd1a1cb6a706af8f015a5
 <<HR, echo = TRUE, results='asis'>>=
 
 coxph.model = coxph(surv.obj ~ groups + strata(data.source), survival_filtered.df)
@@ -1391,6 +1412,7 @@ print(xtable(fit$conf.int), include.rownames=FALSE)
 Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
 
 
+<<<<<<< HEAD
 
 <<hr_plots, out.width="0.8\\textwidth">>=
 high.risk.group <- function(subtype.order){
@@ -1399,6 +1421,10 @@ high.risk.group <- function(subtype.order){
 
 get_hr <- function (margin, subtype.order) {
   subtype.name <- subtype.names[[subtype.order]]
+=======
+<<hr_plots, out.width="0.8\\textwidth", eval=FALSE>>=
+get_hr <- function (margin) {
+>>>>>>> 68b5bf2d4e51b7a942ffd1a1cb6a706af8f015a5
   # For each margin, extract the dataset 
   #dataset_ids = lapply(1:4, function (i) {get_overlaps(100*(1 - margin), only.survival = TRUE)[[i]]$parts[[1]]}) %>% unlist
   dataset_ids = get_marginal_data_top(100*(1 - margin),subtype.name, only.survival=TRUE) %>% row.names
