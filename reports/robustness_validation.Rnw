@@ -59,15 +59,15 @@ classifier.subtypes.concordant <- lapply(c("Konecny.subtypes", "Verhaak.subtypes
 names(classifier.subtypes.concordant) <- c("Konecny", "Verhaak", "Helland")
 
 # Remove clustering/classification subtypes performed on the original dataset
-clustering.subtypes$tcga_nmf_4$TCGA <- NULL
-clustering.subtypes$tothill_kmeans_4$GSE9891 <- NULL
-classifier.subtypes$Verhaak$TCGA <- NULL
-classifier.subtypes$Helland$GSE9891 <- NULL
+#clustering.subtypes$tcga_nmf_4$TCGA <- NULL
+#clustering.subtypes$tothill_kmeans_4$GSE9891 <- NULL
+#classifier.subtypes$Verhaak$TCGA <- NULL
+#classifier.subtypes$Helland$GSE9891 <- NULL
 
-clustering.subtypes.concordant$tcga_nmf_4$TCGA <- NULL
-clustering.subtypes.concordant$tothill_kmeans_4$GSE9891 <- NULL
-classifier.subtypes.concordant$Verhaak$TCGA <- NULL
-classifier.subtypes.concordant$Helland$GSE9891 <- NULL
+#clustering.subtypes.concordant$tcga_nmf_4$TCGA <- NULL
+#clustering.subtypes.concordant$tothill_kmeans_4$GSE9891 <- NULL
+#classifier.subtypes.concordant$Verhaak$TCGA <- NULL
+#classifier.subtypes.concordant$Helland$GSE9891 <- NULL
 
 @
 
@@ -103,7 +103,7 @@ tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 tcga.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
 tcga.pred.str.trend.tcga.ps.vals <- sapply(tcga.pred.str.trend.tcga.xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
-    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Verhaak.margins
+    margin.vals <- esets.not.rescaled.classified$TCGA$Verhaak.margins
     samples.to.keep <- margin.vals > quantile(margin.vals, x)
     #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
     ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Verhaak$TCGA[samples.to.keep], clustering.subtypes$tcga_nmf_4$TCGA[[run.index]][samples.to.keep])$ps)
@@ -129,7 +129,7 @@ tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 tothill.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
 tothill.pred.str.trend.tcga.ps.vals <- sapply(tothill.pred.str.trend.tcga.xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
-    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Helland.margins
+    margin.vals <- esets.not.rescaled.classified$TCGA$Helland.margins
     samples.to.keep <- margin.vals > quantile(margin.vals, x)
     #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
     ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Helland$TCGA[samples.to.keep], clustering.subtypes$tothill_kmeans_4$TCGA[[run.index]][samples.to.keep])$ps)
@@ -155,7 +155,7 @@ konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
 konecny.pred.str.trend.tcga.xvals <- seq(0, 1, length.out = 11)[-11] # percent removed
 konecny.pred.str.trend.tcga.ps.vals <- sapply(konecny.pred.str.trend.tcga.xvals, function(x) {
     # calculate Prediction Strength; use the top x samples (by margin)
-    margin.vals <- esets.not.rescaled.classified[[dataset.name]]$Konecny.margins
+    margin.vals <- esets.not.rescaled.classified$TCGA$Konecny.margins
     samples.to.keep <- margin.vals > quantile(margin.vals, x)
     #samples.to.keep <- margin.vals >= sort(margin.vals)[length(margin.vals)-x+1]
     ps.vals <- sapply(1:100, function(run.index) ps.cluster(classifier.subtypes$Konecny$TCGA[samples.to.keep], clustering.subtypes$konecny_nmf_4$TCGA[[run.index]][samples.to.keep])$ps)
@@ -245,6 +245,9 @@ ggplot(konecny.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.remov
 This plot shows the prediction stregth trend for the TCGA dataset using the methods of Konecny, with Prediction Strength shown as a function of percentage of dataset removed. As previously described, we used classifier margins to determine cutoffs, and subsetted the pre-clustered and pre-classified datasets. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
 
 \pagebreak
+
+We computed Prediction Strength using all three methods on the TCGA dataset. Using the 100 cluster runs for each method, prediction strength was computed using various margin cutoffs. Each point represents the mean prediction strength between 100 cluster runs. Note that the Verhaak classifier was originally developed using the TCGA dataset.
+
 <<tcga-together>>=
 all.tcga <- cbind(tcga.pred.str.trend.tcga, tothill.pred.str.trend.tcga$prediction.strength, konecny.pred.str.trend.tcga$prediction.strength)
 
@@ -252,6 +255,6 @@ colnames(all.tcga)[2:4] <- c("TCGA", "Tothill", "Konecny")
 all.tcga.m <- melt(all.tcga, id="percent.removed")
 colnames(all.tcga.m)[2:3] <- c("Method", "Prediction.Strength")
 
-ggplot(all.tcga.m, aes(y=Prediction.Strength, x = percent.removed, colour=Method)) + geom_point(size=2) + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend using TCGA Data") + geom_line() + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
+ggplot(all.tcga.m, aes(y=Prediction.Strength, x = percent.removed, colour=Method)) + geom_point(size=2) + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend using TCGA Data") + geom_line() + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset")) + scale_x_continuous(breaks=seq(0, 100, 20), limits=c(0,100)) + geom_hline(aes(yintercept=0.8), linetype='dashed') + geom_hline(aes(yintercept=0.9), linetype='dashed') + scale_y_continuous(breaks=seq(0, 1, 0.2), limits=c(0,1))
 @
 
