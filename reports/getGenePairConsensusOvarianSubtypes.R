@@ -1,11 +1,20 @@
 
-getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE) {
+getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=names(esets.not.rescaled.classified), purest.subtypes = FALSE, remove.using.cutoff=FALSE, percentage.dataset.removed = 0.75, rescale.genes = TRUE) {
   
   ### Load training data
   print("Loading training data")
   ## This file is produced from classificationAcrossDatasets.Rnw
   load("esets.not.rescaled.classified.RData")
   
+  
+  if(rescale.genes) {
+    exprs(eset) <- t(scale(t(exprs(eset))))
+    
+    esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+      exprs(eset) <- t(scale(t(exprs(eset))))
+      eset
+    })
+  }
 #  library("org.Hs.eg.db")
 #  konecny.supplementary.data <- read.xls(system.file("extdata", "jnci_JNCI_14_0249_s05.xls", package="MetaGx"), sheet=4)
 #  konecny.entrez.ids <- konecny.supplementary.data$EntrezGeneID
@@ -88,18 +97,27 @@ getGenePairConsensusOvarianSubtypes <- function(eset, .dataset.names.to.keep=nam
   
   train.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) train.expression.matrix[,pair[1]] > train.expression.matrix[,pair[2]])
+  train.pairwise.vals <- as.data.frame(train.pairwise.matrix)
   
-  rf.model <- randomForest(x=train.pairwise.matrix, y=train.labels)
+  rf.model <- randomForest(x=train.pairwise.vals, y=train.labels)
   
   test.expression.matrix <- t(exprs(eset)[match(intersecting.entrez.ids, fData(eset)$EntrezGene.ID),])
   
   test.pairwise.matrix <-
     apply(combn(1:length(intersecting.entrez.ids),2), 2, function(pair) test.expression.matrix[,pair[1]] > test.expression.matrix[,pair[2]])
+  test.pairwise.vals <- as.data.frame(test.pairwise.matrix)
   
-  my.predictions <- predict(rf.model, newdata = test.pairwise.matrix)
+  my.predictions <- predict(rf.model, newdata = test.pairwise.vals)
   my.predictions.probs <- predict(rf.model, newdata = test.pairwise.matrix, type = 'prob')
   
+  if(remove.using.cutoff) {
+    my.predictions.margins <- rowMax(my.predictions.probs) - apply(my.predictions.probs, 1, function(row) sort(row)[3])
+    my.predictions[ecdf(my.predictions.margins)(my.predictions.margins) < 0.75] <- NA
+  }
+  
   eset$Ovarian.subtypes.rf <- my.predictions
+  
+  
   
   return(list(Annotated.eset=eset, rf.probs=my.predictions.probs))
 }
