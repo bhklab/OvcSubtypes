@@ -271,17 +271,22 @@ margin.contingency.plots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.na
 })
 # Create the margin scatterplots
 
-margin.scatterplots.data <- function(subtype.name.pair) {
+margin.scatterplots.data <- function(subtype.name.pair,get.percent_removed = FALSE) {
     margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
     margins.2 <- pooled.subtypes[,paste0(subtype.name.pair[2], ".margins")]  
     margins.1 <- ecdf(margins.1)(margins.1)
     margins.2 <- ecdf(margins.2)(margins.2) 
     xvals <- seq(0, 1, length.out = 3000)
-    concordance <- sapply(xvals, function(x) {
+    percent_removed_concordance <- sapply(xvals, function(x) {
       margin.boolean <- margins.1 > x & margins.2 > x
       contingency.matrix <- as.matrix(table(pooled.subtypes[,subtype.name.pair[1]][margin.boolean],pooled.subtypes[,subtype.name.pair[2]][margin.boolean]))
-      sum(diag(contingency.matrix)) / sum(contingency.matrix)
-    })  
+      total.patients <- pooled.subtypes %>% nrow
+      percent_removed <- (total.patients - sum(contingency.matrix))/total.patients * 100
+      c(percent_removed, sum(diag(contingency.matrix)) / sum(contingency.matrix))
+    }) 
+    m <- percent_removed_concordance %>% as.matrix
+    rownames(m) <- c("percent.removed", "concordance")
+    if (get.percent_removed) m["percent.removed",] else c(m["concordance",])
   }
 
 xvals <- seq(0, 1, length.out = 3000)
@@ -290,24 +295,31 @@ margin.scatterplots <- apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pa
     concordance <- margin.scatterplots.data(subtype.name.pair)
     scatterplot.df <- data.frame(margin=xvals * 100, concordance=concordance)
     scatterplot.df <- scatterplot.df[!is.na(scatterplot.df$concordance),]
-    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=0) + geom_line(size=0) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2])) + ylim(0, 1)
+    scatterplot <- ggplot(scatterplot.df, aes(x=margin, y=concordance)) + geom_point(size=0) + geom_line(size=0) + theme_bw() + xlab("margin percentile") + ylab("Concordance") + ggtitle(paste0(subtype.name.pair[1], " vs ", subtype.name.pair[2])) + ylim(0, 1)
     return(scatterplot)
   })
 @
 
-<<margin_scatterplots_combined, fig.keep = 'none'>>=
-margin.scatterplots.combined <- 
-  pairwise_concordances<- apply(pair.matrix[,c(1,3,5)], 2, margin.scatterplots.data)
-
-  scatterplot.df <- data.frame(percent=xvals * 100, 
-                               Helland_vs_Verhaak =pairwise_concordances[,1], 
-                               Verhaak_vs_Konecny =pairwise_concordances[,2], 
-                               Konecny_vs_Helland =pairwise_concordances[,3]
+<<margin_scatterplots_combined, fig.keep = 'last'>>=
+pairwise_concordances<- apply(pair.matrix[,c(1,3,5)], 2, margin.scatterplots.data)
+  percent_removed <- apply(pair.matrix[,c(1,3,5)], 2, function (p) margin.scatterplots.data(p,get.percent_removed = TRUE))
+ scatterplot1.df <- data.frame( 
+                               percent =percent_removed[,1], 
+                               concordance =pairwise_concordances[,1]
+                               ) 
+scatterplot2.df <- data.frame( 
+                               percent =percent_removed[,2], 
+                               concordance =pairwise_concordances[,2]
                                )
-    scatterplot_melt.df <- melt(scatterplot.df, id = "percent") 
-    scatterplot_melt.df <- scatterplot_melt.df[!is.na(scatterplot_melt.df$value),]
-    legend_title <- ""
-    scatterplots.combined <- ggplot(scatterplot_melt.df, aes(y=value,x=percent, colour=variable)) + scale_colour_manual(legend_title, values=c("gold", "orange", "orchid3")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5))
+scatterplot3.df <- data.frame( 
+                               percent =percent_removed[,3],
+                               concordance =pairwise_concordances[,3]
+                               )
+
+ 
+
+scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="")
+
 @
 
 
@@ -1250,7 +1262,7 @@ Below is a summary of the consensus analysis in the form of a figure in the main
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 \begin{figure}[H]
-<<Figure1-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
+<<Figure1-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10, cache=FALSE>>=
 venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
 # Two-way Concordances
 Pane_A <- grid.arrange(
