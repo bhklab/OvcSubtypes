@@ -318,7 +318,7 @@ scatterplot3.df <- data.frame(
 
  
 
-scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="")
+scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="") + scale_colour_manual("", values=c("gold", "orange", "orchid3")) 
 
 @
 
@@ -520,9 +520,12 @@ margin.concordance <- function (subtype_order = 1, all = FALSE) {
 
 
   scatterplot.df <- data.frame(IMR = margin.concordance(1)%>%as.numeric, DIF = margin.concordance(2)%>%as.numeric, PRO = margin.concordance(3)%>%as.numeric, MES = margin.concordance(4)%>%as.numeric, overall = margin.concordance(1, all = TRUE)%>%as.numeric, percent = percent)
-  legend_title <- ""
-  scatterplot_melt.df <- melt(scatterplot.df, id = "percent")       
-    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual(legend_title, values=c("violet", "red","green","blue", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.position = c(0.75, 0.25))
+  scatterplot_melt.df <- melt(scatterplot.df, id = "percent") 
+scatterplot_melt.df <- scatterplot_melt.df[order(scatterplot_melt.df$value, scatterplot_melt.df$variable, decreasing = TRUE),]
+  legend_length <- length(unique(scatterplot_melt.df$variable))
+legend_breaks <- scatterplot_melt.df$variable[1:legend_length]
+  
+    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual("", values=c("violet", "red","green","blue", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.position = c(0.75, 0.25)) 
 @
 
 We sought to further investigate the association of margin values with subtype concordance, under the hypothesis that patients with had higher margin values were more `confidently' classified, and more concordantly classified between subtypes. We restricted our attention to the Helland, Konecny, and Verhaak classifiers, since they have the same number of subtypes.
@@ -1185,7 +1188,8 @@ get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALS
                                 overlay_n123 = overlay_margin_areas[[7]], 
                                 category = subtype.names[1:3], filename = NULL, 
                                 #fill = c("blue", "yellow", "green")   
-                                fill = c("gold", "orange", "orchid3")
+                                fill = c("gold", "orange", "orchid3"), margin = 0.05, lty = 0
+                                
     )
 
   }
@@ -1221,39 +1225,6 @@ draw_venn_formargin(1,margin_overlay_cutoff)
 
 \caption{Venn diagrams showing the percentages of patients classified under each subtype by each method after removing 85\% of patients with the least distinct subtypes, the numbers in parenthesis are the percentages before filtering.}
 \end{figure}
-
-% 
-% % <<Alternate_venn_rep, results='asis', out.width="0.8\\textwidth", fig.keep='high'>>=
-% % subtype_order <- 1
-% % margin <- 1
-% % margin_overlay <- margin_overlay_cutoff
-% % 
-% % 
-% % 
-% % vals_margin <- c(get_overlaps_margin[[margin]][[subtype_order]]$lengths[1:6],100(2%)) 
-% % names(vals_margin) <- c("hi", "110", "101", "011", "100", "010", "001") 
-% % cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin)+1)[vals_margin+1]
-% % 
-% %  
-% %  
-% % vals_margin_overlay <- get_overlaps_margin[[margin_overlay]][[subtype_order]]$lengths 
-% % names(vals_margin_overlay) <- c("111", "110", "101", "011", "100", "010", "001") 
-% % cols <- colorRampPalette(c("white", "#CC0000"))(max(vals_margin_overlay)+1)[vals_margin_overlay+1]
-% % 
-% % 
-% % 
-% % layout(matrix(c(1,2), nrow = 1, byrow = TRUE))
-% % par(mar=c(5.1, 8, 4.1, 2.1))
-% % plotVenn(vals_margin, names(vals_margin), Colors=cols)
-% % plotVenn(vals_margin_overlay, names(vals_margin_overlay), Colors=cols)
-% % 
-% % # not working
-% % #multiplot(plotlist = plots, ncol = 2)
-% % @
-% 
-% 
-%Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
-
 
 
 Below is a summary of the consensus analysis in the form of a figure in the main manuscript:
@@ -1475,7 +1446,7 @@ grid.arrange(get_hr_plot(1), get_hr_plot(2), get_hr_plot(3),ncol=1)
 @
 
 % Figure 2
-<<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
+<<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10, cache=FALSE>>=
 survival.df <- pooled.subtypes.survival
 
 get_survival_curve <- function (subtype.order) {
@@ -1507,12 +1478,17 @@ get_survival_curve <- function (subtype.order) {
     title <- "Tothill / Helland"
   }
   ss <- survfit(surv.obj ~ groups, data = survival.df) 
-  ggsurv(ss) + theme_bw() + ggtitle(subtype.name)
+  grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
+  gp=gpar(col="red", fontsize=10, fontface="italic")))
+  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(0.63, 0.8), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
   
+  # + annotate(geom="text",x=1.5,y=0.25,label=text) +
 #   km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
 #   title(title, cex.main=2)
 #   text(0,0.05, text, cex=0.85, pos=4)
-  
+
+# ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw()  ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1)  +  labs(color="")  
+
 
 }
 
