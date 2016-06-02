@@ -407,7 +407,7 @@ colnames(subtype.map) <- subtype.names
 print(xtable(subtype.map), include.rownames=FALSE)
 @
 
-<<Data_setup>>=
+<<Data_setup, cache = FALSE>>=
 # Extract margins for each scheme
 margins1 <- function (only.survival) { 
   p = (if (only.survival) pooled.subtypes.survival
@@ -525,7 +525,7 @@ scatterplot_melt.df <- scatterplot_melt.df[order(scatterplot_melt.df$value, scat
   legend_length <- length(unique(scatterplot_melt.df$variable))
 legend_breaks <- scatterplot_melt.df$variable[1:legend_length]
   
-    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual("", values=c("violet", "red","green","blue", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.position = c(0.75, 0.25)) 
+    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual("", values=c("red","green","blue","violet", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.position = c(0.75, 0.25)) 
 @
 
 We sought to further investigate the association of margin values with subtype concordance, under the hypothesis that patients with had higher margin values were more `confidently' classified, and more concordantly classified between subtypes. We restricted our attention to the Helland, Konecny, and Verhaak classifiers, since they have the same number of subtypes.
@@ -625,7 +625,7 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
         beside=TRUE, 
         horiz=TRUE, las=2, 
         col=terrain.colors(3),
-        legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods"),
+        legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods", x = 0.5,y = 0.5)
        )
 
 @
@@ -1459,10 +1459,10 @@ get_survival_curve <- function (subtype.order) {
   text <- ""
   text <- paste0(text, "n = ", nrow(survival.df), "\n")
   if(length(hr.out$hazard.ratio) == 1) {
-    text <- paste0(text, sprintf("HR: %.3f (%.3f-%.3f)\n", hr.out$hazard.ratio, hr.out$lower, hr.out$upper), sprintf("Logrank p = %.1E", pval))
+    text <- paste0(text, sprintf("HR: %.2f (%.2f-%.2f)\n", signif(hr.out$hazard.ratio,2), signif(hr.out$lower, hr.out$upper,2)), sprintf("Logrank p = %.1E", pval))
   } else {
     for(i in 1:length(hr.out$hazard.ratio)) {
-      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(survival.df$groups)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
+      text <- paste0(text, sprintf("HR %s: %.2f (%.2f-%.2f)\n", levels(survival.df$groups)[i+1], signif(hr.out$hazard.ratio[i],2), signif(hr.out$lower[i],2), signif(hr.out$upper[i],2)))
     }
      text <- paste0(text, sprintf("Logrank p = %.1E", pval))
   }
@@ -1479,27 +1479,11 @@ get_survival_curve <- function (subtype.order) {
   }
   ss <- survfit(surv.obj ~ groups, data = survival.df) 
   grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
-  gp=gpar(col="red", fontsize=10, fontface="italic")))
-  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(0.63, 0.8), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
+  gp=gpar(col="black", fontsize=10, fontface="italic")))
+  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(0.55, 0.92), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
   
-  # + annotate(geom="text",x=1.5,y=0.25,label=text) +
-#   km.coxph.plot(surv.obj ~ groups, survival.df, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(survival.df$groups), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-#   title(title, cex.main=2)
-#   text(0,0.05, text, cex=0.85, pos=4)
-
-# ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw()  ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1)  +  labs(color="")  
-
-
 }
 
-# Pane_2_A <- {
-# layout(matrix(c(1,2,3,4,4,4), nrow = 3, byrow = FALSE))
-# par(mar=c(5.1, 8, 4.1, 2.1))
-# get_survival_curve(1)
-# get_survival_curve(2)
-# get_survival_curve(3)
-# Pane_2_B
-# }
 
 Pane_2_A <- grid.arrange(get_survival_curve(1), get_survival_curve(2), get_survival_curve(3),ncol=1,top = "A.")
 Pane_2_B <- grid.arrange(get_hr_plot(1), get_hr_plot(2), get_hr_plot(3),ncol=1,
