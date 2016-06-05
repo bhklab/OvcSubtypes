@@ -16,7 +16,7 @@
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
 days.per.month <- 30.4368
@@ -127,6 +127,7 @@ pooled.subtypes$Consensus.genepairs.default.cutoff.rf.maxprob <- unlist(lapply(c
 
 # reorder factor levels. Note, this should be done in the original function
 pooled.subtypes$Consensus.genepairs.rf <- factor(pooled.subtypes$Consensus.genepairs.rf, levels(pooled.subtypes$Consensus.genepairs.rf)[c(2,1,4,3)])
+pooled.subtypes$Consensus.genepairs.default.cutoff.rf <- factor(pooled.subtypes$Consensus.genepairs.default.cutoff.rf, levels(pooled.subtypes$Consensus.genepairs.default.cutoff.rf)[c(2,1,4,3)])
 
 pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
 pooled.subtypes$days_to_death <- NULL
@@ -156,6 +157,7 @@ We present a consensus subtype classifier based on binary gene pairs. This class
 
 \begin{figure}[H]
 <<genepair_contingency_plots, fig.width=10, fig.height=11, out.width="0.7\\textwidth">>=
+
 contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Classification"), function(comparison.group) {
   if(comparison.group == "Helland") {
     contingency.m <- melt(table(pooled.subtypes$Consensus.genepairs.rf, pooled.subtypes$Helland))
