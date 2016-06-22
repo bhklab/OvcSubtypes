@@ -206,23 +206,8 @@ ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_bo
 The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
 
 \pagebreak
-Next, we computed Prediction Strength using various dataset sizes. Using classifier margins to determine cutoffs, we subsetted the pre-clustered and pre-classified datasets. For each classifier, we included validation datasets with greater than 100 late-stage high-grade serous patients. We excluded the dataset used to train the original classifier, and restricted margin cutoff values to include at least 50 patients. Using classifier margin values to define cutoffs, we computed Prediction Strength for subsets of each dataset. From the 100 cluster runs, we used the run that produced the median prediction strength for each full dataset.
-\subsection{TCGA/Verhaak}
-<<tcga_pred_str_margin_trend>>=
-
-ggplot(tcga.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: TCGA/Verhaak") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
-@
-\pagebreak
-
 \subsection{Tothill/Helland}
 For the clustering algorithm and classifier described in Tothill (2008) and Helland (2011), we observed an increase in robustness of subtypes in the TCGA dataset.
-<<tothill_pred_str_margin_trend>>=
-
-ggplot(tothill.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Tothill/Helland") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
-@
-%Note that Prediction Strength for the TCGA dataset drops to zero between the dataset sizes of 58 and 68. This is an artifact in the Prediction Strength statistic that occurs when the number of samples in a class is very small; for lower than 58 patients, only three subtypes are produced from both clustering and classification. 
-
-\pagebreak
 <<tothill_pred_str_margin_trend_tcga>>=
 
 ggplot(tothill.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.removed, fill="TCGA")) + geom_point(size=2, colour="#E76BF3") + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend: Tothill/Helland") + geom_line(colour="#E76BF3") + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
@@ -231,12 +216,6 @@ This plot shows the prediction stregth trend for the TCGA dataset using the meth
 
 \pagebreak
 \subsection{Konecny}
-For the clustering algorithm and classifier described in Konecny (2014), we observed an increase in robustness of subtypes in the TCGA dataset.
-<<konecny_pred_str_margin_trend>>=
-
-ggplot(konecny.pred.str.trend.combined, aes(y=prediction.strength, x = dataset.size, colour = dataset.name)) + geom_point(size=1) + theme_bw() + xlab("Dataset Size") + ylab("Prediction Strength: Konecny") + ylim(0, 1) + ggtitle("Prediction Strength") + scale_x_reverse() + geom_line()
-@
-\pagebreak
 <<konecny_pred_str_margin_trend_tcga>>=
 
 ggplot(konecny.pred.str.trend.tcga, aes(y=prediction.strength, x = percent.removed, fill="TCGA")) + geom_point(size=2, colour="#E76BF3") + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend: Konecny") + geom_line(colour="#E76BF3") + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset"))
