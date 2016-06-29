@@ -31,13 +31,14 @@ library(dplyr)
 library(reshape2)
 library(grid)
 library(ROCR)
+library(GGally)
 
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
 
 source("getGenePairConsensusOvarianSubtypes.R")
-source("~/repos/MetaGx/R/datasetMerging.R")
-source("~/repos/MetaGx/R/stripWhiteSpace.R")
+source("~/Documents/MetaGx/R/datasetMerging.R")
+source("~/Documents/MetaGx/R/stripWhiteSpace.R")
 @
 
 <<Leave_one_dataset_out>>=
@@ -60,6 +61,7 @@ for(dataset.name in dataset.names) {
   # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
   left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
   training.dataset.names <- dataset.names[dataset.names != dataset.name]
+  
   print(paste("Classifying eset", dataset.name))
   consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names, remove.using.cutoff = FALSE)
   
@@ -176,7 +178,7 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
   
   cramers.v <- vcd::assocstats(contingency.matrix)[["cramer"]]
   
-  stat.text <- sprintf("n = %d\nPercent Concordant = %.2f%%\nCramer's v = %.2f", sum(contingency.matrix), 100 * sum(diag(contingency.matrix)) / sum(contingency.matrix), cramers.v)
+  stat.text <- sprintf("n = %d  Percent Concordant = %.2f%%  Cramer's v = %.2f", sum(contingency.matrix), 100 * sum(diag(contingency.matrix)) / sum(contingency.matrix), cramers.v)
   
   p <- ggplot(contingency.m, aes_string("Consensus_Gene_Pairs_RF", comparison.group)) + 
     geom_tile(aes(fill = value), colour = "black") + 
@@ -184,7 +186,7 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
     geom_text(label=as.character(contingency.matrix), colour="black") + xlab("Consensus Gene-Pairs RF\n\n\n\n\n")
   
-  p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-5.2)
+  p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-6)
   
   gt <- ggplot_gtable(ggplot_build(p))
   gt$layout$clip[gt$layout$name == "panel"] <- "off"
@@ -201,18 +203,14 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 \section{Survival Analysis}
 \begin{figure}[H]
 <<survival_plots, fig.width=12, fig.height=12, out.width="0.8\\textwidth">>=
-layout(matrix(1:4, nrow = 2, byrow = TRUE))
 
-#par(mar=c(5.1, 8, 4.1, 2.1))
-
-for(classifier in c("Gene Pairs RF", "Gene Pairs RF (default cutoff)")) {
-  for(data.subset in c("all", "concordant")) {
-  #par(mar=c(5.1, 5, 4.1, 2.1))
+get_classifier_surv_curves <- function(classifier, data.subset)  
+  {
     pooled.subtypes.current <- pooled.subtypes
     
     if (classifier == "Gene Pairs RF"){
       pooled.subtypes.current$group <- pooled.subtypes.current$Consensus.genepairs.rf
-    } else if (classifier == "Gene Pairs RF (default cutoff)") {
+    } else if (classifier == "Gene Pairs RF \n Patients with higher margins") {
       pooled.subtypes.current$group <- pooled.subtypes.current$Consensus.genepairs.default.cutoff.rf
       pooled.subtypes.current <- pooled.subtypes.current[!is.na(pooled.subtypes.current$Consensus.genepairs.default.cutoff.rf),]
     }
@@ -232,55 +230,62 @@ for(classifier in c("Gene Pairs RF", "Gene Pairs RF (default cutoff)")) {
     cols <- 1:4
     title <- paste0("Combined Classifier: ", classifier)
     if(data.subset == "concordant") {
-      title <- paste0(title, "\n (concordant cases)")
-    }
-    if(data.subset == "concordant.cutoff") {
-      title <- paste0(title, ", concordant, RF margin > 0.5")
+      title <- paste0(title, " (concordant cases)")
     }
     
-    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-    title(title, cex.main=1.5)
-    text(0,0.05, text, cex=0.85, pos=4)
-  }
+    
+#     km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
+#     title(title, cex.main=1.5)
+#     text(0,0.05, text, cex=0.85, pos=4)
+
+ss <- survfit(Surv(years_to_death, vital_status) ~ group, data = pooled.subtypes.current) 
+  grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
+  gp=gpar(col="black", fontsize=10, fontface="italic")))
+  ggsurv(ss, plot.cens = FALSE, main = title, back.white = TRUE) + theme(legend.direction='vertical',legend.box='horizontal',legend.position = c(0.75, 0.80), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
+
 }
 
-#pooled.subtypes.current <- pooled.subtypes
-#pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
-#pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.50 & pooled.subtypes$concordant,]
-#pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
-#    hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
-#    text <- ""
-#    text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
-#    for(i in 1:length(hr.out$hazard.ratio)) {
-#      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-#    }
-#    text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-#    cols <- 1:4
-#    title <- paste0("Combined Classifier: ", classifier, " RF cutoff 0.50")
-#    
-#    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-#    title(title, cex.main=1)
-#    text(0,0.05, text, cex=0.85, pos=4)
+## Other options: 
+# classifier = "Gene Pairs RF", "Gene Pairs RF (default cutoff)")
+# data.subsets = "all", "concordant" 
 
-#pooled.subtypes.current <- pooled.subtypes
-#pooled.subtypes.current$group <- pooled.subtypes$Consensus.rf
-#pooled.subtypes.current <- pooled.subtypes.current[pooled.subtypes$Consensus.rf.maxprob > 0.75 & pooled.subtypes$concordant,]
-#pval <- summary(coxph(Surv(years_to_death, vital_status) ~ group + strata(data.source), pooled.subtypes.current))$sctest["pvalue"]
-#    hr.out <- survcomp::hazard.ratio(x=pooled.subtypes.current$group, surv.time=pooled.subtypes.current$years_to_death, surv.event=pooled.subtypes.current$vital_status, strat=pooled.subtypes.current$data.source)
-#    text <- ""
-#    text <- paste0(text, "n = ", nrow(pooled.subtypes.current), "\n")
-#    for(i in 1:length(hr.out$hazard.ratio)) {
-#      text <- paste0(text, sprintf("HR %s: %.3f (%.3f-%.3f)\n", levels(pooled.subtypes.current$group)[i+1], hr.out$hazard.ratio[i], hr.out$lower[i], hr.out$upper[i]))
-#    }
-#    text <- paste0(text, sprintf("Logrank p = %.1E", pval))
-#    cols <- 1:4
-#    title <- paste0("Combined Classifier: ", classifier, " RF cutoff 0.75")
-#    
-#    km.coxph.plot(Surv(years_to_death, vital_status) ~ group, pooled.subtypes.current, x.label="Time (years)", y.label = "Overall Survival", main.title="", show.n.risk = FALSE, n.risk.step=2, leg.text = levels(pooled.subtypes.current$group), leg.pos="topright", leg.inset=0, leg.bty="n", n.risk.cex=0.85, cex=0.4, o.text="", .col=cols, cex.lab=1.5)
-#    title(title, cex.main=1)
-#    text(0,0.05, text, cex=0.85, pos=4)
+sc1 <- get_classifier_surv_curves("Gene Pairs RF", "all")
+
+sc2 <- get_classifier_surv_curves("Gene Pairs RF", "concordant")
+
+sc3 <- get_classifier_surv_curves("Gene Pairs RF \n Patients with higher margins", "all")
+
+sc4 <- get_classifier_surv_curves("Gene Pairs RF \n Patients with higher margins", "concordant")
+
+grid.arrange(sc1, sc2, sc3, sc4, ncol=2)
+
 @
-\caption{Survival curves for patients across our ovarian cancer data compendium. Classification was performed using leave-one-dataset-out validation. For the bottom two figures, classification with the consensus classifier was performed with the default cutoff, in which 0.75 of patients with the lowest margin are not classified.}
+
+
+
+\caption{Survival curves for patients across our ovarian cancer data compendium. Classification was performed using leave-one-dataset-out validation. For the bottom two figures, classification with the consensus classifier was performed with the default cutoff, in which 75\% of patients with the lowest margin are not classified.}
+\end{figure}
+
+
+% Main Figures of the manuscript
+%figure 4 - pairwise concordance, venn_diagram, scatterplot 
+\begin{figure}[H]
+
+
+<<Figure4-ConsensusClassifier, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
+
+# Two-way Concordances
+Pane_4A <- grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2, top = "A.")
+
+# Survival Curves
+Pane_4B <- grid.arrange(sc3, sc4, ncol=2, top = "B.")
+
+
+grid.arrange(
+Pane_4A, Pane_4B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = FALSE), widths = c(20), heights = c(30,20))
+
+@
+\caption{Combined Classifier. A. Contingency plots showing concordance of subtype classification between  ConsensusOV classifier and the classifiers of Helland, Verhaak, Konecny. The fourth (bottom-right) plot shows the concordance between the Consensus Classifier and the patients concordantly classified between the three classifiers. B. Survival curves for the pooled dataset provided by ConsensusOV. Classification was performed using leave-one-dataset-out validation. For the bottom two figures, classification with ConsensusOV was performed with the default cutoff, in which 75\% of patients with the lowest margin are not classified.}
 \end{figure}
 
 
@@ -341,5 +346,32 @@ title("ROC curves for predicting concordance")
 \caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Classifier was performed using leave-one-dataset-out validation. The Consensus Classifier was effective (AUC = \Sexpr{sprintf("%.3f", aucs[4])}) at discriminating between patients of well-defined or intermediate subtypes.}
 \label{fig:roccurves}
 \end{figure}
+
+
+% Main Figures of the manuscript
+%figure 5 - barplot, roc curve
+\begin{figure}[H]
+
+
+<<Figure4-mARGINaNALYSIS, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
+
+# Bar plots
+Pane_5A <- 
+  grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=2, top = "A.")
+
+# ROC curve
+Pane_5B <- 
+  plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
+  
+
+grid.arrange(
+Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = FALSE), widths = c(20), heights = c(30,20))
+
+@
+\caption{Margin Analysis. A. Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the ConsensusOV, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test. B. ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the ConsensusOV was performed using leave-one-dataset-out validation. ConsensusOV was effective (AUC = 0.779) at discriminating between patients of well-defined or intermediate subtypes.}
+\end{figure}
+}
+
+
 
 \end{document}
