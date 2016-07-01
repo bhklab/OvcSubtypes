@@ -308,10 +308,10 @@ verhaak.boxplot.pval <- wilcox.test(pooled.subtypes$Verhaak.margins[pooled.subty
 konecny.boxplot.pval <- wilcox.test(pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==TRUE], pooled.subtypes$Konecny.margins[pooled.subtypes$concordant==FALSE])$p.value
 consensus.genepair.rf.boxplot.pval <- wilcox.test(pooled.subtypes$Consensus.genepairs.rf.margin[pooled.subtypes$concordant==TRUE], pooled.subtypes$Consensus.genepair.rf.margin[pooled.subtypes$concordant==FALSE])$p.value
 
-helland.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Helland.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Helland Classifier Margins") + xlab(sprintf("p = %.2E", helland.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
-verhaak.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Verhaak.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Verhaak Classifier Margins") + xlab(sprintf("p = %.2E", verhaak.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
-konecny.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Konecny.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Konecny Classifier Margins") + xlab(sprintf("p = %.2E", konecny.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
-consensus.genepairs.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.genepairs.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Consensus Gene-Pairs RF Classifier Margins") + xlab(sprintf("p = %.2E", consensus.genepair.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+helland.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Helland.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Helland") + xlab(sprintf("p = %.2E", helland.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+verhaak.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Verhaak.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Verhaak") + xlab(sprintf("p = %.2E", verhaak.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+konecny.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Konecny.margins)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("Konecny") + xlab(sprintf("p = %.2E", konecny.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
+consensus.genepairs.rf.margin.boxplot <- ggplot(pooled.subtypes[margin.comparison.cases.to.include,], aes(x=concordant, y=Consensus.genepairs.rf.margin)) + stat_boxplot(geom='errorbar') + geom_boxplot(color="black") + ggtitle("ConsensusOV") + xlab(sprintf("p = %.2E", consensus.genepair.rf.boxplot.pval)) + ylab("Margin Value") + scale_x_discrete(labels=c("Non-Concordant", "Concordant"))
 
 grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=2)
 @
@@ -324,11 +324,38 @@ grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxp
 {\centering
 <<ROC curve, fig.width=6, fig.height=6>>=
 roc.colors <- brewer.pal(5, "Set1")
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[2], lwd=2, add=TRUE)
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[3], lwd=2, add=TRUE)
-plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
+roc_Helland <- ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr")
+# plot(roc_Helland.data, col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
+roc_Helland.df <- 
+  data.frame(x = roc_Helland@x.values %>% unlist,
+             y = roc_Helland@y.values %>% unlist,
+             cutoffs = roc_Helland@alpha.values %>% unlist)
+
+roc_Verhaak <- ROCR::performance(ROCR::prediction(pooled.subtypes$Verhaak.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr")
+
+roc_Verhaak.df <- 
+  data.frame(x = roc_Verhaak@x.values %>% unlist,
+             y = roc_Verhaak@y.values %>% unlist,
+             cutoffs = roc_Verhaak@alpha.values %>% unlist)
+
+roc_Konecny <- ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr")
+
+roc_Konecny.df <- 
+  data.frame(x = roc_Konecny@x.values %>% unlist,
+             y = roc_Konecny@y.values %>% unlist,
+             cutoffs = roc_Konecny@alpha.values %>% unlist)
+
+roc_Combined <- ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr")
+
+roc_Combined.df <- 
+  data.frame(x = roc_Combined@x.values %>% unlist,
+             y = roc_Combined@y.values %>% unlist,
+             cutoffs = roc_Combined@alpha.values %>% unlist)
+
+
 #plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[5], lwd=2, add=TRUE)
+
+
 
 # get AUCs
 aucs <- numeric(0)
@@ -337,10 +364,31 @@ aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Ve
 aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Konecny.margins, pooled.subtypes$concordant), "auc")@y.values))
 aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin, pooled.subtypes$concordant), "auc")@y.values))
 #aucs <- c(aucs, as.numeric(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.rf.margin, pooled.subtypes$concordant), "auc")@y.values))
-abline(a=0, b= 1,lty=3)
 
-legend("bottomright", paste0(c("Helland", "Verhaak", "Konecny", "Consensus Gene-Pairs RF"), paste(", AUC:",sprintf("%.3f", aucs))), lwd=2, col=roc.colors, bty="n")
-title("ROC curves for predicting concordance")
+
+
+
+# plot(roc_Verhaak, col=roc.colors[2], lwd=2, add=TRUE)
+# plot(roc_Konecny, col=roc.colors[3], lwd=2, add=TRUE)
+# plot(roc_Combined, col=roc.colors[4], lwd=2, add=TRUE)
+# abline(a=0, b= 1,lty=3)
+#legend("bottomright", paste0(c("Helland", "Verhaak", "Konecny", "ConsensusOV"), paste(", AUC:",sprintf("%.3f", aucs))), lwd=2, col=roc.colors, bty="n")
+# title("ROC curves for predicting concordance")
+## The above commented plot is made into ggplot below  
+roc_curves <- 
+ggplot(roc_Helland.df, aes(x =x, y = y)) +
+    geom_line(aes(colour = paste("Helland, AUC: ", sprintf("%.3f", aucs[[1]])))) +
+    geom_line(data = roc_Verhaak.df,
+              aes(color=paste("Verhaak, AUC: ",sprintf("%.3f", aucs[[2]])))) +
+    geom_line(data = roc_Konecny.df,
+              aes(color=paste("Konecny, AUC: ",sprintf("%.3f", aucs[[3]])))) +
+    geom_line(data = roc_Combined.df,
+              aes(color=paste("ConsensusOV, AUC: ",sprintf("%.3f", aucs[[4]])))) +
+    geom_abline (intercept = 0, slope = 1) +
+    ggtitle("ROC curves for predicting concordance") +
+    theme_bw() + xlab("False positive rate") + ylab("True positive rate") + ylim(0, 1) + theme(legend.position = c(0.75, 0.25)) +  labs(color="") + scale_colour_manual("", values=c("red", "gold", "orange", "orchid3")) 
+
+roc_curves
 @
 }
 \caption{ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the Consensus Classifier was performed using leave-one-dataset-out validation. The Consensus Classifier was effective (AUC = \Sexpr{sprintf("%.3f", aucs[4])}) at discriminating between patients of well-defined or intermediate subtypes.}
@@ -353,24 +401,24 @@ title("ROC curves for predicting concordance")
 \begin{figure}[H]
 
 
-<<Figure4-mARGINaNALYSIS, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
+<<Figure5-MarginAnalysis, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
 
 # Bar plots
 Pane_5A <- 
-  grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot, ncol=2, nrow=2, top = "A.")
+  grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot,  nrow=1, top = "A.")
 
 # ROC curve
 Pane_5B <- 
-  plot(ROCR::performance(ROCR::prediction(pooled.subtypes$Consensus.genepairs.rf.margin[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr"), col=roc.colors[4], lwd=2, add=TRUE)
+  grid.arrange(roc_curves, top = "B.")
   
 
 grid.arrange(
-Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = FALSE), widths = c(20), heights = c(30,20))
+Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = TRUE), heights = c(20,30))
 
 @
 \caption{Margin Analysis. A. Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the ConsensusOV, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test. B. ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the ConsensusOV was performed using leave-one-dataset-out validation. ConsensusOV was effective (AUC = 0.779) at discriminating between patients of well-defined or intermediate subtypes.}
 \end{figure}
-}
+
 
 
 
