@@ -14,7 +14,7 @@
 
 \begin{document}
 
-<<setup, include=FALSE, cache=FALSE>>=
+<<include=FALSE, cache=FALSE>>=
 # Set options
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
@@ -215,15 +215,37 @@ contingency.plots <- apply(pair.matrix, 2, function(subtype.name.pair) {
   contingency.m[,subtype.name.pair[1]] <- factor(contingency.m[,subtype.name.pair[1]], levels = levels(pooled.subtypes[,subtype.name.pair[1]]))
   contingency.m[,subtype.name.pair[2]] <- factor(contingency.m[,subtype.name.pair[2]], levels = levels(pooled.subtypes[,subtype.name.pair[2]]))
   
-  print(chisq.test(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]])["p.value"])
-  print(vcd::assocstats(table(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]]))[["cramer"]])
+  
+  
+  pretty_p <- function (pvalue, max_precision = 5, p = "p-value") {
+    required_precision <- ceiling(-log10(pvalue))
 
+    if (required_precision > max_precision)
+        paste0(p, "<", sprintf('%.*f', max_precision, 0.1 ** max_precision))
+    else
+        paste0(p, "~", sprintf('%.*f', required_precision + 1, pvalue))
+}
+
+p_value_text <- chisq.test(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]])["p.value"]  %>% as.numeric %>% pretty_p
+  
+  cramers.v <- vcd::assocstats(table(pooled.subtypes[,subtype.name.pair[1]],pooled.subtypes[,subtype.name.pair[2]]))[["cramer"]]
+ 
+cramers_v_text <- sprintf("Cramer's v = %.2f", cramers.v)
+
+  stat.text1 <- sprintf("Percent Concordant = %.2f%%",100 * sum(diag(contingency.matrix)) / sum(contingency.matrix))
+  
+  stat.text2 <- paste(p_value_text, cramers_v_text, sep="; ")
+  
+ 
+  
   p <- ggplot(contingency.m, aes_string(subtype.name.pair[1], subtype.name.pair[2])) + 
     geom_tile(aes(fill = value), colour = "black") + 
     scale_fill_gradient(name="Frequency", low="white", high="#CC0000", limits=c(0,600)) + 
     #ggtitle(paste0("Contingency table: ", subtype.name.pair[1], " vs ", subtype.name.pair[2])) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
-    geom_text(label=as.character(contingency.matrix), colour="black")
+    geom_text(label=as.character(contingency.matrix), colour="black") + xlab(paste0(subtype.name.pair[1], "\n", stat.text1, "\n", stat.text2))
+    
+    
   return(p)
 })
 
@@ -318,7 +340,7 @@ scatterplot3.df <- data.frame(
 
  
 
-scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Vehaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="") + scale_colour_manual("", values=c("gold", "orange", "orchid3")) 
+scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Verhaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="") + scale_colour_manual("", values=c("gold", "orange", "orchid3")) 
 
 @
 
