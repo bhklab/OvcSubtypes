@@ -1,24 +1,8 @@
-%\VignetteEngine{knitr::knitr}
-\documentclass{article}
 
-\usepackage{graphicx}
-\usepackage{microtype}
-\usepackage[T1]{fontenc}
-\usepackage{float}
-\usepackage[latin1]{inputenc}
-\usepackage{geometry}
-\usepackage{titlesec}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
-\usepackage[table]{xcolor}
-\usepackage{amsmath}
-\setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
+\pagebreak
+\chapter{Robustness}
 
-\graphicspath{images}
-%\newcommand{\sectionbreak}{\clearpage}
-
-\begin{document}
-
-<<setup, include=FALSE, cache=FALSE>>=
+<<setup2, include=FALSE, cache=FALSE>>=
 # Set options
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
@@ -27,11 +11,7 @@ days.per.month <- 30.4368
 days.per.year <- 365.242
 @
 
-\title{Robustness of Ovarian Subtyping Schemes}
 
-\author{Gregory M. Chen}
-\date{\today}
-\maketitle
 
 <<load, cache=FALSE>>=
 library(MetaGx)
@@ -60,7 +40,7 @@ library(clue)
 library(GEOquery)
 @
 
-<<load_data>>=
+<<load_data3>>=
 #source(system.file("extdata", "reproduce.results.patientselection.config", package="MetaGx2"))
 #source(system.file("extdata", "patientselection.config", package="MetaGxOvarian"))
 source("docs/reproduce.results.patientselection.config")
@@ -116,18 +96,21 @@ The discovery of molecular subtypes of ovarian cancer requires two steps: a clus
 .getNMFClasses <- function(eset, filter.genes=TRUE, num.genes=2000, rank=4, nrun=100) {
   # rescale eset by z-score per gene
   expression.matrix <- exprs(eset)
+  # print("check 1 \n")
   if(filter.genes) {
     mad.vals <- apply(exprs(eset), 1, mad)
     expression.matrix <- exprs(eset)[mad.vals >= tail(sort(mad.vals),num.genes)[1],]
   }
+  # print("check 2 \n")
   if(any(expression.matrix < 0)) {
     expression.matrix <- expression.matrix + abs(min(expression.matrix))
   }
-  
+  # print("check 3 \n")
   nmf.out <- NMF::nmf(expression.matrix, rank=rank, nrun=nrun)
   # Clustering using consensus
+  print("check 4 \n")
   classes <- cutree(consensushc(nmf.out, dendrogram=FALSE), k=rank)
-  
+  print("check 5 \n")
   classes <- as.factor(paste0("ConsensusNMF_", classes))
   # Clustering using matrix factorization
   #h.mat <- coef(nmf.out)
@@ -391,4 +374,3 @@ kable(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kme
 
 \Sexpr{knit_child('robustness_validation.Rnw')}
 
-\end{document}

@@ -1,20 +1,8 @@
-%\VignetteEngine{knitr::knitr}
-\documentclass{article}
 
-\usepackage{graphicx}
-\usepackage{microtype}
-\usepackage[T1]{fontenc}
-\usepackage{float}
-\usepackage[latin1]{inputenc}
-\usepackage{geometry}
-\usepackage{titlesec}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
-\usepackage[table]{xcolor}
-%\newcommand{\sectionbreak}{\clearpage}
+\pagebreak
+\chapter{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
 
-\begin{document}
-
-<<include=FALSE, cache=FALSE>>=
+<<setup2, include=FALSE, cache=FALSE>>=
 # Set options
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
@@ -23,15 +11,10 @@ days.per.month <- 30.4368
 days.per.year <- 365.242
 @
 
-\title{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
-
-\author{Gregory M. Chen (with some updated code added by Lavanya Kannan)}
-\date{\today}
-\maketitle
 
 %\tableofcontents 
 
-<<load, cache=FALSE>>=
+<<load2, cache=FALSE>>=
 library(MetaGx)
 library(gdata)
 library(HiDimDA)
@@ -62,7 +45,7 @@ library(VennDiagram)
 library(GGally)
 @
 
-<<load_data>>=
+<<load_data2>>=
 source("docs/reproduce.results.patientselection.config")
 
 rule.1 <- c("sample_type","^tumor$")
@@ -1725,5 +1708,5 @@ grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots
 
 
 
-\end{document}
+
 

@@ -1,20 +1,6 @@
-%\VignetteEngine{knitr::knitr}
-\documentclass{article}
 
-\usepackage{graphicx}
-\usepackage{microtype}
-\usepackage[T1]{fontenc}
-\usepackage{float}
-\usepackage[latin1]{inputenc}
-\usepackage{geometry}
-\usepackage{titlesec}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
-\usepackage[table]{xcolor}
-%\newcommand{\sectionbreak}{\clearpage}
-
-\graphicspath{images}
-
-\begin{document}
+\pagebreak
+\chapter{Reproduce of Published Ovarian Subtyping Schemes}
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
@@ -26,15 +12,11 @@ days.per.year <- 365.242
 package.dir <- "~/repos/MetaGx/"
 @
 
-\title{Reproduction of Published Ovarian Subtyping Schemes}
 
-\author{Gregory M. Chen}
-\date{\today}
-\maketitle
 
 %\tableofcontents 
 
-<<load, cache=FALSE>>=
+<<load1, cache=FALSE>>=
 library(MetaGx)
 library(gdata)
 library(survival)
@@ -123,4 +105,4 @@ This document reports our implementations of ovarian cancer subtyping classifica
 
 \Sexpr{knit_child('reproduceBentink.Rnw')}
 
-\end{document}
+

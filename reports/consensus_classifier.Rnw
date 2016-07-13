@@ -1,20 +1,8 @@
-%\VignetteEngine{knitr::knitr}
-\documentclass{article}
 
-\usepackage{graphicx}
-\usepackage{microtype}
-\usepackage[T1]{fontenc}
-\usepackage{float}
-\usepackage[latin1]{inputenc}
-\usepackage{geometry}
-\usepackage{titlesec}
-\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
-\usepackage[table]{xcolor}
-%\newcommand{\sectionbreak}{\clearpage}
+\pagebreak
+\chapter{Consensus Classifier}
 
-\begin{document}
-
-<<setup, include=FALSE, cache=FALSE>>=
+<<setup3, include=FALSE, cache=FALSE>>=
 # Set options
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
@@ -79,13 +67,6 @@ for(dataset.name in dataset.names) {
 
 @
 
-\title{Consensus Classifier for High-grade serous ovarian carcinoma}
-
-\author{Gregory M. Chen}
-\date{\today}
-\maketitle
-
-\tableofcontents
 
 \pagebreak
 
@@ -184,9 +165,9 @@ contingency.plots <- lapply(c("Helland", "Verhaak", "Konecny", "Concordant_Class
     geom_tile(aes(fill = value), colour = "black") + 
     scale_fill_gradient(name="Frequency", low="white", high="#00802b") + 
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), legend.position = "none", axis.text.y = element_text(angle = 90)) +
-    geom_text(label=as.character(contingency.matrix), colour="black") + xlab("Consensus Gene-Pairs RF\n\n\n\n\n")
+    geom_text(label=as.character(contingency.matrix), colour="black") + xlab(paste0("Consensus Gene-Pairs RF \n",stat.text))
   
-  p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-6)
+  #p <- p + annotation_custom(grob=textGrob(stat.text, just="left"), xmin=0, xmax=1, ymin=-6)
   
   gt <- ggplot_gtable(ggplot_build(p))
   gt$layout$clip[gt$layout$name == "panel"] <- "off"
@@ -422,4 +403,3 @@ Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = TRUE), height
 
 
 
-\end{document}
