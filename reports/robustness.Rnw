@@ -4,6 +4,7 @@
 
 <<setup_robustness, include=FALSE, cache=FALSE>>=
 # Set options
+rm(list=ls())
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 par.original <- par()
@@ -41,6 +42,7 @@ library(GEOquery)
 @
 
 <<load_data3>>=
+
 #source(system.file("extdata", "reproduce.results.patientselection.config", package="MetaGx2"))
 #source(system.file("extdata", "patientselection.config", package="MetaGxOvarian"))
 source("docs/reproduce.results.patientselection.config")
@@ -323,6 +325,7 @@ Despite the difference between the consensus strategies, the cluster results app
 
 \vspace*{10pt}
 <<tothill_kmeans_contingency, results="asis", cache=FALSE>>=
+save(tothill.merged.kmeans, file="tothill.merged.kmeans.RData")
 kable(table(tothill.merged.kmeans$group, tothill.merged.kmeans$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(5,6,4,3,2,1)], format="latex")
 #table(tothill.merged$nmf.classes, tothill.merged$group)
 @
