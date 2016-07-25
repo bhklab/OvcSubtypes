@@ -21,14 +21,14 @@
 \date{\today}
 \maketitle
 
-This document contains the supplementary files of our analyses. 
 \tableofcontents{}
-\pagebreak
+This document contains the supplementary files of our manuscript titled ``Consensus on Molecular Subtypes of Ovarian Cancer
+". 
 \chapter{MetaGxOvarian}
 
 Our R package MetaGxOvarian consists of one function per subtyping algorithm, that makes subtype calls in a provided dataset or a single patient. In cases where study authors described a fully-specified algorithm capable of subtype calls for a single patient  [3],  (Verhaak et al. 2013), our function is implemented as the algorithm is described. In other cases where authors did not describe such a fully-specified algorithm (Tothill et al. 2008), a PAM50-like (Bastien et al. 2012) a new algorithm is developed using the same training data that the original authors used for clustering, using the nearest shrunken centroids method (Tibshirani et al. 2002). This algorithm is selected because of its adoption in clinical practice for classifying intrinsic subtypes of breast cancer. 
 
-MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms. Using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
+MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
 
 \Sexpr{knit_child('reproduceResults.Rnw')}
 

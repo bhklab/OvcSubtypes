@@ -96,7 +96,7 @@ source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
 @
 
 This document reports our implementations of ovarian cancer subtyping classification algorithms. Using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts.
-\tableofcontents
+%\tableofcontents
 
 \Sexpr{knit_child('reproduceKonecny.Rnw')}
 
