@@ -400,7 +400,3 @@ Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = TRUE), height
 @
 \caption{Margin Analysis. A. Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the ConsensusOV, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test. B. ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the ConsensusOV was performed using leave-one-dataset-out validation. ConsensusOV was effective (AUC = 0.779) at discriminating between patients of well-defined or intermediate subtypes.}
 \end{figure}
-
-
-
-

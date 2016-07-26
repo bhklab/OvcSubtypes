@@ -1,6 +1,6 @@
 
-\pagebreak
-\chapter{Reproduce of Published Ovarian Subtyping Schemes}
+
+\chapter{Reproduce Results of Published Ovarian Subtyping Schemes}
 
 <<setup, include=FALSE, cache=FALSE>>=
 # Set options
@@ -105,5 +105,3 @@ This document reports our implementations of ovarian cancer subtyping classifica
 \Sexpr{knit_child('reproduceHelland.Rnw')}
 
 \Sexpr{knit_child('reproduceBentink.Rnw')}
-
-

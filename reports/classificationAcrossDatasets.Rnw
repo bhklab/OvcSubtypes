@@ -1,6 +1,6 @@
 
 \pagebreak
-\chapter{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
+\chapter[Classification Across Datasets]{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
 
 <<setup2, include=FALSE, cache=FALSE>>=
 # Set options
@@ -122,7 +122,7 @@ concordant <- match(eset$Konecny.subtypes, subtype.correspondances$Konecny) ==
 save(esets.not.rescaled.classified.concordant, file="esets.not.rescaled.classified.concordant.RData")
 @
 
-\tableofcontents
+%\tableofcontents
 <<Pooled_survival_prepare_data>>=
 subtype.names <- c("Konecny", "Verhaak", "Helland", "Bentink")
 
@@ -164,7 +164,7 @@ pooled.subtypes$surv.obj <- Surv(time = pooled.subtypes$years_to_death, event = 
 pooled.subtypes.survival = na.omit(pooled.subtypes)
 @
 
-\pagebreak
+%\pagebreak
 
 \section{Data Description}
 
@@ -177,7 +177,8 @@ data.counts[,1] <- as.character(data.counts[,1])
 data.counts <- rbind(data.counts, list("Total", sum(data.counts[,2])))
 print(xtable(data.counts), include.rownames=FALSE)
 @
-\pagebreak
+
+%\pagebreak
 \section{Pairwise subtype associations}
 We applied our implementation of the subtype classifiers of Helland, Verhaak, Konecny, and Bentink to these datasets. 
 % Survival analysis moved to end of document by Lavanya
@@ -330,7 +331,7 @@ scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance)
 
 
 
-\pagebreak
+%\pagebreak
 
 \subsection{Helland vs Verhaak}
 \begin{figure}[H]
@@ -631,7 +632,8 @@ barplot(as.matrix(newdata) %>% t, main="HGS sample sizes",
         beside=TRUE, 
         horiz=TRUE, las=2, 
         col=terrain.colors(3),
-        legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods", x = 0.5,y = 0.5)
+        legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods"),
+        legend.placement='br'
        )
 
 @
@@ -1203,7 +1205,7 @@ get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALS
 
 
 \begin{figure}[H]
-<<Subtype_venn_diagrams, fig.keep ='last', fig.width=4, fig.height=8>>=
+<<Subtype_venn_diagrams, fig.keep ='last', fig.width=5, fig.height=5>>=
 
 draw_venn <- function (margin,margin_overlay, subtype_order){
   q <- get_venn_margin_subtype(margin,subtype_order, overlay_another = TRUE, margin_overlay)   
@@ -1272,7 +1274,7 @@ Pane_A, Pane_B,  Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,2,2,4,4,3,3,4,
 }
 \end{figure}
 
-\pagebreak
+%\pagebreak
 
 \section{Survival Analysis}
 <<Pooled_survival_plot, fig.height=12, out.width="0.8\\textwidth">>=
@@ -1378,7 +1380,7 @@ survival_filtered.df <- Filtered_intersection_pooled.subtypes.survival
   @
 
 
-\pagebreak
+%\pagebreak
 % Hazard Ratio vs % of dataset removed for three subtypes (all in one plot) added by Lavanya Kannan
 
 <<HR, echo = TRUE, results='asis'>>=
@@ -1705,9 +1707,3 @@ smc_c.df <- na.omit(smc_conc.df)
 
 grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3)
 @
-
-
-
-
-
-

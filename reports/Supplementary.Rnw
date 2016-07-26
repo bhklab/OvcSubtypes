@@ -8,6 +8,7 @@
 \usepackage[latin1]{inputenc}
 \usepackage{geometry}
 \usepackage{titlesec}
+\usepackage{amsmath}
 \geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
 \usepackage[table]{xcolor}
 %\newcommand{\sectionbreak}{\clearpage}
