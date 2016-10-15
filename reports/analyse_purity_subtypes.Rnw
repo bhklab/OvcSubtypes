@@ -1,0 +1,353 @@
+\pagebreak
+\chapter{Purity Analysis and Age Demographics of subtypes of combined classifier}
+
+
+% <<load5, echo = FALSE, cache=FALSE>>=
+% library(xtable)
+% library(simsalapar)
+% 
+% @
+
+\section{Loading data and initial plots}
+We first load the pathology readings and the results of ABSOLUTE available for our samples. The ABOLUTE results used here are from the PancanAtlas website. Not evaluated, but eventually might be better to get ABSOLUTE results from Carter et al. 2012, so we have a citation. They don't give barcode IDs, but the filenames can be mapped.
+
+
+
+<<load_pathology, echo=FALSE, cache=FALSE,echo = FALSE>>=
+# read and process pathology readings 
+
+Pathology <- read.table("../reports/Purity_Ploidy/biospecimen_slide_ov.txt", 
+                    header = TRUE, sep = "\t",
+                    as.is=TRUE,
+                    na.strings = c("[Not Applicable]", "[Not Reported]"))
+Pathology[Pathology=="predominant"] <- "100"
+Pathology[Pathology=="Predon"] <- "100"
+Pathology[Pathology==">90"] <- "95"
+for (i in grep("percent", colnames(Pathology))){
+  Pathology[, i] <- as.numeric(Pathology[, i])
+}
+# removing normal samples
+Pathology_filtered <- Pathology[substring(Pathology$bcr_sample_barcode,first=14,last=14) == 0,]
+# truncating the barcodes to sample level - all samples are that of tumor
+Pathology_filtered$sample_barcode <- 
+  substring(Pathology_filtered$bcr_sample_barcode,first=1,last=12)
+# remove columns with all NAs - If the count of NAs in a column is equal to the number of rows, it must be entirely NA.
+Pathology_filtered <- Pathology_filtered[, colSums(is.na(Pathology_filtered)) != nrow(Pathology_filtered)] 
+
+# calculate the mean values of the samples
+Pathology_aggregate <- aggregate(Pathology_filtered[-c(1,2,3,12,13)], by = list(Pathology_filtered$sample_barcode), mean, na.rm = TRUE)
+Pathology_aggregate <- Pathology_aggregate[, colSums(is.na(Pathology_aggregate)) != nrow(Pathology_aggregate)] 
+@
+
+<<load_ABSOLUTE, include=FALSE, cache=FALSE>>=
+
+library(readr)
+# ABSOLUTE_results <- read_delim("http://www.nature.com/nbt/journal/v30/n5/extref/nbt.2203-S2.txt", delim="\t")
+# ABSOLUTE_results <- data.frame(ABSOLUTE_results)
+
+ABSOLUTE_results <- read.csv("../reports/Purity_Ploidy/Purity_Ploidy_ov.csv", as.is=TRUE)
+@
+
+<<Merge_Dataframes, include=FALSE, cache=FALSE>>=
+
+colnames(Pathology_aggregate)[1] <- "individual_id"
+Pathology_ABSOLUTE <- merge(Pathology_aggregate, ABSOLUTE_results, by = "individual_id")
+@
+
+
+<<get_TCGA, echo=FALSE, cache=FALSE>>=
+# TCGA data for which we ran our subtyping analyses
+
+load("../reports/pooled.subtypes.updated.RData")
+TCGA_subtypes <- pooled.subtypes[pooled.subtypes$data.source == "TCGA",]
+rownames(TCGA_subtypes) <-
+  gsub("\\.","-",
+  substring(row.names(TCGA_subtypes),first= 11, last = 22))
+TCGA_subtypes$individual_id <- row.names(TCGA_subtypes)
+
+subtype.margin_purity <- merge(Pathology_ABSOLUTE,TCGA_subtypes, by = "individual_id")
+subtype.margin_purity.filtered <- subtype.margin_purity[subtype.margin_purity$individual_id %in% row.names(TCGA_subtypes),]
+
+
+subtype.margin_purity.filtered$Consensus.genepairs.rf <- factor(sub("_consensus", "",
+                as.character(subtype.margin_purity.filtered$Consensus.genepairs.rf)))
+
+subtype.margin_purity.filtered$Consensus.genepairs.rf <- factor(subtype.margin_purity.filtered$Consensus.genepairs.rf, levels = c("IMR", "DIF", "PRO", "MES"))
+
+@
+
+Below are some initial plots for ABSOLUTE ploidy and for purity between ABSOLUTE and pathology. 
+
+<<ABSOLUTE_and_pathology, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+hist(subtype.margin_purity.filtered$ploidy)
+
+regline <- lm(percent_tumor_cells ~ purity, data=subtype.margin_purity.filtered)
+pvalue<- summary(regline)[[4]][[8]]
+stat.text <- 
+ sprintf("p-value of purity coeff. in linear model = %.5f", pvalue)
+
+
+plot(subtype.margin_purity.filtered$purity, 
+     subtype.margin_purity.filtered$percent_tumor_cells,  
+     xlab=paste0("Purity (ABSOLUTE) \n", stat.text), 
+     ylab="Purity (pathology)", 
+     #xlim=c(0,1), ylim=c(0,1), 
+     main= " ABSOLUTE purity Vs Pathology purity", 
+     pch=2, cex.main=1.5, 
+     frame.plot=FALSE)
+abline(regline) 
+@
+
+
+
+\section{Margin versus Purity}
+
+
+<<Setup_purity_versus_margin, echo=FALSE, cache=FALSE>>= 
+methods <- c("Helland","Konecny","Verhaak", "Consensus")
+methods_margins <- list(Helland=subtype.margin_purity.filtered$Helland.margins,
+                     Konecny=subtype.margin_purity.filtered$Konecny.margins,
+                     Verhaak=subtype.margin_purity.filtered$Verhaak.margins,
+                     Consensus=subtype.margin_purity.filtered$Consensus.genepairs.rf.margin
+                     )
+methods_subtypes <- list(Helland=subtype.margin_purity.filtered$Helland,
+                      Konecny=subtype.margin_purity.filtered$Konecny,
+                      Verhaak=subtype.margin_purity.filtered$Verhaak,
+                      Consensus=subtype.margin_purity.filtered$Consensus.genepairs.rf)
+
+get_scatterplot_margin.purity <- 
+  function (method, purity = TRUE, ABSOLUTE = TRUE) {
+  margins <- methods_margins[[method]]
+  x.label_values <-
+    if (purity) {
+      if (ABSOLUTE) 
+        {list("Purity (ABSOLUTE)", subtype.margin_purity.filtered$purity)
+      } else {list("Purity (Pathology)",subtype.margin_purity.filtered$percent_tumor_cells)}         
+                 } else list("Ploidy (ABSOLUTE)",subtype.margin_purity.filtered$ploidy)
+  
+  title <- if (purity) {" margins Vs purity"} else {" margins Vs ploidy"}
+
+regline <- lm(margins~x.label_values[[2]]+methods_subtypes[[method]] + 0)
+## in the above formula, subtypes were added to fix any confounding by subtype
+pvalue<- summary(regline)[[4]][[8]]  
+stat.text <- 
+  sprintf("p-value of purity coeff. in linear model = %.5f", pvalue)
+subtype_levels <- levels(methods_subtypes[[method]])
+
+plot(x.label_values[[2]],
+     margins,
+     pch=c(1:3, 20)[methods_subtypes[[method]]],
+     xlab=paste0(x.label_values[[1]], "\n", stat.text),
+     ylab="Margins", 
+     #xlim=c(0,1), ylim=c(0,1),  
+     main= paste(methods[[method]], title), 
+     cex.main=1.5, 
+     frame.plot=FALSE, 
+     col= ifelse(methods_subtypes[[method]] == subtype_levels[1],"black",
+                 ifelse(methods_subtypes[[method]] == subtype_levels[2],"red",
+                        ifelse(methods_subtypes[[method]] == subtype_levels[3],"blue", "green")))
+     )
+                 
+## if using RColorBrewer package 
+# plot.col(x = purity, y = Helland.margins, factor = Helland, subtype.margin_purity.filtered)
+
+# abline(regline) - removed since subtypes are added in the analysis
+
+legend("topleft", col = c("black","red","blue","green"),
+       pch=c(1:3, 20), levels(methods_subtypes[[method]]))
+}
+@
+
+\subsection{Helland}
+
+<<Helland_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+get_scatterplot_margin.purity(1, purity = TRUE, ABSOLUTE = FALSE)
+
+get_scatterplot_margin.purity(1, purity = TRUE, ABSOLUTE = TRUE)
+@
+
+
+\subsection{Konecny}
+
+<<Konecny_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+get_scatterplot_margin.purity(2, purity = TRUE, ABSOLUTE = FALSE)
+
+get_scatterplot_margin.purity(2, purity = TRUE, ABSOLUTE = TRUE)
+@
+
+
+\subsection{Verhaak}
+<<Verhaak_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+get_scatterplot_margin.purity(3, purity = TRUE, ABSOLUTE = FALSE)
+
+get_scatterplot_margin.purity(3, purity = TRUE, ABSOLUTE = TRUE)
+@
+
+\subsection{Consensus classifier}
+
+<<Consensus_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = FALSE)
+
+get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = TRUE)
+@
+
+
+
+
+\section{Pathology vs. subtypes}
+
+
+<<pathology_subtypes, echo = FALSE>>=
+
+iseq = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
+
+
+
+get_boxplots <- function (usedat) {
+for (i in iseq){
+  boxplot(usedat[, i] ~ usedat$Consensus.genepairs.rf,
+          varwidth=TRUE,
+          main=colnames(subtype.margin_purity)[i],
+          xlab="Consensus Classifier", ylab=colnames(subtype.margin_purity)[i])
+}
+}
+
+iseq2 = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
+library(stargazer)
+
+analyse_pathology_subtypes <- function (usedat) {
+mylm <- list()
+for (i in iseq2){
+  mylm[[colnames(usedat)[i]]] <- lm(usedat[, i] ~ usedat$Consensus.genepairs.rf)
+}
+mylm
+}
+@
+
+
+\subsection{Consensus gene pairs algorithm, with all tumors}
+<<all_tumors, echo = FALSE, results = 'asis'>>=
+par(mfrow=c(2, 2))
+usedat = subtype.margin_purity.filtered
+get_boxplots(usedat)
+apsu <- analyse_pathology_subtypes(usedat)
+stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
+@
+
+
+\subsection{Consensus gene pairs algorithm, concordant cases only}
+<<concordant_tumors, echo = FALSE, results = 'asis'>>=
+par(mfrow=c(2, 2))
+usedat = subtype.margin_purity.filtered[subtype.margin_purity.filtered$concordant, ]
+get_boxplots(usedat)
+apsu <- analyse_pathology_subtypes(usedat)
+stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
+@
+
+
+\section{Age versus Subtypes}
+<<Age_versus_subtypes, echo = FALSE>>=
+
+load("../reports/esets.not.rescaled.classified.RData") 
+load("../reports/classification.vals.genepairs.default.cutoff.rf.RData")
+
+esets.all.data <- esets.not.rescaled.classified
+eset.all.data.names <- names(esets.not.rescaled.classified)
+esets.all <-lapply(eset.all.data.names, function(eset.name) {
+  esets.all.data[[eset.name]]$data.source <- eset.name
+  return(esets.all.data[[eset.name]])
+  })
+names(esets.all) <- eset.all.data.names
+
+
+pooled.subtypes.with.ages <- do.call(rbind, 
+    lapply(esets.all, function(eset) pData(eset)[,c("age_at_initial_pathologic_diagnosis","days_to_death", "vital_status","Konecny.subtypes", "Helland.subtypes", "Verhaak.subtypes"        
+           )]))
+
+pooled.subtypes.with.ages$Consensus.subtypes <- unlist(classification.vals.genepairs.default.cutoff.rf)
+pooled.subtypes.with.ages$Verhaak.subtypes <-
+  factor(pooled.subtypes.with.ages$Verhaak.subtypes, levels = c("IMR", "DIF", "PRO", "MES"))
+pooled.subtypes.with.ages$Consensus.subtypes <-
+  factor(pooled.subtypes.with.ages$Consensus.subtypes, levels = c("IMR_consensus", "DIF_consensus", "PRO_consensus", "MES_consensus"))
+
+library(ggplot2)
+
+get_complete_data <- function(method) {
+  pooled.subtypes.with.ages[complete.cases(pooled.subtypes.with.ages[,c(paste0(method,".subtypes"),"age_at_initial_pathologic_diagnosis")]),] 
+}
+
+
+boxplot_subtype_ages <- function(method) {
+  
+data_complete <- get_complete_data(method)
+subtypes <- data_complete[,paste0(method,".subtypes")]
+data_complete$subtypes <- subtypes
+  
+
+ggplot(data_complete, 
+       aes(x = subtypes, 
+           y = age_at_initial_pathologic_diagnosis)) + 
+  geom_boxplot(fill = "grey80", colour = "blue") + 
+  scale_x_discrete() + ggtitle(method) +
+  xlab("Subtypes") + ylab("age_at_initial_pathologic_diagnosis")
+
+}
+
+
+anova_analysis <- function (method) {
+  data_complete <- get_complete_data(method)
+  subtypes <- data_complete[,paste0(method,".subtypes")]
+  data_complete$subtypes <- subtypes
+  
+  subtype_ages <- lm(age_at_initial_pathologic_diagnosis ~ subtypes, data = data_complete)
+  print(summary(subtype_ages))
+  # stargazer(subtype_ages)
+  anova(subtype_ages) 
+  
+
+}
+@
+
+\subsection{Konecny subtypes and ages}
+
+<<Konecny_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+boxplot_subtype_ages("Konecny")
+anova_analysis("Konecny")
+@
+
+\subsection{Verhaak subtypes and ages}
+
+<<Verhaak_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+boxplot_subtype_ages("Verhaak")
+anova_analysis("Verhaak")
+@
+
+\subsection{Helland subtypes and ages}
+
+<<Helland_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+boxplot_subtype_ages("Helland")
+anova_analysis("Helland")
+@
+
+\subsection{Helland subtypes and ages}
+
+<<Consensus_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+boxplot_subtype_ages("Consensus")
+anova_analysis("Consensus")
+
+  data_complete <- get_complete_data("Consensus")
+  subtypes <- data_complete[,"Consensus.subtypes"]
+  data_complete$subtypes <- subtypes
+  
+  subtype_ages <- lm(age_at_initial_pathologic_diagnosis ~ subtypes, data = data_complete)
+  contmat <- matrix(c(
+                    1,1,0,0,
+                    1,0,1,0,
+                    1,0,0,1
+), nrow = 3, byrow = TRUE)
+fitX <- subtype_ages
+new.interaction <- multcomp::glht(fitX, linfct=contmat)
+summary(new.interaction)
+@
+
+

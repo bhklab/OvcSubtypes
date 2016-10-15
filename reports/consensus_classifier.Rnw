@@ -66,6 +66,14 @@ for(dataset.name in dataset.names) {
   classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
 }
 
+save(classification.vals.genepairs.default.cutoff.rf,
+     file = "classification.vals.genepairs.default.cutoff.rf.RData"
+     )
+
+save(classification.vals.genepairs.default.cutoff.rf.prob,
+     file = "classification.vals.genepairs.default.cutoff.prob.rf.RData"
+     )
+
 @
 
 
@@ -128,7 +136,7 @@ pooled.subtypes$vital_status <- pooled.subtypes$vital_status == "deceased"
 
 pooled.subtypes$data.source <- factor(pooled.subtypes$data.source)
 
-save(pooled.subtypes, file = "pooled.subtypes.RData")
+save(pooled.subtypes, file = "pooled.subtypes.updated.RData")
 @
 
 \section{Consensus Classifier: Description}
