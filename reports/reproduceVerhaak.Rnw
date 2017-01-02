@@ -110,6 +110,7 @@ We observed Pearson's correlation coefficients of \Sexpr{ round(DIF.cor, digits=
 \vspace*{-30pt}
 \begin{figure}[H]
 <<verhaak_scatterplots, eval=TRUE, fig.width=10, fig.height=8, out.width="0.9\\textwidth">>=
+# par.original <- par()
 #png("verhaak_scatterplots.png", width=800, height=700)
 par(mfrow=c(2,2))
 
@@ -128,7 +129,7 @@ legend(1.1,2.61,
        pch=1)
 #dev.off()
 
-par(par.original)
+# par(par.original)
 @
 \vspace*{-15pt}
 \caption{ssGSEA scores for the >800 patient validation set from our implementation (x axis) and the supplementary material (y axis) for each of the four subtypes.}

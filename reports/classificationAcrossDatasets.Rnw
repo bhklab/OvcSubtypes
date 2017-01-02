@@ -7,7 +7,6 @@
 rm(list=ls())
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
-par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
 @
@@ -61,8 +60,16 @@ source(system.file("extdata", "createEsetList.R", package="MetaGxOvarian"))
   
 esets.not.rescaled <- esets
 # remove any genes with NA values
-esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))),])
+esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))), ])
 
+xx <- apply(exprs(eset), 1, function(x, y) {
+   return ((sum(is.na(x)) / length(x)) < 0.2)
+ }, y=0.2)
+
+
+ xx <- apply(exprs(eset), 1, function(x, y) {
+    return (sum(!is.na(x)))
+  }, y=0.2)
 
 save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @

@@ -5,7 +5,6 @@
 rm(list=ls())
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
-par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
 @
@@ -23,7 +22,7 @@ library(genefu)
 library(annotate)
 library(hgu133plus2.db)
 library(stringr)
-# library(survMisc) 
+library(survMisc) 
 library(xtable)
 library(gridExtra)
 library(Biobase)
@@ -37,6 +36,8 @@ library(e1071)
 library(randomForest)
 library(clue)
 library(GEOquery)
+library(logging)
+library(metafor)
 @
 
 <<load_data3>>=
