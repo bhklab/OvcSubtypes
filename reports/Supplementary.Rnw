@@ -16,6 +16,7 @@
 \graphicspath{images}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 %\SweaveOpts{concordance=TRUE}
 
 \title{Supplementary}
@@ -26,22 +27,51 @@
 This document contains the supplementary files of our manuscript titled ``Consensus on Molecular Subtypes of Ovarian Cancer". 
 
 
-% 
-% 
-% \chapter{MetaGxOvarian}
-% 
-% Our R package MetaGxOvarian consists of one function per subtyping algorithm, that makes subtype calls in a provided dataset or a single patient. In cases where study authors described a fully-specified algorithm capable of subtype calls for a single patient  [3],  (Verhaak et al. 2013), our function is implemented as the algorithm is described. In other cases where authors did not describe such a fully-specified algorithm (Tothill et al. 2008), a PAM50-like (Bastien et al. 2012) a new algorithm is developed using the same training data that the original authors used for clustering, using the nearest shrunken centroids method (Tibshirani et al. 2002). This algorithm is selected because of its adoption in clinical practice for classifying intrinsic subtypes of breast cancer. 
-% 
-% MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+\begin{table}[]
+\centering
+\caption{Supplementary Table 1: 15 whole-transcriptome studies with at least 40 patients with late stage, high-grade serous histology from the curatedOvarianData compendium consisting of 1770 patients. 13 of these datasets provided 1581 patients with survival data.}
+\label{my-label}
+\begin{tabular}{@{}llll@{}}
+\toprule
+GEO28 Accession ID & Number of samples with survival data: deceased (median survival months) & Microarray Platform                                                    & Number of Features \\ \midrule
+TCGA               & 464 452: 239 (42.6)                                                     & Affymetrix HT Human Genome U133A                                       & 12833              \\
+GSE17260           & 43 43: 22 (29)                                                          & Agilent-012391 Whole Human Genome Oligo                                & 19596              \\
+GSE14764           & 41 41: 13 (30)                                                          & Affymetrix HG-U133A                                                    & 12752              \\ \midrule
+GSE18520           & 53 53: 41 (21)                                                          & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
+GSE26193           & 47 47: 39 (34)                                                          & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
+PMID17290060       & 59 59: 36 (34)                                                          & Affymetrix HG-U133A                                                    & 12752              \\
+GSE51088           & 85 84: 69 (43.6)                                                        & Agilent-012097 Human 1A Microarray (V2) G4110B                         & 15299              \\
+GSE13876           & 98 98: 72 (22)                                                          & Operon human v3 $\sim$35K 70-mer two-color oligonucleotide microarrays & 13846              \\
+GSE49997           & 132 122: 40 (23)                                                        & ABI Human Genome Survey Microarray Version                             & 216760             \\
+E.MTAB.386         & 128 128: 73 (29.65)                                                     & Illumina humanRef-8 v2.0 expression beadchip                           & 10572              \\
+GSE32062           & 129 129: 60 (40)                                                        & Agilent-014850 Whole Human Genome Microarray 4x44K G4112F              & 19596              \\
+GSE9891            & 142 140: 72 (28.5)                                                      & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
+GSE26712           & 185 185: 129 (38.8)                                                     & Affymetrix Human Genome U133A Array                                    & 12752              \\
+GSE20565           & 89 (0)                                                                  & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
+GSE2109            & 79 (0)                                                                  & Affymetrix HG-U133Plus                                                 & 220282            
+\end{tabular}
+\end{table}
 
-\Sexpr{knit_child('reproduceResults.Rnw')}
 
-\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
 
-\Sexpr{knit_child('robustness.Rnw')}
 
-\Sexpr{knit_child('consensus_classifier.Rnw')}
 
-\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
+\chapter{MetaGxOvarian}
+
+Our R package MetaGxOvarian consists of one function per subtyping algorithm, that makes subtype calls in a provided dataset or a single patient. In cases where study authors described a fully-specified algorithm capable of subtype calls for a single patient  [3],  (Verhaak et al. 2013), our function is implemented as the algorithm is described. In other cases where authors did not describe such a fully-specified algorithm (Tothill et al. 2008), a PAM50-like (Bastien et al. 2012) a new algorithm is developed using the same training data that the original authors used for clustering, using the nearest shrunken centroids method (Tibshirani et al. 2002). This algorithm is selected because of its adoption in clinical practice for classifying intrinsic subtypes of breast cancer. 
+
+MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
+
+%\Sexpr{knit_child('reproduceResults.Rnw')}
+
+%\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
+
+%\Sexpr{knit_child('robustness.Rnw')}
+
+%\Sexpr{knit_child('consensus_classifier.Rnw')}
+
+%\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
 
 \end{document}
