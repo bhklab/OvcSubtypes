@@ -7,7 +7,6 @@
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 rm(list=ls())
-par.original <- par()
 days.per.month <- 30.4368
 days.per.year <- 365.242
 library(ggplot2)
