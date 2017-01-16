@@ -440,7 +440,7 @@ get_margin <- function(lower.bound, only.survival = FALSE){
     margins1(only.survival) > lower.bound & 
     margins2(only.survival) > lower.bound & 
     margins3(only.survival) > lower.bound
-  }
+}
 
 # the code below fetches the marginal data (including the ones where 100% remain) for each subtype
 get_marginal_data_top <- function(top_margin_percent,subtype.name, only.survival = FALSE) {
@@ -452,13 +452,12 @@ get_marginal_data_top <- function(top_margin_percent,subtype.name, only.survival
     row.names(tmp) <- row.names(p)[margin.boolean]
     names(tmp) <- "tmp_subtype"
     tmp # tmp can be obtained in a more simpler way?
-  }
+}
 
 # given a subtype.name (scheme) position and the subtype, find the list of patients in the subtype in the scheme 
 
 
-filtered_dataset_all_subtypes <- 
-              function(margin_percent, only.survival = FALSE) 
+filtered_dataset_all_subtypes <- function(margin_percent, only.survival = FALSE) 
                 lapply(subtype.names[1:3], function (sn) 
                   get_marginal_data_top(margin_percent,sn, only.survival))
 
