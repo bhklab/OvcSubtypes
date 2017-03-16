@@ -64,14 +64,14 @@ Our R package MetaGxOvarian consists of one function per subtyping algorithm, th
 
 MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
 
-%\Sexpr{knit_child('reproduceResults.Rnw')}
+\Sexpr{knit_child('reproduceResults.Rnw')}
 
-%\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
+\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
 
-%\Sexpr{knit_child('robustness.Rnw')}
+\Sexpr{knit_child('robustness.Rnw')}
 
-%\Sexpr{knit_child('consensus_classifier.Rnw')}
+\Sexpr{knit_child('consensus_classifier.Rnw')}
 
-%\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
+\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
 
 \end{document}

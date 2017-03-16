@@ -62,14 +62,7 @@ esets.not.rescaled <- esets
 # remove any genes with NA values
 esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))), ])
 
-xx <- apply(exprs(eset), 1, function(x, y) {
-   return ((sum(is.na(x)) / length(x)) < 0.2)
- }, y=0.2)
-
-
- xx <- apply(exprs(eset), 1, function(x, y) {
-    return (sum(!is.na(x)))
-  }, y=0.2)
+esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(eset) nrow(eset) > 10000)]
 
 save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
