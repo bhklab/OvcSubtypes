@@ -63,6 +63,7 @@ esets.not.rescaled <- esets
 esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))), ])
 
 esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(eset) nrow(eset) > 10000)]
+esets.not.rescaled <- esets.not.rescaled[names(esets.not.rescaled) != "TCGA.RNASeqV2"]
 
 save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
