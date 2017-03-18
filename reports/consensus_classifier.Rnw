@@ -25,8 +25,6 @@ load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
 
 source("getGenePairConsensusOvarianSubtypes.R")
-source("~/Documents/MetaGx/R/datasetMerging.R")
-source("~/Documents/MetaGx/R/stripWhiteSpace.R")
 @
 
 <<Leave_one_dataset_out>>=

@@ -2,7 +2,7 @@
 % Verhaak et al., 2013
 \pagebreak
 \section{Verhaak et al., 2013 / TCGA 2011}
-<<verhaak_get_subtypes, cache=FALSE>>=
+<<verhaak_get_subtypes>>=
 verhaak.spreadsheet.data <- read.xls("docs/JCI65833sd1.xls", skip=1)
 
 ## Examine the correlation between normalized ssGSEA scores in the Tothill dataset, as predicted by our implementation and that of Verhaak et al.

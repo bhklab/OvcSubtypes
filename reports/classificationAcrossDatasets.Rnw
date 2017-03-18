@@ -63,38 +63,41 @@ esets.not.rescaled <- esets
 esets.not.rescaled <- lapply(esets.not.rescaled, function(eset) eset[apply(exprs(eset), 1, function(x) all(!is.na(x))), ])
 
 esets.not.rescaled <- esets.not.rescaled[sapply(esets.not.rescaled, function(eset) nrow(eset) > 10000)]
-esets.not.rescaled <- esets.not.rescaled[names(esets.not.rescaled) != "TCGA.RNASeqV2"]
 
 save(esets.not.rescaled, file="esets.not.rescaled.RData")
 @
 
 <<classify_data>>=
 set.seed(450)
-# Subtype classification
-esets.not.rescaled.classified <- esets.not.rescaled
-# Remove TCGA.RNASeqV2
-esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
-
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  konecny.out <- getKonecnySubtypes(eset)
-  annotated.eset <- konecny.out[[1]]
-  annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  verhaak.out <- getVerhaakSubtypes(eset)
-  annotated.eset <- verhaak.out[[1]]
-  annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-  helland.out <- getHellandSubtypes(eset)
-  annotated.eset <- helland.out[[1]]
-  annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
-  return(annotated.eset)
-  })
-esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
-save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+if(file.exists("esets.not.rescaled.classified.RData")) {
+  load("esets.not.rescaled.classified.RData")
+} else {
+  # Subtype classification
+  esets.not.rescaled.classified <- esets.not.rescaled
+  # Remove TCGA.RNASeqV2
+  esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
+  
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    konecny.out <- getKonecnySubtypes(eset)
+    annotated.eset <- konecny.out[[1]]
+    annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    verhaak.out <- getVerhaakSubtypes(eset)
+    annotated.eset <- verhaak.out[[1]]
+    annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
+    helland.out <- getHellandSubtypes(eset)
+    annotated.eset <- helland.out[[1]]
+    annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
+    return(annotated.eset)
+    })
+  esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) getBentinkSubtypes(eset)[[1]])
+  save(esets.not.rescaled.classified, file = "esets.not.rescaled.classified.RData")
+}
 @
 
 <<Concordantly classified patients>>=
@@ -398,7 +401,7 @@ subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes[,subtype.names[[i]]])
 Based on the pairwise concordance, we observe that the subtypes in the different schemes appear to follow a clear one-to-one mapping, except in the case of the Bentink, which maps the IMR, DIF, and PRO subtypes of Verhaak (and the corresponding subtypes in other schemes) to non-Angiogenic and the MES subtype to Angiogenic. The table below shows the mapping. 
 
 
-<<Subtype_map_table, results='asis'>>=
+<<Subtype_map_table, results='asis', cache=FALSE>>=
 subtype.map <- as.data.frame(subtypes)
 subtype.map$"Bentink" <- c("nonAngiogenic", "nonAngiogenic", "nonAngiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
@@ -406,7 +409,7 @@ colnames(subtype.map) <- subtype.names
 print(xtable(subtype.map), include.rownames=FALSE)
 @
 
-<<Data_setup, cache = FALSE>>=
+<<Data_setup, cache=FALSE>>=
 # Extract margins for each scheme
 margins1 <- function (only.survival) { 
   p = (if (only.survival) pooled.subtypes.survival
@@ -1232,7 +1235,7 @@ Below is a summary of the consensus analysis in the form of a figure in the main
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 \begin{figure}[H]
-<<Figure1-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10, cache=FALSE>>=
+<<Figure1-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
 venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
 # Two-way Concordances
 Pane_A <- grid.arrange(
@@ -1445,7 +1448,7 @@ grid.arrange(get_hr_plot(1), get_hr_plot(2), get_hr_plot(3),ncol=1)
 @
 
 % Figure 2
-<<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10, cache=FALSE>>=
+<<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
 survival.df <- pooled.subtypes.survival
 
 get_survival_curve <- function (subtype.order) {

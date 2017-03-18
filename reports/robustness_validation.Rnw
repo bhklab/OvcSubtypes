@@ -1,7 +1,7 @@
 
 
 <<load_data_from_files, cache=TRUE>>=
-knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(cache=FALSE)
 load("esets.not.rescaled.classified.RData")
 load("esets.not.rescaled.classified.concordant.RData")
 
@@ -91,9 +91,6 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
-tcga.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Verhaak[[x]], clustering.subtypes.concordant$tcga_nmf_4[[x]][[y]])$ps))
-colnames(tcga.ps.vals.concordant) <- names(classifier.subtypes.concordant$Verhaak)
-
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
@@ -118,9 +115,6 @@ tcga.pred.str.trend.tcga$percent.removed <- tcga.pred.str.trend.tcga$percent.rem
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
 
-tothill.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Helland[[x]], clustering.subtypes.concordant$tothill_kmeans_4[[x]][[y]])$ps))
-colnames(tothill.ps.vals.concordant) <- names(classifier.subtypes.concordant$Helland)
-
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @
 
@@ -143,9 +137,6 @@ tothill.pred.str.trend.tcga$percent.removed <- tothill.pred.str.trend.tcga$perce
 <<Konecny_pred_str, cache=TRUE>>=
 konecny.ps.vals <- sapply(1:length(classifier.subtypes$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Konecny[[x]], clustering.subtypes$konecny_nmf_4[[x]][[y]])$ps))
 colnames(konecny.ps.vals) <- names(classifier.subtypes$Konecny)
-
-konecny.ps.vals.concordant <- sapply(1:length(classifier.subtypes.concordant$Konecny), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes.concordant$Konecny[[x]], clustering.subtypes.concordant$konecny_nmf_4[[x]][[y]])$ps))
-colnames(konecny.ps.vals.concordant) <- names(classifier.subtypes.concordant$Konecny)
 
 konecny.ordered.classes <- c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL")
 @
@@ -184,7 +175,7 @@ ggplot(combined.ps.m, aes(x=L1, y=value, fill="red")) + stat_boxplot(geom='error
 
 Next, we compared the Prediction Strength for only the concordantly classified patients. Using only the patients classified concordantly using the classifiers of Helland, Verhaak, and Konecny, we performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. Each data point in the boxplot below represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
 
-<<ps_paired_boxplots, fig.width=10, out.width="0.85\\textwidth">>=
+<<ps_paired_boxplots, fig.width=10, out.width="0.85\\textwidth", eval=FALSE>>=
 set.seed(900)
 combined.ps.concordant <- lapply(list(Tothill=tothill.ps.vals.concordant, TCGA=tcga.ps.vals.concordant, Konecny=konecny.ps.vals.concordant), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
 combined.ps.concordant.m <- melt(combined.ps.concordant)
@@ -203,7 +194,7 @@ ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_bo
 
 @
 
-The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
+%The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
 
 \pagebreak
 \subsection{Tothill/Helland}

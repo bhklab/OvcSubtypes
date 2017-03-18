@@ -1,6 +1,6 @@
 \chapter{Robustness}
 
-<<setup_robustness, include=FALSE, cache=FALSE>>=
+<<setup_robustness, include=FALSE>>=
 # Set options
 rm(list=ls())
 knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
@@ -11,7 +11,7 @@ days.per.year <- 365.242
 
 
 
-<<load, cache=FALSE>>=
+<<load>>=
 library(MetaGx)
 library(gdata)
 library(knitr)
@@ -141,7 +141,7 @@ The discovery of molecular subtypes of ovarian cancer requires two steps: a clus
 %TCGA
 
 \section{TCGA}
-<<TCGA_clustering_authorlist, cache=TRUE>>=
+<<TCGA_clustering_authorlist>>=
 set.seed(120)
 tcga.clustering.authordata <- read.delim("docs/TCGA_489_UE.top1500.txt", sep="\t")
 
@@ -291,7 +291,7 @@ kable(table(konecny.merged.authorlist$MAYO.C4, konecny.merged.authorlist$nmf.cla
 %Tothill
 \section{Tothill}
 
-<<Tothill_clustering, cache=FALSE>>=
+<<Tothill_clustering>>=
 set.seed(132)
 tothill.original.labels <- read.table("docs/tothill.supptable.1.classes.txt", header=TRUE, stringsAsFactors = FALSE)
 tothill.original.labels <- tothill.original.labels[tothill.original.labels$group %in% c(1, 2, 3, 4, 5, 6),]
@@ -323,18 +323,18 @@ where $\mathcal{C}$ is the set of all possible clusterings, $d$ is the Euclidean
 Despite the difference between the consensus strategies, the cluster results appear to be similar:
 
 \vspace*{10pt}
-<<tothill_kmeans_contingency, results="asis", cache=FALSE>>=
+<<tothill_kmeans_contingency, results="asis">>=
 save(tothill.merged.kmeans, file="tothill.merged.kmeans.RData")
 kable(table(tothill.merged.kmeans$group, tothill.merged.kmeans$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(5,6,4,3,2,1)], format="latex")
 #table(tothill.merged$nmf.classes, tothill.merged$group)
 @
 \vspace*{10pt}
 
-<<tothill_6_contingency_heatmap, fig.width=6, fig.height=5.5, out.width="0.6\\textwidth", cache=FALSE>>=
+<<tothill_6_contingency_heatmap, fig.width=6, fig.height=5.5, out.width="0.6\\textwidth">>=
 .getContingencyHeatmap(table(tothill.merged.kmeans$group, tothill.merged.kmeans$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(5,6,4,3,2,1)])
 @
 
-<<tothill_kmeans_5_clustering, cache=FALSE>>=
+<<tothill_kmeans_5_clustering>>=
 tothill.implemented.clustering.kmeans.5 <- data.frame(ID=esets.not.rescaled.probes$GSE9891$alt_sample_name, consensus.kmeans.classes=.getConsensusKMeansClasses(esets.not.rescaled.probes$GSE9891, k=5, num.iterations=1000))
 tothill.implemented.clustering.kmeans.5$ID <- sub("X", "", tothill.implemented.clustering.kmeans.5$ID)
 tothill.merged.kmeans.5 <- merge(tothill.implemented.clustering.kmeans.5, tothill.original.labels)
@@ -343,11 +343,11 @@ tothill.merged.kmeans.5 <- merge(tothill.implemented.clustering.kmeans.5, tothil
 \pagebreak
 Since it appears that this implementation of k-means clustering is not capturing C6, we performed consensus k-means clustering with k = 5:
 \vspace*{10pt}
-<<tothill_kmeans_5_contingency, results="asis", cache=FALSE>>=
+<<tothill_kmeans_5_contingency, results="asis">>=
 kable(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(4,5,2,1,3)], format="latex")
 @
 \vspace*{10pt}
-<<tothill_5_contingency_heatmap, fig.width=5.5, fig.height=5.5, out.width="0.5\\textwidth", cache=FALSE>>=
+<<tothill_5_contingency_heatmap, fig.width=5.5, fig.height=5.5, out.width="0.5\\textwidth">>=
 .getContingencyHeatmap(table(tothill.merged.kmeans.5$group, tothill.merged.kmeans.5$consensus.kmeans.classes)[c(1,5,4,2,3,6),c(4,5,2,1,3)])
 @
 
