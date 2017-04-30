@@ -8,14 +8,15 @@
 % 
 % @
 
-\section{Loading data and initial plots}
-We first load the pathology readings and the results of ABSOLUTE available for our samples. The ABOLUTE results used here are from the PancanAtlas website. Not evaluated, but eventually might be better to get ABSOLUTE results from Carter et al. 2012, so we have a citation. They don't give barcode IDs, but the filenames can be mapped.
+\vfill
 
+\pagebreak
 
+\section{Ploidy and Purity}
+We first load the pathology readings and the results of ABSOLUTE available for our samples. The ABOLUTE results used here are from the PancanAtlas website. 
 
 <<load_pathology, echo=FALSE, cache=FALSE,echo = FALSE>>=
 # read and process pathology readings 
-
 Pathology <- read.table("../reports/Purity_Ploidy/biospecimen_slide_ov.txt", 
                     header = TRUE, sep = "\t",
                     as.is=TRUE,
@@ -78,31 +79,36 @@ subtype.margin_purity.filtered$Consensus.genepairs.rf <- factor(subtype.margin_p
 
 Below are some initial plots for ABSOLUTE ploidy and for purity between ABSOLUTE and pathology. 
 
-<<ABSOLUTE_and_pathology, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
-hist(subtype.margin_purity.filtered$ploidy)
+\begin{figure}[H]
+<<Ploidy_frequency_plot, echo= FALSE, out.width="0.9\\textwidth", fig.width=8, fig.height=5>>=
+hist(subtype.margin_purity.filtered$ploidy, main = "ABSOLUTE ploidy frequency histogram", xlab = "ABSOLUTE ploidy")
 
+@
+
+<<ABSOLUTE_and_pathology_plot, echo= FALSE, out.width="0.9\\textwidth", fig.width=9, fig.height=6>>=
 regline <- lm(percent_tumor_cells ~ purity, data=subtype.margin_purity.filtered)
 pvalue<- summary(regline)[[4]][[8]]
 stat.text <- 
  sprintf("p-value of purity coeff. in linear model = %.5f", pvalue)
-
 
 plot(subtype.margin_purity.filtered$purity, 
      subtype.margin_purity.filtered$percent_tumor_cells,  
      xlab=paste0("Purity (ABSOLUTE) \n", stat.text), 
      ylab="Purity (pathology)", 
      #xlim=c(0,1), ylim=c(0,1), 
-     main= " ABSOLUTE purity Vs Pathology purity", 
+     main= " ABSOLUTE Purity Vs Pathology purity", 
      pch=2, cex.main=1.5, 
      frame.plot=FALSE)
 abline(regline) 
 @
+\end{figure}
 
-
+\pagebreak
 
 \section{Margin versus Purity}
 
 
+\begin{figure}[H]
 <<Setup_purity_versus_margin, echo=FALSE, cache=FALSE>>= 
 methods <- c("Helland","Konecny","Verhaak", "Consensus")
 methods_margins <- list(Helland=subtype.margin_purity.filtered$Helland.margins,
@@ -157,59 +163,70 @@ legend("topleft", col = c("black","red","blue","green"),
        pch=c(1:3, 20), levels(methods_subtypes[[method]]))
 }
 @
+\end{figure}
 
 \subsection{Helland}
 
-<<Helland_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Helland_purity_margins, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(1, purity = TRUE, ABSOLUTE = FALSE)
-
+@
+<<Helland_purity_margins_2, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(1, purity = TRUE, ABSOLUTE = TRUE)
 @
 
+\pagebreak
 
 \subsection{Konecny}
 
-<<Konecny_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Konecny_purity_margins, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(2, purity = TRUE, ABSOLUTE = FALSE)
-
+@
+<<Konecny_purity_margins_2, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(2, purity = TRUE, ABSOLUTE = TRUE)
 @
 
-
+\pagebreak
 \subsection{Verhaak}
-<<Verhaak_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Verhaak_purity_margins, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(3, purity = TRUE, ABSOLUTE = FALSE)
-
+@
+<<Verhaak_purity_margins_2, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(3, purity = TRUE, ABSOLUTE = TRUE)
 @
 
+\pagebreak
 \subsection{Consensus classifier}
 
-<<Consensus_purity_margins, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Consensus_purity_margins, out.width="0.6\\textwidth", fig.width=6.5, fig.height=5.5>>=
 get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = FALSE)
 
 get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = TRUE)
 @
 
+\pagebreak
 
+\section{Pathology vs. Subtypes}
 
-
-\section{Pathology vs. subtypes}
-
-
-<<pathology_subtypes, echo = FALSE>>=
+<<pathology_subtypes, echo = FALSE, warning=FALSE, cache=FALSE>>=
 
 iseq = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
 
 
 
 get_boxplots <- function (usedat) {
-for (i in iseq){
-  boxplot(usedat[, i] ~ usedat$Consensus.genepairs.rf,
-          varwidth=TRUE,
-          main=colnames(subtype.margin_purity)[i],
-          xlab="Consensus Classifier", ylab=colnames(subtype.margin_purity)[i])
-}
+  cat('\r\n\\begin{figure}[H]\r\n')
+  for (i in iseq){
+    if(which(i == iseq) %in% c(5,9)) {
+      cat('\r\n\\end{figure}\r\n')
+      cat('\r\n\\begin{figure}[H]\r\n')
+      }
+    
+    boxplot(usedat[, i] ~ usedat$Consensus.genepairs.rf,
+            varwidth=TRUE,
+            main=colnames(subtype.margin_purity)[i],
+            xlab="Consensus Classifier", ylab=colnames(subtype.margin_purity)[i])
+  }
+  cat('\r\n\\end{figure}\r\n')
 }
 
 iseq2 = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
@@ -226,27 +243,34 @@ mylm
 
 
 \subsection{Consensus gene pairs algorithm, with all tumors}
-<<all_tumors, echo = FALSE, results = 'asis'>>=
+<<all_tumors, echo = FALSE, results='asis'>>=
 par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered
 get_boxplots(usedat)
+
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
 @
 
 
 \subsection{Consensus gene pairs algorithm, concordant cases only}
-<<concordant_tumors, echo = FALSE, results = 'asis'>>=
+\begin{figure}[H]
+<<concordant_tumors_fig, echo = FALSE>>=
 par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered[subtype.margin_purity.filtered$concordant, ]
 get_boxplots(usedat)
+@
+\end{figure}
+<<concordant_tumors, echo = FALSE, results = 'asis'>>=
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
 @
 
+\pagebreak
 
 \section{Age versus Subtypes}
-<<Age_versus_subtypes, echo = FALSE>>=
+\begin{figure}[H]
+<<Age_versus_subtypes, echo = FALSE, warning=FALSE>>=
 
 load("../reports/esets.not.rescaled.classified.RData") 
 load("../reports/classification.vals.genepairs.default.cutoff.rf.RData")
@@ -307,30 +331,42 @@ anova_analysis <- function (method) {
 
 }
 @
+\end{figure}
+
+\pagebreak
 
 \subsection{Konecny subtypes and ages}
-
+\begin{figure}[H]
 <<Konecny_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
 boxplot_subtype_ages("Konecny")
 anova_analysis("Konecny")
 @
+\end{figure}
 
+\pagebreak
 \subsection{Verhaak subtypes and ages}
 
+\begin{figure}[H]
 <<Verhaak_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
 boxplot_subtype_ages("Verhaak")
 anova_analysis("Verhaak")
 @
+\end{figure}
+
+\pagebreak
 
 \subsection{Helland subtypes and ages}
 
+\begin{figure}[H]
 <<Helland_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
 boxplot_subtype_ages("Helland")
 anova_analysis("Helland")
 @
+\end{figure}
 
 \subsection{Helland subtypes and ages}
 
+\begin{figure}[H]
 <<Consensus_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
 boxplot_subtype_ages("Consensus")
 anova_analysis("Consensus")
@@ -349,5 +385,5 @@ fitX <- subtype_ages
 new.interaction <- multcomp::glht(fitX, linfct=contmat)
 summary(new.interaction)
 @
-
+\end{figure}
 
