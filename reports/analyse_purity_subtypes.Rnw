@@ -252,21 +252,17 @@ stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration
 
 
 \subsection{Consensus gene pairs algorithm, concordant cases only}
-<<concordant_tumors_fig, echo = FALSE, results='asis'>>=
+<<concordant_tumors, echo = FALSE, results='asis'>>=
 par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered[subtype.margin_purity.filtered$concordant, ]
 get_boxplots(usedat)
-@
-<<concordant_tumors, echo = FALSE, results = 'asis'>>=
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
 @
-
-\pagebreak
-
+\vfill
+\clearpage
 \section{Age versus Subtypes}
-\begin{figure}[H]
-<<Age_versus_subtypes, echo = FALSE, warning=FALSE>>=
+<<Age_versus_subtypes, echo = FALSE, warning=FALSE, message=FALSE>>=
 
 load("../reports/esets.not.rescaled.classified.RData") 
 load("../reports/classification.vals.genepairs.default.cutoff.rf.RData")
@@ -328,25 +324,21 @@ anova_analysis <- function (method) {
 
 }
 @
-\end{figure}
-
-\pagebreak
 
 \subsection{Konecny subtypes and ages}
 \begin{figure}[H]
-<<Konecny_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Konecny_ages, echo= FALSE, out.width="0.6\\textwidth", fig.width=5, fig.height=4>>=
 boxplot_subtype_ages("Konecny")
-anova_analysis("Konecny")
+#anova_analysis("Konecny")
 @
 \end{figure}
 
-\pagebreak
 \subsection{Verhaak subtypes and ages}
 
 \begin{figure}[H]
-<<Verhaak_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Verhaak_ages, echo= FALSE, out.width="0.6\\textwidth", fig.width=5, fig.height=4>>=
 boxplot_subtype_ages("Verhaak")
-anova_analysis("Verhaak")
+#anova_analysis("Verhaak")
 @
 \end{figure}
 
@@ -355,32 +347,18 @@ anova_analysis("Verhaak")
 \subsection{Helland subtypes and ages}
 
 \begin{figure}[H]
-<<Helland_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Helland_ages, echo= FALSE, out.width="0.6\\textwidth", fig.width=5, fig.height=4>>=
 boxplot_subtype_ages("Helland")
-anova_analysis("Helland")
+#anova_analysis("Helland")
 @
 \end{figure}
 
-\subsection{Helland subtypes and ages}
+\subsection{Consensus classifier subtypes and ages}
 
 \begin{figure}[H]
-<<Consensus_ages, echo= FALSE, out.width="0.55\\textwidth", fig.width=15, fig.height=10>>=
+<<Consensus_ages, echo= FALSE, out.width="0.6\\textwidth", fig.width=5, fig.height=4>>=
 boxplot_subtype_ages("Consensus")
-anova_analysis("Consensus")
-
-  data_complete <- get_complete_data("Consensus")
-  subtypes <- data_complete[,"Consensus.subtypes"]
-  data_complete$subtypes <- subtypes
-  
-  subtype_ages <- lm(age_at_initial_pathologic_diagnosis ~ subtypes, data = data_complete)
-  contmat <- matrix(c(
-                    1,1,0,0,
-                    1,0,1,0,
-                    1,0,0,1
-), nrow = 3, byrow = TRUE)
-fitX <- subtype_ages
-new.interaction <- multcomp::glht(fitX, linfct=contmat)
-summary(new.interaction)
+#anova_analysis("Consensus")
 @
 \end{figure}
 
