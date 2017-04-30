@@ -207,17 +207,15 @@ get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = TRUE)
 
 \section{Pathology vs. Subtypes}
 
-<<pathology_subtypes, echo = FALSE, warning=FALSE, cache=FALSE>>=
+<<pathology_subtypes, echo = FALSE, warning=FALSE, message=FALSE, cache=FALSE>>=
 
 iseq = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
-
-
 
 get_boxplots <- function (usedat) {
   cat('\r\n\\begin{figure}[H]\r\n')
   for (i in iseq){
     if(which(i == iseq) %in% c(5,9)) {
-      cat('\r\n\\end{figure}\r\n')
+      cat('\r\n\\end{figure}\r\n\\vfill\\pagebreak\r\n')
       cat('\r\n\\begin{figure}[H]\r\n')
       }
     
@@ -226,7 +224,7 @@ get_boxplots <- function (usedat) {
             main=colnames(subtype.margin_purity)[i],
             xlab="Consensus Classifier", ylab=colnames(subtype.margin_purity)[i])
   }
-  cat('\r\n\\end{figure}\r\n')
+  cat('\r\n\\end{figure}\r\n\\vfill\\pagebreak\r\n')
 }
 
 iseq2 = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
@@ -249,18 +247,16 @@ usedat = subtype.margin_purity.filtered
 get_boxplots(usedat)
 
 apsu <- analyse_pathology_subtypes(usedat)
-stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
+stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectively
 @
 
 
 \subsection{Consensus gene pairs algorithm, concordant cases only}
-\begin{figure}[H]
-<<concordant_tumors_fig, echo = FALSE>>=
+<<concordant_tumors_fig, echo = FALSE, results='asis'>>=
 par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered[subtype.margin_purity.filtered$concordant, ]
 get_boxplots(usedat)
 @
-\end{figure}
 <<concordant_tumors, echo = FALSE, results = 'asis'>>=
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
