@@ -9,6 +9,7 @@
 \usepackage{geometry}
 \usepackage{titlesec}
 \usepackage{amsmath}
+\usepackage{booktabs}
 \geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
 \usepackage[table]{xcolor}
 %\newcommand{\sectionbreak}{\clearpage}
@@ -16,14 +17,15 @@
 \graphicspath{images}
 
 \begin{document}
-\SweaveOpts{concordance=TRUE}
-%\SweaveOpts{concordance=TRUE}
 
 \title{Supplementary}
 \date{\today}
-\maketitle
 
-\tableofcontents{}
+% Remove empty page after title page
+\let\cleardoublepage\clearpage 
+
+\maketitle
+\tableofcontents
 This document contains the supplementary files of our manuscript titled ``Consensus on Molecular Subtypes of Ovarian Cancer". 
 
 
@@ -33,12 +35,12 @@ This document contains the supplementary files of our manuscript titled ``Consen
 \centering
 \caption{Supplementary Table 1: 15 whole-transcriptome studies with at least 40 patients with late stage, high-grade serous histology from the curatedOvarianData compendium consisting of 1770 patients. 13 of these datasets provided 1581 patients with survival data.}
 \label{my-label}
-\begin{tabular}{@{}llll@{}}
+\begin{tabular}{l p{4cm} p{5cm}  l}
 \toprule
-GEO28 Accession ID & Number of samples with survival data: deceased (median survival months) & Microarray Platform                                                    & Number of Features \\ \midrule
+GEO Accession ID & Number of samples with survival data: deceased (median survival months) & Microarray Platform                                                    & Number of Features \\ \midrule
 TCGA               & 464 452: 239 (42.6)                                                     & Affymetrix HT Human Genome U133A                                       & 12833              \\
 GSE17260           & 43 43: 22 (29)                                                          & Agilent-012391 Whole Human Genome Oligo                                & 19596              \\
-GSE14764           & 41 41: 13 (30)                                                          & Affymetrix HG-U133A                                                    & 12752              \\ \midrule
+GSE14764           & 41 41: 13 (30)                                                          & Affymetrix HG-U133A                                                    & 12752              \\
 GSE18520           & 53 53: 41 (21)                                                          & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
 GSE26193           & 47 47: 39 (34)                                                          & Affymetrix Human Genome U133 Plus 2.0                                  & 20282              \\
 PMID17290060       & 59 59: 36 (34)                                                          & Affymetrix HG-U133A                                                    & 12752              \\
@@ -64,13 +66,15 @@ Our R package MetaGxOvarian consists of one function per subtyping algorithm, th
 
 MetaGx is a R package for meta-analysis for gene expressions : We implemented the ovarian subtyping classification algorithms using the gene lists provided in supplementary data for each publication, we implemented the subtyping classifiers as described in the methods or supplementary texts. We performed a concordance analysis on the predicted versus implemented version of the subtypes of each dataset. Please refer reproduceResults.pdf for detailed reports. We also validated 3 other datasets (Denkert et al. 2009), (Dressman et al. 2007), (Mok et al. 2009) using our implementation of the Bentink et al. subtype classifier. 
 
-\Sexpr{knit_child('reproduceResults.Rnw')}
+\vfill
 
-\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
+%\Sexpr{knit_child('reproduceResults.Rnw')}
 
-\Sexpr{knit_child('robustness.Rnw')}
+%\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
 
-\Sexpr{knit_child('consensus_classifier.Rnw')}
+%\Sexpr{knit_child('robustness.Rnw')}
+
+%\Sexpr{knit_child('consensus_classifier.Rnw')}
 
 \Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
 
