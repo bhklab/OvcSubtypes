@@ -307,6 +307,7 @@ data_complete$subtypes <- subtypes
 ggplot(data_complete, 
        aes(x = subtypes, 
            y = age_at_initial_pathologic_diagnosis)) + 
+  stat_boxplot(geom = "errorbar", width = 0.5) + 
   geom_boxplot(fill = "grey80", colour = "blue") + 
   scale_x_discrete() + ggtitle(method) +
   xlab("Subtypes") + ylab("age_at_initial_pathologic_diagnosis")
