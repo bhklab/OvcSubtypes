@@ -324,6 +324,7 @@ anova_analysis <- function (method) {
 
 }
 @
+\end{figure}
 
 \subsection{Konecny subtypes and ages}
 \begin{figure}[H]
