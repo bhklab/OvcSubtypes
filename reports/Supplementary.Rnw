@@ -18,7 +18,7 @@
 
 \begin{document}
 
-\title{Supplementary}
+\title{\Large Supplementary}
 \date{\today}
 
 % Remove empty page after title page
@@ -68,13 +68,13 @@ MetaGx is a R package for meta-analysis for gene expressions : We implemented th
 
 \vfill
 
-%\Sexpr{knit_child('reproduceResults.Rnw')}
+\Sexpr{knit_child('reproduceResults.Rnw')}
 
-%\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
+\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
 
-%\Sexpr{knit_child('robustness.Rnw')}
+\Sexpr{knit_child('robustness.Rnw')}
 
-%\Sexpr{knit_child('consensus_classifier.Rnw')}
+\Sexpr{knit_child('consensus_classifier.Rnw')}
 
 \Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
 
