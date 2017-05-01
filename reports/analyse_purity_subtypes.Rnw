@@ -212,19 +212,12 @@ get_scatterplot_margin.purity(4, purity = TRUE, ABSOLUTE = TRUE)
 iseq = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
 
 get_boxplots <- function (usedat) {
-  cat('\r\n\\begin{figure}[H]\r\n')
   for (i in iseq){
-    if(which(i == iseq) %in% c(5,9)) {
-      cat('\r\n\\end{figure}\r\n\\vfill\\pagebreak\r\n')
-      cat('\r\n\\begin{figure}[H]\r\n')
-      }
-    
     boxplot(usedat[, i] ~ usedat$Consensus.genepairs.rf,
             varwidth=TRUE,
             main=colnames(subtype.margin_purity)[i],
             xlab="Consensus Classifier", ylab=colnames(subtype.margin_purity)[i])
   }
-  cat('\r\n\\end{figure}\r\n\\vfill\\pagebreak\r\n')
 }
 
 iseq2 = grep("percent|purity|ploidy|margin", colnames(subtype.margin_purity.filtered))
@@ -242,23 +235,31 @@ mylm
 
 \subsection{Consensus gene pairs algorithm, with all tumors}
 <<all_tumors, echo = FALSE, results='asis'>>=
-par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered
-get_boxplots(usedat)
-
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectively
 @
+\vfill
+\pagebreak
+<<all_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H'>>=
+par(mfrow=c(2, 2))
+get_boxplots(usedat)
+@
 
-
+\pagebreak
 \subsection{Consensus gene pairs algorithm, concordant cases only}
 <<concordant_tumors, echo = FALSE, results='asis'>>=
-par(mfrow=c(2, 2))
 usedat = subtype.margin_purity.filtered[subtype.margin_purity.filtered$concordant, ]
-get_boxplots(usedat)
 apsu <- analyse_pathology_subtypes(usedat)
 stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration" and "purity" respectivelys
 @
+\vfill
+\pagebreak
+<<concordant_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H'>>=
+par(mfrow=c(2, 2))
+get_boxplots(usedat)
+@
+
 \vfill
 \clearpage
 \section{Age versus Subtypes}
@@ -324,7 +325,6 @@ anova_analysis <- function (method) {
 
 }
 @
-\end{figure}
 
 \subsection{Konecny subtypes and ages}
 \begin{figure}[H]
