@@ -241,7 +241,7 @@ stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration
 @
 \vfill
 \pagebreak
-<<all_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H'>>=
+<<all_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H', fig.show='asis'>>=
 par(mfrow=c(2, 2))
 get_boxplots(usedat)
 @
@@ -255,7 +255,7 @@ stargazer(apsu[c(1,9)]) # Variable 1 and 2 are "percent_lymphocyte_infilteration
 @
 \vfill
 \pagebreak
-<<concordant_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H'>>=
+<<concordant_tumors_fig, echo = FALSE, fig.cap='', fig.pos='H', fig.show='asis'>>=
 par(mfrow=c(2, 2))
 get_boxplots(usedat)
 @
