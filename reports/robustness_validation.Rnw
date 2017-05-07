@@ -1,7 +1,7 @@
 
 
 <<load_data_from_files, cache=TRUE>>=
-knitr::opts_chunk$set(cache=FALSE)
+knitr::opts_chunk$set(cache=TRUE)
 load("esets.not.rescaled.classified.RData")
 load("esets.not.rescaled.classified.concordant.RData")
 

@@ -17,15 +17,16 @@ implemented.bentink.esets <- list(
   denkert=denkert.eset,
   mok=mok.eset)
 
-implemented.bentink.esets <- lapply(implemented.bentink.esets, function(x) {
+implemented.bentink.out <- lapply(implemented.bentink.esets, function(x) {
   x <- x[,!is.na(x$histological_type) & !is.na(x$summarygrade) & !is.na(x$summarystage) & x$histological_type=="ser" & x$summarygrade=="high" & x$summarystage=="late"]
   x <- x[,!is.na(x$days_to_death) & !is.na(x$vital_status)]
 })
 
-implemented.bentink.out <- lapply(implemented.bentink.esets, getBentinkSubtypes)
+implemented.bentink.out <- lapply(implemented.bentink.esets, get.subtypes, method="Bentink")
 
 bentink.plots <- lapply(names(implemented.bentink.out), function(dataset.name) {
-  data.to.plot <- pData(implemented.bentink.out[[dataset.name]]$Annotated.eset)
+  data.to.plot <- pData(implemented.bentink.esets[[dataset.name]])
+  data.to.plot$Bentink.subtypes <- implemented.bentink.out[[dataset.name]]$Bentink.subtypes
   data.to.plot <- merge(data.to.plot, data.frame(score=implemented.bentink.out[[dataset.name]]$angio$score), by='row.names')
   # only keep patients with high grade, late stage, serous ovarian carcinoma
   data.to.plot <- data.to.plot[,c("days_to_death", "vital_status", "Bentink.subtypes", "score")]

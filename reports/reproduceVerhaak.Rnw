@@ -17,7 +17,7 @@ verhaak.validation.esets <- list(Bonome=esets$GSE26712,
 verhaak.tcga.discovery.ids <- as.character(verhaak.spreadsheet.data[verhaak.spreadsheet.data$DATASET == "TCGA-discovery",]$ID)
 verhaak.validation.esets$TCGA <- verhaak.validation.esets$TCGA[,!(as.character(verhaak.validation.esets$TCGA$unique_patient_ID) %in% as.character(verhaak.tcga.discovery.ids))]
 
-implemented.verhaak.output <- lapply(verhaak.validation.esets, getVerhaakSubtypes)
+implemented.verhaak.output <- lapply(verhaak.validation.esets, get.subtypes, method="Verhaak")
 @
 
 <<verhaak_get_merged, eval=TRUE, include=TRUE>>=
@@ -63,9 +63,9 @@ for(i in 1:length(implemented.verhaak.output)) {
                                                                       IMR=current.ssgsea.scores$IMR,
                                                                       MES=current.ssgsea.scores$MES,
                                                                       PRO=current.ssgsea.scores$PRO,
-                                                                      implemented.subtype=implemented.verhaak.output[[i]][[1]]$Verhaak.subtypes,
-                                                                      days_to_death=implemented.verhaak.output[[i]][[1]]$days_to_death,
-                                                                      vital_status=implemented.verhaak.output[[i]][[1]]$vital_status))
+                                                                      implemented.subtype=implemented.verhaak.output[[i]]$Verhaak.subtypes,
+                                                                      days_to_death=verhaak.validation.esets[[i]]$days_to_death,
+                                                                      vital_status=verhaak.validation.esets[[i]]$vital_status))
 }
 
 implemented.ssgsea.scores$Dataset.name <- as.character(implemented.ssgsea.scores$Dataset.name)

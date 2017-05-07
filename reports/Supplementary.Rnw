@@ -16,6 +16,7 @@
 
 \graphicspath{images}
 
+\raggedbottom
 \begin{document}
 
 \title{\Large Supplementary}
@@ -70,12 +71,12 @@ MetaGx is a R package for meta-analysis for gene expressions : We implemented th
 
 \Sexpr{knit_child('reproduceResults.Rnw')}
 
-\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
+%\Sexpr{knit_child('classificationAcrossDatasets.Rnw')}
 
-\Sexpr{knit_child('robustness.Rnw')}
+%\Sexpr{knit_child('robustness.Rnw')}
 
-\Sexpr{knit_child('consensus_classifier.Rnw')}
+%\Sexpr{knit_child('consensus_classifier.Rnw')}
 
-\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
+%\Sexpr{knit_child('analyse_purity_subtypes.Rnw')}
 
 \end{document}
