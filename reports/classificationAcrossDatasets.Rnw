@@ -9,6 +9,12 @@ knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, f
 options(replace.assign=TRUE,width=90)
 days.per.month <- 30.4368
 days.per.year <- 365.242
+source("~/repos/consensusOV/get.konecny.subtypes.R")
+source("~/repos/consensusOV/get.verhaak.subtypes.R")
+source("~/repos/consensusOV/get.helland.subtypes.R")
+source("~/repos/consensusOV/get.bentink.subtypes.R")
+source("~/repos/consensusOV/get.consensus.subtypes.R")
+source("~/repos/consensusOV/get.subtypes.R")
 @
 
 
@@ -78,20 +84,23 @@ if(file.exists("esets.not.rescaled.classified.RData")) {
   esets.not.rescaled.classified <- esets.not.rescaled.classified[names(esets.not.rescaled.classified) != "TCGA.RNASeqV2"]
   
   esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-    konecny.out <- getKonecnySubtypes(eset)
-    annotated.eset <- konecny.out[[1]]
+    konecny.out <- get.subtypes(eset, method = "Konecny")
+    annotated.eset <- eset
+    annotated.eset$Konecny.subtypes <- konecny.out$Konecny.subtypes
     annotated.eset$Konecny.margins <- apply(konecny.out$spearman.cc.vals, 1, function(x) max(x) - sort(x)[3])
     return(annotated.eset)
     })
   esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-    verhaak.out <- getVerhaakSubtypes(eset)
-    annotated.eset <- verhaak.out[[1]]
+    verhaak.out <- get.subtypes(eset, method = "Verhaak")
+    annotated.eset <- eset
+    annotated.eset$Verhaak.subtypes <- verhaak.out$Verhaak.subtypes
     annotated.eset$Verhaak.margins <- apply(verhaak.out$gsva.out, 1, function(x) max(x) - sort(x)[3])
     return(annotated.eset)
     })
   esets.not.rescaled.classified <- lapply(esets.not.rescaled.classified, function(eset) {
-    helland.out <- getHellandSubtypes(eset)
-    annotated.eset <- helland.out[[1]]
+    helland.out <- get.subtypes(eset, method = "Helland")
+    annotated.eset <- eset
+    annotated.eset$Helland.subtypes <- helland.out$Helland.subtypes
     annotated.eset$Helland.margins <- apply(helland.out$subtype.scores, 1, function(x) max(x) - sort(x)[3])
     return(annotated.eset)
     })
@@ -137,10 +146,10 @@ pooled.subtypes <- do.call(rbind,
 
 colnames(pooled.subtypes)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes)[4:7])
 
-pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
-pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
-pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
-pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
+#pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
+#pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
+#pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
+#pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
 
 pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
 pooled.subtypes$days_to_death <- NULL
@@ -565,23 +574,23 @@ Filtered_intersection_pooled.subtypes.survival = pooled.subtypes.survival[filter
 a = row.names(Filtered_intersection_pooled.subtypes)
 b = row.names(Filtered_pooled.subtypes)
 if (!all(a %in% b)) {
-  print("Error in filtered datasets")
+  stop("Error in filtered datasets")
   rm(Filtered_intersection_pooled.subtypes)
 }
 
 # Another method to calculate Filtered_intersection_pooled.subtypes.survival from directly Filtered_pooled.subtypes.survival using Subtype_mapping object "subtype" defined above
- tmp_filtered <- Filtered_pooled.subtypes.survival
- levels(tmp_filtered$"Konecny") <- subtypes[[2]]
- levels(tmp_filtered$"Helland") <- subtypes[[2]]
- 
- x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
- y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
- # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
- c = row.names(tmp_filtered[x&y,])
- if (!all(c %in% b)) {
-   print("Error in filtered datasets")
-   rm(Filtered_intersection_pooled.subtypes.survival)
- }
+# tmp_filtered <- Filtered_pooled.subtypes.survival
+# levels(tmp_filtered$"Konecny") <- subtypes[[2]]
+# levels(tmp_filtered$"Helland") <- subtypes[[2]]
+# 
+# x <- tmp_filtered$"Konecny" == tmp_filtered$"Verhaak"
+# y <- tmp_filtered$"Helland" == tmp_filtered$"Verhaak"
+# # tmp_filtered[x&y,] must be same as Filtered_intersection_pooled.subtypes.survival
+# c = row.names(tmp_filtered[x&y,])
+# if (!all(c %in% b)) {
+#   stop("Error in filtered datasets")
+#   rm(Filtered_intersection_pooled.subtypes.survival)
+# }
 
 
 #### intersection_pooled.subtypes and intersection_pooled.subtypes.survival are the patients which are unanimously classified under the same subtypes across the methods and those which have survival data, respectively; intersection_pooled.subtypes must contain Filtered_intersection_pooled.subtypes (and must be the same as the cases_to_keep in getConsensusovarianSubtypes.R)
@@ -1507,8 +1516,7 @@ marginal_dataset = BigDF[ !(row.names(BigDF) %in% row.names(SmallDF)), ]
 <<marginal_dataset_classification, results='asis', eval=FALSE>>=
 levels(marginal_dataset$"Konecny") <- subtypes[[2]]
 levels(marginal_dataset$"Helland") <- subtypes[[2]]
-subtype_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
+subtype_combinations <- lapply(1:length(row.names(marginal_dataset)), 
        function (i) 
         marginal_dataset[i,subtype.names[1:3]] %>% as.numeric %>% unique %>% sort
        ) 
@@ -1524,8 +1532,7 @@ vecMatch <- function(x, want) {
     isTRUE(all.equal(x, want))
 }
 
-which_combinations = 
-lapply(1:length(row.names(marginal_dataset)), 
+which_combinations <- lapply(1:length(row.names(marginal_dataset)), 
        function (i) 
         sapply(sorted_unique_comb, vecMatch, subtype_combinations[[i]]) %>% which 
        ) %>% unlist
@@ -1693,7 +1700,7 @@ margin.scatterplots_pairwise <-
 
 smc_c.df <- na.omit(smc_conc.df)
   smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
-   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(4,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
+   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(2,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
 
   })
 
