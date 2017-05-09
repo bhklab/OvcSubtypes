@@ -2,10 +2,10 @@
 \pagebreak
 \chapter[Classification Across Datasets]{Classification of a Compendium of Ovarian Datasets Ovarian under Published Subtyping Schemes}
 
-<<setup2, include=FALSE, cache=FALSE>>=
+<<setup2, include=FALSE>>=
 # Set options
 rm(list=ls())
-knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=FALSE)
+knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, fig.path='figures/', fig.align='center', fig.show='hold',warning=FALSE, echo=FALSE, message=FALSE, error=FALSE, cache=TRUE)
 options(replace.assign=TRUE,width=90)
 days.per.month <- 30.4368
 days.per.year <- 365.242
@@ -20,7 +20,7 @@ source("~/repos/consensusOV/get.subtypes.R")
 
 %\tableofcontents 
 
-<<load2, cache=FALSE>>=
+<<load2>>=
 library(MetaGx)
 library(gdata)
 library(HiDimDA)
@@ -329,7 +329,7 @@ scatterplot3.df <- data.frame(
 
  
 
-scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Verhaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1) + theme(legend.position = c(0.5, 0.5)) +  labs(color="") + scale_colour_manual("", values=c("gold", "orange", "orchid3")) 
+scatterplots.combined <- ggplot(scatterplot1.df,aes(x = percent,y = concordance))+geom_line(aes(color="Helland_vs_Verhaak")) + geom_line(data = scatterplot2.df,aes(color="Verhaak_vs_Konecny")) + geom_line(data = scatterplot3.df,aes(color="Konecny_vs_Helland")) + theme_bw() + theme(legend.justification = c(1, 0), legend.position = c(0.95, 0), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.background = element_rect(fill="transparent")) +  xlab("% of dataset removed") + ylab("Concordance") + ggtitle("Two-way Concordances") + ylim(0, 1)  +  labs(color="") + scale_colour_manual("", values=c("gold", "orange", "orchid3"))
 
 @
 
@@ -410,7 +410,7 @@ subtypes = lapply(1:3,(function(i) {levels(pooled.subtypes[,subtype.names[[i]]])
 Based on the pairwise concordance, we observe that the subtypes in the different schemes appear to follow a clear one-to-one mapping, except in the case of the Bentink, which maps the IMR, DIF, and PRO subtypes of Verhaak (and the corresponding subtypes in other schemes) to non-Angiogenic and the MES subtype to Angiogenic. The table below shows the mapping. 
 
 
-<<Subtype_map_table, results='asis', cache=FALSE>>=
+<<Subtype_map_table, results='asis'>>=
 subtype.map <- as.data.frame(subtypes)
 subtype.map$"Bentink" <- c("nonAngiogenic", "nonAngiogenic", "nonAngiogenic", "Angiogenic")
 colnames(subtype.map) <- subtype.names
@@ -418,7 +418,7 @@ colnames(subtype.map) <- subtype.names
 print(xtable(subtype.map), include.rownames=FALSE)
 @
 
-<<Data_setup, cache=FALSE>>=
+<<Data_setup>>=
 # Extract margins for each scheme
 margins1 <- function (only.survival) { 
   p = (if (only.survival) pooled.subtypes.survival
@@ -535,7 +535,7 @@ scatterplot_melt.df <- scatterplot_melt.df[order(scatterplot_melt.df$value, scat
   legend_length <- length(unique(scatterplot_melt.df$variable))
 legend_breaks <- scatterplot_melt.df$variable[1:legend_length]
   
-    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual("", values=c("red","green","blue","violet", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.position = c(0.75, 0.25)) 
+    subtype_scatterplots <- ggplot(scatterplot_melt.df, aes(y=value, x = percent, colour=variable)) + scale_colour_manual("", values=c("red","green","blue","violet", "black")) + geom_line() + theme_bw() + xlab("% of dataset removed") + ylab("Concordance") + ylim(0, 1) + ggtitle("Three-way Concordance") + theme(legend.justification = c(1, 0), legend.position = c(0.95, 0), panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.background = element_rect(fill="transparent")) 
 @
 
 We sought to further investigate the association of margin values with subtype concordance, under the hypothesis that patients with had higher margin values were more `confidently' classified, and more concordantly classified between subtypes. We restricted our attention to the Helland, Konecny, and Verhaak classifiers, since they have the same number of subtypes.
@@ -629,14 +629,14 @@ newdata <- mydata[order(All),]
 
 %The resulting dataset is as below:
 \begin{figure}[H]
-<<dataset_barplots, out.width="0.8\\textwidth">>=
+<<dataset_barplots, height=8, width=10, out.width="0.8\\textwidth">>=
 
 barplot(as.matrix(newdata) %>% t, main="HGS sample sizes", 
         beside=TRUE, 
         horiz=TRUE, las=2, 
         col=terrain.colors(3),
         legend=c("All", "Margins Removed", "Concordant Across Subtyping Methods"),
-        legend.placement='br'
+        args.legend = list(x = "bottomright", bty="n")
        )
 
 @
@@ -1208,7 +1208,7 @@ get_venn_margin_subtype <- function(margin,subtype_order, overlay_another = FALS
 
 
 \begin{figure}[H]
-<<Subtype_venn_diagrams, fig.keep ='last', fig.width=5, fig.height=5>>=
+<<Subtype_venn_diagrams, fig.keep ='last', fig.width=6, fig.height=6>>=
 
 draw_venn <- function (margin,margin_overlay, subtype_order){
   q <- get_venn_margin_subtype(margin,subtype_order, overlay_another = TRUE, margin_overlay)   
@@ -1268,7 +1268,7 @@ venn_dia, top = "D.", ncol = 1)
 
 
 grid.arrange(
-Pane_A, Pane_B,  Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,2,2,4,4,3,3,4,4), nrow = 4, byrow = FALSE), widths=c(8,10,10), heights = c(10,10,10,10)
+Pane_A, Pane_B,  Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,4,4,4,4,4,2,2,2,4,4,4,4,4,3,3,3,4,4,4,4,4,3,3,3,4,4,4,4,4), nrow = 8, byrow = FALSE), widths=c(4,4,5,5,5,5), heights = c(5,5,5,5,5,5,5,5)
 )
 
 
@@ -1277,7 +1277,7 @@ Pane_A, Pane_B,  Pane_C, Pane_D, layout_matrix = matrix(c(1,1,1,1,2,2,4,4,3,3,4,
 }
 \end{figure}
 
-%\pagebreak
+\pagebreak
 
 \section{Survival Analysis}
 <<Pooled_survival_plot, fig.height=12, out.width="0.8\\textwidth">>=
@@ -1392,9 +1392,6 @@ coxph.model = coxph(surv.obj ~ groups + strata(data.source), survival_filtered.d
 fit = summary(coxph.model)
 print(xtable(fit$conf.int), include.rownames=FALSE)
 @ 
-Interestingly, the survival curves of the first three risky subtypes are more relatively more risky in the filtered dataset.  
-
-
 
 
 <<hr_plots, out.width="0.8\\textwidth">>=
@@ -1674,7 +1671,7 @@ grid_arrange_shared_legend <- function(...) {
 grid_arrange_shared_legend(get_subtype_concordance(1), get_subtype_concordance(2), get_subtype_concordance(3), get_subtype_concordance(4))
 @
 
-<<pairwise_contingency>>=
+<<pairwise_contingency, fig.width=6, fig.height=6, out.width="0.8\\textwidth">>=
 margin.scatterplots_pairwise <- 
     apply(pair.matrix[,c(1,3,5)], 2, function(subtype.name.pair) {
     margins.1 <- pooled.subtypes[,paste0(subtype.name.pair[1], ".margins")]
@@ -1700,11 +1697,23 @@ margin.scatterplots_pairwise <-
 
 smc_c.df <- na.omit(smc_conc.df)
   smc_c_long.df <- melt(smc_c.df, id = "percent")   %>% na.omit         
-   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(2,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Proportions of 3-way in ", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
+   ggplot(smc_c_long.df) + geom_line(aes(x=percent, y=value, colour=variable, size = variable)) + scale_size_manual(values=c(0.5,0.5,0.5,0.5,0.5)) + scale_colour_manual(values=c("black", "red","green","blue","violet")) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Concordance") + ggtitle(paste0("Concordance of subtypes:\n", subtype.name.pair[1], " and ", subtype.name.pair[2])) + ylim(0, 1) 
 
   })
 
 #grid.arrange(grobs = margin.scatterplots_pairwise,ncol = 3, widths=c(6,6,6), heights=c(6,6,6))
+g_legend<-function(a.gplot){
+    tmp <- ggplot_gtable(ggplot_build(a.gplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    legend <- tmp$grobs[[leg]]
+    legend
+}
 
-grid_arrange_shared_legend(margin.scatterplots_pairwise[[1]],margin.scatterplots_pairwise[[2]],margin.scatterplots_pairwise[[3]],ncol = 3)
+common.legend <- g_legend(margin.scatterplots_pairwise[[1]] + theme(legend.title=element_blank()))
+common.legend <- common.legend
+grid.arrange(
+  margin.scatterplots_pairwise[[1]] + theme(legend.position="none"),
+  margin.scatterplots_pairwise[[2]] + theme(legend.position="none"),
+  margin.scatterplots_pairwise[[3]] + theme(legend.position="none"), 
+  common.legend, nrow = 2, ncol=2)
 @
