@@ -10,6 +10,12 @@ options(replace.assign=TRUE,width=90)
 days.per.month <- 30.4368
 days.per.year <- 365.242
 # package.dir <- "~/repos/MetaGx/"
+source("~/repos/consensusOV/get.konecny.subtypes.R")
+source("~/repos/consensusOV/get.verhaak.subtypes.R")
+source("~/repos/consensusOV/get.helland.subtypes.R")
+source("~/repos/consensusOV/get.bentink.subtypes.R")
+source("~/repos/consensusOV/get.consensus.subtypes.R")
+source("~/repos/consensusOV/get.subtypes.R")
 @
 
 
