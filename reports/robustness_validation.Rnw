@@ -91,6 +91,8 @@ In order to permit comparability between subtyping schemes, all datasets were fi
 tcga.ps.vals <- sapply(1:length(classifier.subtypes$Verhaak), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Verhaak[[x]], clustering.subtypes$tcga_nmf_4[[x]][[y]])$ps))
 colnames(tcga.ps.vals) <- names(classifier.subtypes$Verhaak)
 
+tcga.ps.vals <- tcga.ps.vals[,colnames(tcga.ps.vals) != "TCGA"]
+
 tcga.ordered.classes <- c("IMR", "DIF", "PRO", "MES")
 
 @
@@ -114,6 +116,8 @@ tcga.pred.str.trend.tcga$percent.removed <- tcga.pred.str.trend.tcga$percent.rem
 <<Tothill_pred_str, cache=TRUE>>=
 tothill.ps.vals <- sapply(1:length(classifier.subtypes$Helland), function(x) sapply(1:100, function(y) ps.cluster(classifier.subtypes$Helland[[x]], clustering.subtypes$tothill_kmeans_4[[x]][[y]])$ps))
 colnames(tothill.ps.vals) <- names(classifier.subtypes$Helland)
+
+tothill.ps.vals <- tothill.ps.vals[,colnames(tothill.ps.vals) != "GSE9891"]
 
 tothill.ordered.classes <- c("C2", "C4", "C5", "C1")
 @

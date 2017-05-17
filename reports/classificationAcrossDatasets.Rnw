@@ -9,12 +9,14 @@ knitr::opts_chunk$set(include=TRUE, results="hide", fig.width=8, fig.height=8, f
 options(replace.assign=TRUE,width=90)
 days.per.month <- 30.4368
 days.per.year <- 365.242
-source("~/repos/consensusOV/get.konecny.subtypes.R")
-source("~/repos/consensusOV/get.verhaak.subtypes.R")
-source("~/repos/consensusOV/get.helland.subtypes.R")
-source("~/repos/consensusOV/get.bentink.subtypes.R")
-source("~/repos/consensusOV/get.consensus.subtypes.R")
-source("~/repos/consensusOV/get.subtypes.R")
+
+library(consensusOV)
+#source("~/repos/consensusOV/get.konecny.subtypes.R")
+#source("~/repos/consensusOV/get.verhaak.subtypes.R")
+#source("~/repos/consensusOV/get.helland.subtypes.R")
+#source("~/repos/consensusOV/get.bentink.subtypes.R")
+#source("~/repos/consensusOV/get.consensus.subtypes.R")
+#source("~/repos/consensusOV/get.subtypes.R")
 @
 
 
@@ -1455,6 +1457,7 @@ grid.arrange(get_hr_plot(1), get_hr_plot(2), get_hr_plot(3),ncol=1)
 
 % Figure 2
 <<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
+
 survival.df <- pooled.subtypes.survival
 
 get_survival_curve <- function (subtype.order) {
@@ -1488,7 +1491,7 @@ get_survival_curve <- function (subtype.order) {
   ss <- survfit(surv.obj ~ groups, data = survival.df) 
   grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
   gp=gpar(col="black", fontsize=10, fontface="italic")))
-  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(0.55, 0.92), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
+  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(1, 1), legend.justification = c(1, 1), legend.title=element_blank(), legend.background = element_rect(fill="transparent"))  + xlab("Time (years)") + annotation_custom(grob)
   
 }
 

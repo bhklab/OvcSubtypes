@@ -21,10 +21,18 @@ library(grid)
 library(ROCR)
 library(GGally)
 
+library(consensusOV)
+#source("~/repos/consensusOV/get.konecny.subtypes.R")
+#source("~/repos/consensusOV/get.verhaak.subtypes.R")
+#source("~/repos/consensusOV/get.helland.subtypes.R")
+#source("~/repos/consensusOV/get.bentink.subtypes.R")
+#source("~/repos/consensusOV/get.consensus.subtypes.R")
+#source("~/repos/consensusOV/get.subtypes.R")
+
 load("Filtered_intersection_pooled.subtypes.RData")
 load("intersection_pooled.subtypes.RData")
 
-source("getGenePairConsensusOvarianSubtypes.R")
+#source("/Users/greg/Desktop/mar7_ovcsubtypes/OvcSubtypes/reports/getGenePairConsensusOvarianSubtypes.R")
 @
 
 <<Leave_one_dataset_out>>=
@@ -43,33 +51,48 @@ classification.vals.genepairs.default.cutoff.rf.prob <- list()
 
 sample_ids <- list()
 
-for(dataset.name in dataset.names) {
-  # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
-  left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
-  training.dataset.names <- dataset.names[dataset.names != dataset.name]
+if(file.exists("classification.vals.genepairs.rf.RData")) {
+  load("classification.vals.genepairs.rf.RData")
+  load("classification.vals.genepairs.rf.prob.RData")
+  load("classification.vals.genepairs.default.cutoff.rf.RData")
+  load("classification.vals.genepairs.default.cutoff.prob.rf.RData")
+} else {
+  for(dataset.name in dataset.names) {
+    # left.out.dataset <- esets.with.survival.scaled[[dataset.name]]
+    left.out.dataset <- esets.not.rescaled.classified[[dataset.name]]
+    training.dataset.names <- dataset.names[dataset.names != dataset.name]
+    
+    print(paste("Classifying eset", dataset.name))
+    consensus.classifier.output.genepairs.rf <- get.subtypes(left.out.dataset, method="consensusOV",.dataset.names.to.keep = training.dataset.names, remove.using.cutoff = FALSE)
+    
+    classification.vals.genepairs.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$consensusOV.subtypes
+    classification.vals.genepairs.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+    
+    classification.vals.genepairs.default.cutoff.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$consensusOV.subtypes
+    classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+    
+    current.margins <- rowMax(consensus.classifier.output.genepairs.rf$rf.probs) - apply(consensus.classifier.output.genepairs.rf$rf.probs, 1, function(row) sort(row)[3])
+    
+    classification.vals.genepairs.default.cutoff.rf[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
+    classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
+  }
   
-  print(paste("Classifying eset", dataset.name))
-  consensus.classifier.output.genepairs.rf <- getGenePairConsensusOvarianSubtypes(left.out.dataset, .dataset.names.to.keep = training.dataset.names, remove.using.cutoff = FALSE)
+  save(classification.vals.genepairs.rf,
+       file = "classification.vals.genepairs.rf.RData"
+       )
   
-  classification.vals.genepairs.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
-  classification.vals.genepairs.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+  save(classification.vals.genepairs.rf.prob,
+       file = "classification.vals.genepairs.rf.prob.RData"
+       )
   
-  classification.vals.genepairs.default.cutoff.rf[[dataset.name]] <- consensus.classifier.output.genepairs.rf$Annotated.eset$Ovarian.subtypes.rf
-  classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]] <- consensus.classifier.output.genepairs.rf$rf.probs
+  save(classification.vals.genepairs.default.cutoff.rf,
+       file = "classification.vals.genepairs.default.cutoff.rf.RData"
+       )
   
-  current.margins <- rowMax(consensus.classifier.output.genepairs.rf$rf.probs) - apply(consensus.classifier.output.genepairs.rf$rf.probs, 1, function(row) sort(row)[3])
-  
-  classification.vals.genepairs.default.cutoff.rf[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
-  classification.vals.genepairs.default.cutoff.rf.prob[[dataset.name]][ecdf(current.margins)(current.margins) < 0.75] <- NA
+  save(classification.vals.genepairs.default.cutoff.rf.prob,
+       file = "classification.vals.genepairs.default.cutoff.prob.rf.RData"
+       )
 }
-
-save(classification.vals.genepairs.default.cutoff.rf,
-     file = "classification.vals.genepairs.default.cutoff.rf.RData"
-     )
-
-save(classification.vals.genepairs.default.cutoff.rf.prob,
-     file = "classification.vals.genepairs.default.cutoff.prob.rf.RData"
-     )
 
 @
 
@@ -90,10 +113,10 @@ pooled.subtypes <- do.call(rbind,
 
 colnames(pooled.subtypes)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes)[4:7])
 
-pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
-pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
-pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
-pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
+#pooled.subtypes$Konecny <- factor(pooled.subtypes$Konecny, levels(pooled.subtypes$Konecny)[c(1,2,3,4)])
+#pooled.subtypes$Verhaak <- factor(pooled.subtypes$Verhaak, levels(pooled.subtypes$Verhaak)[c(2,1,4,3)])
+#pooled.subtypes$Helland <- factor(pooled.subtypes$Helland, levels(pooled.subtypes$Helland)[c(2,3,4,1)])
+#pooled.subtypes$Bentink <- factor(pooled.subtypes$Bentink, levels(pooled.subtypes$Bentink)[c(2,1)])
 
 subtype.correspondances <- data.frame(Konecny=c("C1_immL", "C2_diffL", "C3_profL", "C4_mescL"),
                                       Verhaak=c("IMR", "DIF", "PRO", "MES"),
@@ -115,8 +138,8 @@ pooled.subtypes$Consensus.genepairs.default.cutoff.rf.margin <- unlist(lapply(cl
 pooled.subtypes$Consensus.genepairs.default.cutoff.rf.maxprob <- unlist(lapply(classification.vals.genepairs.default.cutoff.rf.prob, function(rf.probs) apply(rf.probs, 1, max))) 
 
 # reorder factor levels. Note, this should be done in the original function
-pooled.subtypes$Consensus.genepairs.rf <- factor(pooled.subtypes$Consensus.genepairs.rf, levels(pooled.subtypes$Consensus.genepairs.rf)[c(2,1,4,3)])
-pooled.subtypes$Consensus.genepairs.default.cutoff.rf <- factor(pooled.subtypes$Consensus.genepairs.default.cutoff.rf, levels(pooled.subtypes$Consensus.genepairs.default.cutoff.rf)[c(2,1,4,3)])
+pooled.subtypes$Consensus.genepairs.rf <- factor(pooled.subtypes$Consensus.genepairs.rf, levels(pooled.subtypes$Consensus.genepairs.rf))
+pooled.subtypes$Consensus.genepairs.default.cutoff.rf <- factor(pooled.subtypes$Consensus.genepairs.default.cutoff.rf, levels(pooled.subtypes$Consensus.genepairs.default.cutoff.rf))
 
 pooled.subtypes$years_to_death = pooled.subtypes$days_to_death / days.per.year
 pooled.subtypes$days_to_death <- NULL
@@ -189,7 +212,7 @@ grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[
 
 \section{Survival Analysis}
 \begin{figure}[H]
-<<survival_plots, fig.width=12, fig.height=12, out.width="0.8\\textwidth">>=
+<<survival_plots, fig.width=12, fig.height=12, out.width="0.9\\textwidth">>=
 
 get_classifier_surv_curves <- function(classifier, data.subset)  
   {
@@ -259,7 +282,7 @@ grid.arrange(sc1, sc2, sc3, sc4, ncol=2)
 \begin{figure}[H]
 
 
-<<Figure4-ConsensusClassifier, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
+<<Figure4-ConsensusClassifier, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.7\\textwidth", cache=FALSE>>=
 
 # Two-way Concordances
 Pane_4A <- grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2, top = "A.")
@@ -309,7 +332,7 @@ grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxp
 \subsection{Margin ROC Curves}
 \begin{figure}[H]
 {\centering
-<<ROC curve, fig.width=6, fig.height=6>>=
+<<ROC curve, fig.width=8, fig.height=8>>=
 roc.colors <- brewer.pal(5, "Set1")
 roc_Helland <- ROCR::performance(ROCR::prediction(pooled.subtypes$Helland.margins[margin.comparison.cases.to.include], pooled.subtypes$concordant[margin.comparison.cases.to.include]), "tpr", "fpr")
 # plot(roc_Helland.data, col=roc.colors[1], lwd=2, ylim=c(0,1), xlim=c(0,1))
@@ -373,7 +396,7 @@ ggplot(roc_Helland.df, aes(x =x, y = y)) +
               aes(color=paste("ConsensusOV, AUC: ",sprintf("%.3f", aucs[[4]])))) +
     geom_abline (intercept = 0, slope = 1) +
     ggtitle("ROC curves for predicting concordance") +
-    theme_bw() + xlab("False positive rate") + ylab("True positive rate") + ylim(0, 1) + theme(legend.position = c(0.75, 0.25)) +  labs(color="") + scale_colour_manual("", values=c("red", "gold", "orange", "orchid3")) 
+    theme_bw(base_size=20) + xlab("False positive rate") + ylab("True positive rate") + ylim(0, 1) + theme(legend.position = c(0.75, 0.25)) +  labs(color="") + scale_colour_manual("", values=c("red", "gold", "orange", "orchid3")) 
 
 roc_curves
 @
@@ -388,8 +411,7 @@ roc_curves
 \begin{figure}[H]
 
 
-<<Figure5-MarginAnalysis, fig.keep ='last', fig.width=10, fig.height=11, out.width="0.7\\textwidth", cache=FALSE>>=
-
+<<Figure5-MarginAnalysis, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.8\\textwidth", cache=FALSE>>=
 # Bar plots
 Pane_5A <- 
   grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot,  nrow=1, top = "A.")
@@ -400,7 +422,7 @@ Pane_5B <-
   
 
 grid.arrange(
-Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = TRUE), heights = c(20,30))
+Pane_5A, Pane_5B, layout_matrix = matrix(c(1,2), nrow = 2, byrow = TRUE), heights = c(20,50))
 
 @
 \caption{Margin Analysis. A. Boxplots indicating the margin values assigned by each classifier to concordant and non-concordant cases. These plots exclude patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based. For the ConsensusOV, classification was performed using leave-one-dataset-out validation. All statistical tests were performed using the Wilcoxon rank-sum test. B. ROC curve for assessing the ability of margin values to discriminate between concordant and non-concordant cases. This plot excludes patients in the training sets on which the Helland, Verhaak, and Konecny classifiers are based; classification from the ConsensusOV was performed using leave-one-dataset-out validation. ConsensusOV was effective (AUC = 0.779) at discriminating between patients of well-defined or intermediate subtypes.}

@@ -215,10 +215,12 @@ kable(table(tcga.merged.authorlist$SUBTYPE, tcga.merged.authorlist$nmf.classes)[
 <<Konecny_clustering, cache=TRUE>>=
 set.seed(840)
 
-if(file.exists("konecny.eset.RData")) {
+konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
+
+if(file.exists("konecny.eset.RData") && file.exists("konecny.original.eset.RData")) {
 	load("konecny.eset.RData")
+  load("konecny.original.eset.RData")
 } else {
-	konecny.unique.entrez.ids <- scan("docs/konecny.unique.entrez.ids.txt", what=character(0))
 	konecny.original.eset <- getGEO("GSE53963", GSEMatrix=TRUE)[[1]]
 	konecny.mad.vals <- apply(exprs(konecny.original.eset), 1, function(x) mad(x, na.rm=TRUE))
 	konecny.eset <- konecny.original.eset
