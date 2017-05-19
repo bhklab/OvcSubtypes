@@ -175,30 +175,6 @@ combined.ps.m$variable <- NULL
 ggplot(combined.ps.m, aes(x=L1, y=value, fill="red")) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(color="black", outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) + theme_bw() + ggtitle("Robustness of Molecular Subtyping Schemes") + xlab("") + ylab("Prediction Strength") + xlab("Subtyping Scheme") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1)) + theme(legend.position='none')
 @
 
-\pagebreak
-
-Next, we compared the Prediction Strength for only the concordantly classified patients. Using only the patients classified concordantly using the classifiers of Helland, Verhaak, and Konecny, we performed each clustering algorithm 100 times for each dataset, producing 100 prediction strength estimates per dataset. Each data point in the boxplot below represents the mean estimated prediction strength for a dataset under a given subtyping clustering/classification scheme.
-
-<<ps_paired_boxplots, fig.width=10, out.width="0.85\\textwidth", eval=FALSE>>=
-set.seed(900)
-combined.ps.concordant <- lapply(list(Tothill=tothill.ps.vals.concordant, TCGA=tcga.ps.vals.concordant, Konecny=konecny.ps.vals.concordant), function(x) data.frame(dataset=colnames(x), pred.strength=apply(x, 2, mean)))
-combined.ps.concordant.m <- melt(combined.ps.concordant)
-combined.ps.concordant.m$variable <- NULL
-
-combined.ps.concordant.m$Data <- "Concordant"
-combined.ps.m$Data <- "All"
-
-pred.str.df <- rbind(combined.ps.m, combined.ps.concordant.m)
-
-colnames(pred.str.df)[2:3] <- c("pred.strength", "Method")
-
-#ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + geom_boxplot(aes(fill=Data), outlier.size=0) + geom_line(aes(group=interaction(dataset, Method)), alpha=0.2, cex=0.5) + geom_jitter(position=position_jitter(0), cex=0.3) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
-
-ggplot(pred.str.df, aes(x=interaction(Data, Method), y=pred.strength)) + stat_boxplot(geom='errorbar', width=0.5) + geom_boxplot(aes(fill=Data), outlier.shape=NA) + geom_jitter(position=position_jitter(0.1), cex=0.5) + theme_bw() + ggtitle("Robustness: All Data and Concordant Cases") + xlab("Subtyping Scheme") + ylab("Prediction Strength") + theme(plot.title=element_text(size=20, vjust=2)) + coord_cartesian(ylim = c(0, 1))  + scale_x_discrete(labels=c("                        Konecny", "", "                        TCGA", "", "                     Tothill", ""))
-
-@
-
-%The Wilcoxon signed-rank test yields p-values of \Sexpr{sprintf("%.2e, %.2e, and %.2e", wilcox.test(combined.ps$Konecny$pred.strength, combined.ps.concordant$Konecny$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$TCGA$pred.strength, combined.ps.concordant$TCGA$pred.strength, paired=TRUE)$p.value, wilcox.test(combined.ps$Tothill$pred.strength, combined.ps.concordant$Tothill$pred.strength, paired=TRUE)$p.value)} respectively for Konecny, TCGA, and Tothill.
 
 \pagebreak
 \subsection{Tothill/Helland}
