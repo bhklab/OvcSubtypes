@@ -1,5 +1,5 @@
 # Analysis and report generation for ovarian subtyping project
-
+(this will be updated shortly to reflect new directory structure)
 
 **_Instructions:_**
 
