@@ -19,7 +19,7 @@
 \raggedbottom
 \begin{document}
 
-\title{\Large Supplementary}
+\title{\Large Full Analysis}
 \date{\today}
 
 % Remove empty page after title page
@@ -27,7 +27,7 @@
 
 \maketitle
 \tableofcontents
-This document contains the supplementary files of our manuscript titled ``Consensus on Molecular Subtypes of Ovarian Cancer". 
+This document contains the complete analyses done on of our manuscript titled ``Consensus on Molecular Subtypes of Ovarian Cancer". A subset of this file is used as the supplementary text.
 
 
 % Please add the following required packages to your document preamble:

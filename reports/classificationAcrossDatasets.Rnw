@@ -10,6 +10,8 @@ options(replace.assign=TRUE,width=90)
 days.per.month <- 30.4368
 days.per.year <- 365.242
 
+percent.removed.for.analyses <- 75
+
 library(consensusOV)
 #source("~/repos/consensusOV/get.konecny.subtypes.R")
 #source("~/repos/consensusOV/get.verhaak.subtypes.R")
@@ -547,7 +549,14 @@ In the following plot, we can see the relationship between the margin cutoffs an
 <<margin_cuttoffs_versus_percentage removed, fig.width=8, fig.height=7, out.width="0.6\\textwidth">>=
 xvals <- seq(0, 1, length.out = 3000)
 margin_scatterplot.df <- data.frame(margin = xvals, percent = percent)
-margin_cutoff = margin_scatterplot.df$margin[1500]
+#margin_cutoff = margin_scatterplot.df$margin[1500]
+# Set a cutoff to 75% of the dataset removed.
+margin_cutoff <- margin_scatterplot.df$margin[
+  min(which(
+    abs(margin_scatterplot.df$percent - percent.removed.for.analyses) < 0.02)
+    )
+  ]
+
 points.df <- data.frame(cutoff=margin_cutoff, percent_removed=percent[margin_scatterplot.df$margin == margin_cutoff])
 ggplot(margin_scatterplot.df, aes(y=margin, x = percent)) + 
     geom_point(size=3) + geom_line(size=3) + theme_bw() + 
@@ -1397,6 +1406,8 @@ print(xtable(fit$conf.int), include.rownames=FALSE)
 
 
 <<hr_plots, out.width="0.8\\textwidth">>=
+hr.max.xval <- min(which(abs(percent - percent.removed.for.analyses) < 0.02))
+
 high.risk.group <- function(subtype.order){
   if (subtype.order == 3) subtypes[[subtype.order]][3:4] else subtypes[[subtype.order]][2:4]
 }
@@ -1428,26 +1439,26 @@ get_hr <- function (margin, subtype.order) {
   fit$conf.int[,c(1,3,4)]  
 }
 
-xvals <- seq(0, 0.75, length.out = 2250)
+xvals <- seq(0, 0.75, length.out = hr.max.xval)
 
 all_hrs_CI <- function (subtype.order) lapply(xvals,function (x) get_hr(x,subtype.order))
 all_hrs_CI_subtypes <- lapply(1:3, all_hrs_CI)
-extract_hr <- function (all_hrs_CI_subtype) {lapply(1:2250,function (i) all_hrs_CI_subtype[[i]][[1]]) %>% unlist}
-extract_lower_CI <- function (all_hrs_CI_subtype) {lapply(1:2250,function (i) all_hrs_CI_subtype[[i]][[2]]) %>% unlist}
-extract_upper_CI <- function (all_hrs_CI_subtype) {lapply(1:2250,function (i) all_hrs_CI_subtype[[i]][[3]]) %>% unlist}
+extract_hr <- function (all_hrs_CI_subtype) {lapply(1:hr.max.xval,function (i) all_hrs_CI_subtype[[i]][[1]]) %>% unlist}
+extract_lower_CI <- function (all_hrs_CI_subtype) {lapply(1:hr.max.xval,function (i) all_hrs_CI_subtype[[i]][[2]]) %>% unlist}
+extract_upper_CI <- function (all_hrs_CI_subtype) {lapply(1:hr.max.xval,function (i) all_hrs_CI_subtype[[i]][[3]]) %>% unlist}
 @
  
 <<HR_plots>>=
 get_hr_plot <- function (subtype.order) { 
-# ss = smooth.spline(xvals[1:2250], extract_hr(all_hrs_CI_subtypes[[subtype.order]]))
-ss_l = smooth.spline(xvals[1:2250], extract_lower_CI(all_hrs_CI_subtypes[[subtype.order]]))
-ss_u = smooth.spline(xvals[1:2250], extract_upper_CI(all_hrs_CI_subtypes[[subtype.order]]))
-hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr(all_hrs_CI_subtypes[[subtype.order]]), lower = ss_l$y, upper = ss_u$y)
+# ss = smooth.spline(xvals[1:hr.max.xval], extract_hr(all_hrs_CI_subtypes[[subtype.order]]))
+ss_l = smooth.spline(xvals[1:hr.max.xval], extract_lower_CI(all_hrs_CI_subtypes[[subtype.order]]))
+ss_u = smooth.spline(xvals[1:hr.max.xval], extract_upper_CI(all_hrs_CI_subtypes[[subtype.order]]))
+hrplot.df <- data.frame(margin = xvals[1:hr.max.xval], percent = percent[1:hr.max.xval],hr = extract_hr(all_hrs_CI_subtypes[[subtype.order]]), lower = ss_l$y, upper = ss_u$y)
 #                         
 #  
-# hrplot.df <- data.frame(margin = xvals[1:2250], percent = percent[1:2250],hr = extract_hr(all_hrs_CI_subtypes[[subtype.order]]))
+# hrplot.df <- data.frame(margin = xvals[1:hr.max.xval], percent = percent[1:hr.max.xval],hr = extract_hr(all_hrs_CI_subtypes[[subtype.order]]))
 low.risk.group = setdiff(subtypes[[subtype.order]],high.risk.group(subtype.order)) 
-ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle(paste("Hazard Ratio w.r.t. less risky subtypes ", paste(low.risk.group,collapse=" "))) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
+ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + scale_x_continuous(breaks = seq(0,75,25))+ ggtitle(paste("Hazard Ratio w.r.t. less risky subtypes ", paste(low.risk.group,collapse=" "))) + geom_line(aes(y = lower)) + geom_line(aes(y = upper))
 
 # ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(size=3) + geom_line(size=3) + theme_bw() + xlab("Percentage of dataset removed") + ylab("Hazard Ratio") + ylim(1, 2.5) + ggtitle(paste("Hazard Ratio w.r.t. less risky subtypes ", paste(low.risk.group,collapse=" ")))
 }

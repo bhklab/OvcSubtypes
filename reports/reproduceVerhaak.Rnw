@@ -200,7 +200,7 @@ verhaak.merged$months_to_death <- time.cens.out$surv.time.cens
 verhaak.merged$vital_status <- time.cens.out$surv.event.cens
 
 verhaak.merged$surv.obj <- Surv(verhaak.merged$months_to_death, verhaak.merged$vital_status)
-km.coxph.plot(surv.obj ~ implemented.subtype, verhaak.merged, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Classifier", show.n.risk = FALSE, leg.text = levels(verhaak.merged$implemented.subtype), .col=c("#E38010", "green", "blue", "purple"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0.4)
+km.coxph.plot(surv.obj ~ implemented.subtype, verhaak.merged, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Classifier", show.n.risk = FALSE, leg.text = levels(verhaak.merged$implemented.subtype), .col=c("green", "#E38010", "purple", "blue"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0.4)
 @
 \includegraphics[width=0.5\textwidth]{images/verhaak_fig2B.png}
 \caption{The survival curves produced by our implemented classifier (top) appear similar to Figure 2B in the original publication (bottom).}

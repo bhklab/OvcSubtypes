@@ -25,7 +25,7 @@ addtorow$pos <- list()
 addtorow$pos[[1]] <- 0
 addtorow$pos[[2]] <- 0
 addtorow$command <- c('& Original Helland Subtypes & & &\\\\\n', "Implemented Helland Subtypes & C1 & C2 & C4 & C5 \\\\\n")
-print(xtable(table(helland.merged$Helland.subtypes, helland.merged$ClassLabel), caption="Contingency table showing concordance of our implementation and and the predictions given by the table provided by Helland et al. Predictions were made on the TCGA dataset. Note that subtypes C3 and C6 were excluded in the original study since they are associated with non-HGS ovarian tumours."), add.to.row=addtorow, include.colnames=FALSE)
+print(xtable(table(factor(helland.merged$Helland.subtypes, levels=c("C1", "C2", "C4", "C5")), helland.merged$ClassLabel), caption="Contingency table showing concordance of our implementation and and the predictions given by the table provided by Helland et al. Predictions were made on the TCGA dataset. Note that subtypes C3 and C6 were excluded in the original study since they are associated with non-HGS ovarian tumours."), add.to.row=addtorow, include.colnames=FALSE)
 @
 
 
@@ -45,7 +45,7 @@ helland.data.for.survival$months_to_death <- helland.censored.out$surv.time.cens
 helland.data.for.survival$vital_status <- helland.censored.out$surv.event.cens
 
 helland.data.for.survival$surv.obj <- Surv(helland.data.for.survival$months_to_death, helland.data.for.survival$vital_status)
-km.coxph.plot(surv.obj ~ Helland.subtypes, helland.data.for.survival, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Helland classifier", show.n.risk = FALSE, leg.text = levels(helland.data.for.survival$Helland.subtypes), .col=c("black", "red", "green", "blue"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0)
+km.coxph.plot(surv.obj ~ Helland.subtypes, helland.data.for.survival, x.label="Time (months)", y.label = "Survival", main.title="Survival: Implemented Helland classifier", show.n.risk = FALSE, leg.text = levels(helland.data.for.survival$Helland.subtypes), .col=c("red", "green", "blue", "black"), leg.pos="topright", leg.inset=0, n.risk.cex=0.85, cex=0)
 @
 
 \includegraphics[width=0.5\textwidth]{images/helland_fig1B_TCGA.png}
