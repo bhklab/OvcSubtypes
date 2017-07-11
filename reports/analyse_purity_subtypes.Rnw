@@ -363,3 +363,42 @@ boxplot_subtype_ages("Consensus")
 @
 \end{figure}
 
+<<values_for_figure_table, eval=FALSE>>=
+## For all these calculations, use patients with survival
+
+# Mean age
+consensus.data.age <- pooled.subtypes[with(pooled.subtypes, !is.na(age_at_initial_pathologic_diagnosis) & !is.na(Consensus.genepairs.default.cutoff.rf)),]
+by(consensus.data.age$age_at_initial_pathologic_diagnosis, consensus.data.age$Consensus.genepairs.default.cutoff.rf, mean)
+anova(lm(age_at_initial_pathologic_diagnosis ~ Consensus.genepairs.default.cutoff.rf, consensus.data.age))
+
+
+# 5-year survival
+library(survival)
+consensus.data.survival <- pooled.subtypes[with(pooled.subtypes, !is.na(vital_status) & !is.na(years_to_death) & !is.na(Consensus.genepairs.default.cutoff.rf)),]
+consensus.data.survival$surv.obj <- with(consensus.data.survival, Surv(years_to_death, event=vital_status))
+
+fit <- survfit(surv.obj ~ Consensus.genepairs.default.cutoff.rf, consensus.data.survival)
+summary(fit)
+
+# Purity
+boxplot(subtype.margin_purity.filtered$purity ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf)
+by(subtype.margin_purity.filtered$purity, subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf, mean, na.rm=TRUE)
+summary(lm(subtype.margin_purity.filtered$purity ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf))
+
+# Lymphocyte infiltration
+boxplot(subtype.margin_purity.filtered$percent_lymphocyte_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf)
+summary(lm(subtype.margin_purity.filtered$percent_lymphocyte_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf))
+by(subtype.margin_purity.filtered$percent_lymphocyte_infiltration, subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf, mean, na.rm=TRUE)
+
+# Neutrophil infiltration
+boxplot(subtype.margin_purity.filtered$percent_neutrophil_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf)
+summary(lm(subtype.margin_purity.filtered$percent_neutrophil_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf))
+by(subtype.margin_purity.filtered$percent_neutrophil_infiltration, subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf, mean, na.rm=TRUE)
+
+# Monocyte infiltration. Means are < 5%
+boxplot(subtype.margin_purity.filtered$percent_monocyte_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf)
+summary(lm(subtype.margin_purity.filtered$percent_monocyte_infiltration ~ subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf))
+by(subtype.margin_purity.filtered$percent_monocyte_infiltration, subtype.margin_purity.filtered$Consensus.genepairs.default.cutoff.rf, mean, na.rm=TRUE)
+
+
+@

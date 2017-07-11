@@ -108,7 +108,7 @@ esets.not.rescaled.classified <-lapply(esets.not.rescaled.classified.names, func
   })
 names(esets.not.rescaled.classified) <- esets.not.rescaled.classified.names
 pooled.subtypes <- do.call(rbind, 
-    lapply(esets.not.rescaled.classified, function(eset) pData(eset)[,c("days_to_death", "vital_status", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]        
+    lapply(esets.not.rescaled.classified, function(eset) pData(eset)[,c("days_to_death", "vital_status", "age_at_initial_pathologic_diagnosis", "data.source", paste0(subtype.names, ".subtypes"), paste0(c("Konecny", "Verhaak", "Helland"), ".margins"))]        
            ))
 
 colnames(pooled.subtypes)[4:7] <- sub(".subtypes", "", colnames(pooled.subtypes)[4:7])

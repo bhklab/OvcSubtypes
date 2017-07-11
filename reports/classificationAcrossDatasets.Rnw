@@ -1245,7 +1245,7 @@ margin_overlay_cutoff = ceiling(margin_cutoff*3000) %>% as.integer
 draw_venn_formargin(1,margin_overlay_cutoff)
 @
 
-\caption{Venn diagrams showing the percentages of patients classified under each subtype by each method after removing 85\% of patients with the least distinct subtypes, the numbers in parenthesis are the percentages before filtering.}
+\caption{Venn diagrams showing the percentages of patients classified under each subtype by each method after removing \Sexpr{percent.removed.for.analyses}\% of patients with the least distinct subtypes, the numbers in parenthesis are the percentages before filtering.}
 \end{figure}
 
 
