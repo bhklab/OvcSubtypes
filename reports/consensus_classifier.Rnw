@@ -251,7 +251,7 @@ get_classifier_surv_curves <- function(classifier, data.subset)
 ss <- survfit(Surv(years_to_death, vital_status) ~ group, data = pooled.subtypes.current) 
   grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
   gp=gpar(col="black", fontsize=10, fontface="italic")))
-  ggsurv(ss, plot.cens = FALSE, main = title, back.white = TRUE) + theme(legend.direction='vertical',legend.box='horizontal',legend.position = c(0.75, 0.80), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
+  ggsurv(ss, plot.cens = FALSE, main = title, back.white = TRUE, cens.col=c("red","green","blue","violet"), surv.col=c("red","green","blue","violet")) + theme(legend.direction='vertical',legend.box='horizontal',legend.position = c(0.75, 0.80), legend.title=element_blank())  + xlab("Time (years)") + annotation_custom(grob)
 
 }
 
@@ -396,7 +396,7 @@ ggplot(roc_Helland.df, aes(x =x, y = y)) +
               aes(color=paste("ConsensusOV, AUC: ",sprintf("%.3f", aucs[[4]])))) +
     geom_abline (intercept = 0, slope = 1) +
     ggtitle("ROC curves for predicting concordance") +
-    theme_bw(base_size=20) + xlab("False positive rate") + ylab("True positive rate") + ylim(0, 1) + theme(legend.position = c(0.75, 0.25)) +  labs(color="") + scale_colour_manual("", values=c("red", "gold", "orange", "orchid3")) 
+    theme_bw(base_size=20) + xlab("False positive rate") + ylab("True positive rate") + ylim(0, 1) + theme(legend.position = c(0.75, 0.25)) +  labs(color="") + scale_colour_manual("", values=c("#1b9e77", "#d95f02", "#7570b3", "#e7298a")) 
 
 roc_curves
 @
