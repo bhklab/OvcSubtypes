@@ -282,7 +282,7 @@ grid.arrange(sc1, sc2, sc3, sc4, ncol=2)
 \begin{figure}[H]
 
 
-<<Figure4-ConsensusClassifier, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.7\\textwidth", cache=FALSE>>=
+<<Figure5-ConsensusClassifier, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.7\\textwidth", cache=FALSE>>=
 
 # Two-way Concordances
 Pane_4A <- grid.arrange(contingency.plots[[1]], contingency.plots[[2]], contingency.plots[[3]], contingency.plots[[4]], ncol=2, top = "A.")
@@ -411,7 +411,7 @@ roc_curves
 \begin{figure}[H]
 
 
-<<Figure5-MarginAnalysis, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.8\\textwidth", cache=FALSE>>=
+<<Figure6-MarginAnalysis, fig.keep ='last', fig.width=10, fig.height=14, out.width="0.8\\textwidth", cache=FALSE>>=
 # Bar plots
 Pane_5A <- 
   grid.arrange(helland.margin.boxplot, verhaak.margin.boxplot, konecny.margin.boxplot, consensus.genepairs.rf.margin.boxplot,  nrow=1, top = "A.")
