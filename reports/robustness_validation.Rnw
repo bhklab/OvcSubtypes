@@ -1,7 +1,7 @@
 
 
 <<load_data_from_files, cache=TRUE>>=
-knitr::opts_chunk$set(cache=FALSE)
+knitr::opts_chunk$set(cache=TRUE)
 load("esets.not.rescaled.classified.RData")
 load("esets.not.rescaled.classified.concordant.RData")
 
@@ -198,7 +198,7 @@ This plot shows the prediction stregth trend for the TCGA dataset using the meth
 
 We computed Prediction Strength using all three methods on the TCGA dataset. Using the 100 cluster runs for each method, prediction strength was computed using various margin cutoffs. Each point represents the mean prediction strength between 100 cluster runs. Note that the Verhaak classifier was originally developed using the TCGA dataset.
 
-<<tcga-together>>=
+<<tcga-together, fig.width=7, fig.height=7>>=
 
 #all.tcga <- cbind(tcga.pred.str.trend.tcga, tothill.pred.str.trend.tcga$prediction.strength, konecny.pred.str.trend.tcga$prediction.strength)
 all.tcga <- cbind(tothill.pred.str.trend.tcga, konecny.pred.str.trend.tcga$prediction.strength)
@@ -208,6 +208,7 @@ colnames(all.tcga)[2:3] <- c("Tothill", "Konecny")
 all.tcga.m <- melt(all.tcga, id="percent.removed")
 colnames(all.tcga.m)[2:3] <- c("Method", "Prediction.Strength")
 
-ggplot(all.tcga.m, aes(y=Prediction.Strength, x = percent.removed, colour=Method)) + geom_point(size=2) + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("Prediction Strength Trend using TCGA Data") + geom_line() + theme(plot.title=element_text(size=20)) + guides(fill=guide_legend(title="Dataset")) + scale_x_continuous(breaks=seq(0, 75, 25), limits=c(0,80)) + geom_hline(aes(yintercept=0.8), linetype='dashed') + scale_y_continuous(breaks=seq(0, 1, 0.2), limits=c(0,1))
+ggplot(all.tcga.m, aes(y=Prediction.Strength, x = percent.removed, linetype=Method)) + geom_point(size=2) + theme_bw() + xlab("Percent Removed") + ylab("Prediction Strength") + ylim(0, 1) + ggtitle("") + geom_line() + theme(plot.title=element_text(size=40), axis.title=element_text(size=14), legend.text=element_text(size=11), legend.title=element_text(size=14)) + scale_x_continuous(breaks=seq(0, 75, 25), limits=c(0,80)) + geom_hline(aes(yintercept=0.8), linetype='dotted') + scale_y_continuous(breaks=seq(0, 1, 0.2), limits=c(0,1))
+
 @
 
