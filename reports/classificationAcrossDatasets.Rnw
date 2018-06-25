@@ -1255,7 +1255,7 @@ Below is a summary of the consensus analysis in the form of a figure in the main
 % Main Figures of the manuscript
 %figure 1 - pairwise concordance, venn_diagram, scatterplot 
 \begin{figure}[H]
-<<Figure1-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
+<<Figure2-ConsensusAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
 venn_dia <- draw_venn_formargin(1,margin_overlay_cutoff)
 # Two-way Concordances
 Pane_A <- grid.arrange(
@@ -1466,8 +1466,8 @@ ggplot(hrplot.df, aes(y=hr, x = percent), colour = "Hazard Ratio") + geom_point(
 grid.arrange(get_hr_plot(1), get_hr_plot(2), get_hr_plot(3),ncol=1)
 @
 
-% Figure 2
-<<Figure2-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
+% Figure 3
+<<Figure3-SurvivalAnalysis, fig.keep ='last', fig.width=10, fig.height=10>>=
 
 survival.df <- pooled.subtypes.survival
 
@@ -1502,7 +1502,7 @@ get_survival_curve <- function (subtype.order) {
   ss <- survfit(surv.obj ~ groups, data = survival.df) 
   grob <- grobTree(textGrob(text, x=0.02,  y=0.2, hjust=0,
   gp=gpar(col="black", fontsize=10, fontface="italic")))
-  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(1, 1), legend.justification = c(1, 1), legend.title=element_blank(), legend.background = element_rect(fill="transparent"))  + xlab("Time (years)") + annotation_custom(grob)
+  ggsurv(ss, plot.cens = FALSE, main = subtype.name, back.white = TRUE, cens.col=c("red","green","blue","violet"), surv.col=c("red","green","blue","violet")) + theme(legend.direction='horizontal',legend.box='horizontal',legend.position = c(1, 1), legend.justification = c(1, 1), legend.title=element_blank(), legend.background = element_rect(fill="transparent"))  + xlab("Time (years)") + annotation_custom(grob)
   
 }
 
